@@ -1,0 +1,447 @@
+@import "tailwindcss";
+
+/*
+ * NeverMinde — Design Foundation + Polish v2
+ *
+ * Still minimal and dry, but elevated to an editorial, premium feel:
+ * - a deep "ink" for dark bands (richer than pure black) with a restrained
+ *   layered glow for depth,
+ * - a warm "paper" tone for light/light rhythm variation,
+ * - soft editorial shadows (never heavy), modest rounded corners,
+ * - subtle, reduced-motion-aware hover lift.
+ *
+ * The four locked brand colors are unchanged; ink + paper are supporting tones
+ * only. No external fonts. No gradients louder than a whisper.
+ */
+
+:root {
+  /* Locked brand tokens (unchanged) */
+  --background: #fafaf8; /* off-white page */
+  --foreground: #1a1a1a; /* primary text */
+  --action: #d42b2b; /* action red */
+  --muted: #9ca3af; /* muted gray */
+
+  /* v2 supporting tones */
+  --ink: #141519; /* deep ink for premium dark bands */
+  --ink-raised: #1f2127; /* lifted ink for cards/panels on dark */
+  --paper: #f2eee6; /* warm off-white for layered light depth */
+
+  /* Hairlines (borders) */
+  --hairline: rgba(26, 26, 26, 0.1);
+  --hairline-strong: rgba(26, 26, 26, 0.16);
+  --hairline-on-dark: rgba(250, 250, 248, 0.16);
+  --hairline-on-dark-strong: rgba(250, 250, 248, 0.3);
+
+  /* Soft editorial shadows */
+  --shadow-soft: 0 1px 2px rgba(20, 21, 25, 0.04),
+    0 12px 30px -16px rgba(20, 21, 25, 0.16);
+  --shadow-float: 0 2px 6px rgba(20, 21, 25, 0.06),
+    0 30px 56px -24px rgba(20, 21, 25, 0.26);
+
+  /* RTL-friendly system font stack with Hebrew support. No external fonts. */
+  --font-sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue",
+    "Arial Hebrew", Arial, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-action: var(--action);
+  --color-muted: var(--muted);
+  --color-ink: var(--ink);
+  --color-ink-raised: var(--ink-raised);
+  --color-paper: var(--paper);
+
+  --font-sans: var(--font-sans);
+
+  --shadow-soft: var(--shadow-soft);
+  --shadow-float: var(--shadow-float);
+
+  --radius-btn: 0.625rem;
+  --radius-card: 0.875rem;
+  --radius-frame: 1.25rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  /* RTL typography defaults (logical alignment) */
+  direction: rtl;
+  text-align: start;
+  line-height: 1.7;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: 18px;
+  }
+}
+
+/* Links: red action color, no underline by default (added on hover only). */
+a {
+  color: var(--action);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Headings: tight, clear hierarchy. No drama. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0 0 0.5em;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Editorial typography craft: balanced headlines, tighter display tracking,
+   and prettier paragraph rag. CSS-only, no fonts. */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+h1,
+h2 {
+  letter-spacing: -0.022em;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+p {
+  text-wrap: pretty;
+}
+
+::selection {
+  background: rgba(212, 43, 43, 0.16);
+  color: var(--foreground);
+}
+
+/* ----------------------------------------------------------------------- */
+/* Polish v2 — reusable editorial classes                                  */
+/* ----------------------------------------------------------------------- */
+@layer components {
+  /* Premium dark band: deep ink + restrained layered glow for depth.
+     Wrap inner content in `relative z-10` so it sits above the glow. */
+  .band-dark {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-color: var(--ink);
+    color: var(--background);
+  }
+  .band-dark::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        75% 55% at 85% -10%,
+        rgba(255, 255, 255, 0.07),
+        transparent 60%
+      ),
+      radial-gradient(
+        55% 45% at 0% 115%,
+        rgba(212, 43, 43, 0.06),
+        transparent 60%
+      );
+  }
+  /* Whisper-quiet film grain for tactile, premium depth (content sits at z-10). */
+  .band-dark::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.04;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Warm paper band for light/light rhythm variation. */
+  .band-paper {
+    background-color: var(--paper);
+    color: var(--foreground);
+  }
+
+  /* Editorial card — light context. */
+  .card {
+    border: 1px solid var(--hairline-strong);
+    border-radius: var(--radius-card);
+    background-color: var(--background);
+    box-shadow: var(--shadow-soft);
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
+  }
+
+  /* Visible keyboard focus for interactive cards/rows and quiet links.
+     Mouse users still see only the hover treatment. */
+  .card:focus-visible,
+  .row-link:focus-visible,
+  .link-arrow:focus-visible {
+    outline: 2px solid var(--action);
+    outline-offset: 3px;
+    border-radius: var(--radius-btn);
+  }
+
+  /* Editorial card — dark context. */
+  .card-dark {
+    border: 1px solid var(--hairline-on-dark);
+    border-radius: var(--radius-card);
+    background-color: var(--ink-raised);
+    box-shadow: 0 24px 48px -30px rgba(0, 0, 0, 0.7);
+    transition:
+      transform 0.25s ease,
+      border-color 0.25s ease;
+  }
+
+  /* Opt-in hover lift for interactive cards. */
+  .card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-float);
+  }
+
+  /* Media frame (video/portrait placeholders). */
+  .media-frame {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-frame);
+    border: 1px solid var(--hairline-on-dark-strong);
+    background: radial-gradient(
+      120% 120% at 50% 0%,
+      rgba(255, 255, 255, 0.06),
+      transparent 62%
+    );
+    transition: border-color 0.25s ease;
+  }
+  .media-frame-light {
+    border-color: var(--hairline-strong);
+    background: var(--paper);
+  }
+
+  /* Buttons — modest radius, soft motion. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.875rem;
+    padding: 0.8rem 1.65rem;
+    border-radius: var(--radius-btn);
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.005em;
+    line-height: 1;
+    text-decoration: none;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      opacity 0.2s ease,
+      background-color 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .btn:hover {
+    text-decoration: none;
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--action);
+    outline-offset: 2px;
+  }
+  .btn-primary {
+    background-color: var(--action);
+    color: var(--background);
+    box-shadow: 0 1px 2px rgba(212, 43, 43, 0.18),
+      0 14px 28px -16px rgba(212, 43, 43, 0.45);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    opacity: 0.96;
+    box-shadow: 0 2px 4px rgba(212, 43, 43, 0.2),
+      0 20px 36px -16px rgba(212, 43, 43, 0.55);
+  }
+  .btn-secondary {
+    border: 1px solid var(--hairline-strong);
+    color: var(--foreground);
+    background: transparent;
+  }
+  .btn-secondary:hover {
+    background-color: rgba(26, 26, 26, 0.05);
+  }
+  .btn-on-dark {
+    border: 1px solid var(--hairline-on-dark-strong);
+    color: var(--background);
+    background: transparent;
+  }
+  .btn-on-dark:hover {
+    background-color: rgba(250, 250, 248, 0.1);
+  }
+
+  /* Inline "read more ←" link with an underline that grows from the start. */
+  .link-arrow {
+    color: var(--action);
+    font-weight: 500;
+    text-decoration: none;
+    padding-bottom: 2px;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-position: 100% 100%;
+    background-repeat: no-repeat;
+    background-size: 0% 1px;
+    transition: background-size 0.3s ease;
+  }
+  .link-arrow:hover {
+    text-decoration: none;
+    background-size: 100% 1px;
+  }
+
+  /* Oversized low-contrast background word. */
+  .watermark {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  /* Short red accent rule used above closing CTAs. */
+  .accent-rule {
+    display: block;
+    height: 2px;
+    width: 4rem;
+    background-color: var(--action);
+    border-radius: 999px;
+  }
+
+  /* Eyebrow label — a quiet muted line with a short red editorial tick that
+     sits at the inline-start (right, in RTL). The signature mark for sections. */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+  .eyebrow::before {
+    content: "";
+    flex: none;
+    width: 1.5rem;
+    height: 2px;
+    border-radius: 999px;
+    background-color: var(--action);
+  }
+  .eyebrow-on-dark {
+    color: rgba(250, 250, 248, 0.62);
+  }
+
+  /* Header navigation link — flat color shift, with an active (current-page)
+     state carried by the red accent. */
+  .nav-link {
+    color: var(--foreground);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .nav-link:hover {
+    color: var(--action);
+    text-decoration: none;
+  }
+  .nav-link:focus-visible {
+    outline: 2px solid var(--action);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+  .nav-link[aria-current="page"] {
+    color: var(--action);
+  }
+
+  /* Editorial index row — a numbered article entry that reads like a table of
+     contents. Whole row links; the title shifts to red on hover/focus. */
+  .row-link {
+    display: block;
+    text-decoration: none;
+    color: var(--foreground);
+    transition: opacity 0.2s ease;
+  }
+  .row-link:hover {
+    text-decoration: none;
+  }
+}
+
+/* The fact-branch line draws itself in on load. Reduced-motion users simply
+   get the finished line (no .nm-draw dash setup outside this block). */
+@media (prefers-reduced-motion: no-preference) {
+  .nm-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: nm-draw 1.4s ease 0.2s forwards;
+  }
+  @keyframes nm-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+}
+
+/* Subtle scroll-driven reveal of each top-level section. Progressive
+   enhancement: only where supported and only when motion is welcome. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    main > section {
+      animation: nm-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+    @keyframes nm-reveal {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+  .card-hover:hover,
+  .btn-primary:hover {
+    transform: none;
+  }
+}
