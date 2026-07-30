@@ -5,7 +5,7 @@ import { SiteShell } from "@/components/layout/site-shell";
 
 export const metadata: Metadata = {
   title: {
-    default: "NeverMinde — יקיר כהן",
+    default: "NeverMinde: יקיר כהן",
     template: "%s | NeverMinde",
   },
   description:

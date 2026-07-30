@@ -5,6 +5,20 @@ const nextConfig: NextConfig = {
   // Allow .md / .mdx alongside the usual page extensions so MDX content
   // can be imported and (later) routed. Articles live in /content for now.
   pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "i.ytimg.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "img.youtube.com",
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
 const withMDX = createMDX({

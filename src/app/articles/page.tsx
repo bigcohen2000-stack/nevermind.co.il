@@ -5,7 +5,7 @@ import { Eyebrow } from "@/components/ui/editorial";
 import { CATEGORY_LABELS, getAllArticles } from "@/lib/content/articles";
 
 export const metadata: Metadata = {
-  title: "מאמרים — NeverMinde",
+  title: "מאמרים",
   description: "ניתוח לוגי בכתב. הפרדה בין עובדה לבין סיפור, ללא דרמה.",
 };
 
@@ -50,7 +50,7 @@ export default function ArticlesPage() {
             לפי מנגנונים, לא לפי רגשות.
           </h2>
           <p className="mt-4 max-w-prose leading-relaxed">
-            כל מאמר משויך לאחד משלושה מנגנונים. הרגש והדרמה הם רק התוצאה הגלויה;
+            כל מאמר משויך לאחד משלושה מנגנונים. הרגש והדרמה הם רק התוצאה הגלויה.
             המאמר עוסק במבנה שמייצר אותם.
           </p>
           <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm">

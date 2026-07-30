@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
 
 export const metadata: Metadata = {
-  title: "חברים — NeverMinde",
+  title: "חברים",
   description:
     "אזור החברים מתוכנן ועדיין אינו פעיל. התבוננות מובנית, מנגנונים עמוקים יותר, פחות רעש.",
 };

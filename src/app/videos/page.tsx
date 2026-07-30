@@ -1,34 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { HeroSearchSection } from "@/components/search/hero-search-section";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
+import { VideoCard } from "@/components/videos/video-card";
+import { listPublicVideos } from "@/lib/videos/queries";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "וידאו והרצאות — NeverMinde",
+  title: "וידאו והרצאות",
   description:
-    "אותם מנגנונים, בקול. דרך נוספת להתבונן במבנה. המאמרים נשארים מקור המסגרת.",
+    "אותם מנגנונים, בקול. חפש סרטונים ומושגים. המאמרים נשארים מקור המסגרת.",
 };
 
-/* -------------------------------------------------------------------------- */
+export default async function VideosPage() {
+  let videos: Awaited<ReturnType<typeof listPublicVideos>> = [];
 
-interface VideoCategory {
-  label: string;
-  body: string;
-}
+  try {
+    videos = await listPublicVideos(9);
+  } catch {
+    videos = [];
+  }
 
-const categories: VideoCategory[] = [
-  { label: "שיחות", body: "שיחות פתוחות סביב מקרים יומיומיים." },
-  { label: "הרצאות", body: "הרצאות מסודרות, מנגנון אחר מנגנון." },
-  { label: "מנגנונים", body: "פירוק ויזואלי של שלושת המנגנונים." },
-  { label: "שאלות נפוצות", body: "תשובות קצרות לשאלות שחוזרות." },
-];
-
-/* -------------------------------------------------------------------------- */
-
-export default function VideosPage() {
   return (
     <main className="w-full text-start">
-      {/* 1 — HERO (ink, large media frame) -------------------------------- */}
       <section aria-labelledby="videos-hero-title" className="band-dark">
         <Watermark className="bottom-[-1.5rem] start-[-0.5rem] text-[6rem] text-background/[0.045] sm:text-[9rem] lg:text-[13rem]">
           הרצאות
@@ -47,79 +43,55 @@ export default function VideosPage() {
                 בקול.
               </h1>
               <p className="mt-7 max-w-prose text-lg leading-relaxed text-background/80">
-                אותם מנגנונים, בצורה מדוברת. דרך נוספת לראות את אותו מבנה. כרגע
-                זהו מציין מקום בלבד — אין כאן נגן אמיתי.
+                חפש לפי מושג או כותרת. סרטונים לחברים מוצגים רק לאחר התחברות.
               </p>
             </div>
 
             <div className="lg:col-span-7">
-              <div className="relative">
-                <div className="media-frame flex aspect-video w-full items-center justify-center">
-                  <span className="flex h-20 w-20 items-center justify-center rounded-full border border-background/40">
-                    <span
-                      aria-hidden="true"
-                      className="ms-1 h-0 w-0 border-y-[12px] border-s-[20px] border-y-transparent border-s-background"
-                    />
-                  </span>
-                </div>
-                <span className="card relative z-20 mt-[-2rem] block w-max px-4 py-2 text-sm text-foreground shadow-float lg:absolute lg:-bottom-5 lg:-start-5 lg:mt-0">
-                  בקרוב — הרצאה ראשונה
-                </span>
-              </div>
+              <HeroSearchSection variant="dark" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2 — VIDEO CATEGORIES (paper, editorial cards) -------------------- */}
       <section
-        aria-labelledby="videos-categories-title"
+        aria-labelledby="videos-list-title"
         className="band-paper border-b border-foreground/10"
       >
         <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-28">
           <div className="lg:max-w-2xl">
-            <Eyebrow>סוגי תוכן</Eyebrow>
+            <Eyebrow>ספרייה</Eyebrow>
             <h2
-              id="videos-categories-title"
+              id="videos-list-title"
               className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
             >
-              אותם מנגנונים, מזוויות שונות.
+              סרטונים זמינים לחקירה.
             </h2>
             <p className="mt-4 max-w-prose leading-relaxed">
-              כל קטגוריה מתבוננת באותו מבנה בדרך אחרת. התוכן עוד לא עלה.
+              {videos.length === 0
+                ? "אין סרטונים להצגה כרגע. אפשר להתחיל מערוץ היוטיוב או לחזור לכאן בהמשך."
+                : "בחרו סרטון. התמונה נטענת קודם. הנגן המלא נפתח בדף הצפייה."}
             </p>
           </div>
 
-          <ul className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {categories.map((c) => (
-              <li key={c.label}>
-                <div className="card flex h-full flex-col overflow-hidden">
-                  {/* Mini media placeholder */}
-                  <div className="flex aspect-video items-center justify-center border-b border-foreground/10 bg-paper">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full border border-foreground/30">
-                      <span
-                        aria-hidden="true"
-                        className="ms-0.5 h-0 w-0 border-y-[7px] border-s-[11px] border-y-transparent border-s-foreground/60"
-                      />
-                    </span>
-                  </div>
-                  <div className="flex flex-1 flex-col p-6">
-                    <span className="text-lg font-semibold tracking-tight">
-                      {c.label}
-                    </span>
-                    <span className="mt-2 flex-1 leading-relaxed text-foreground/80">
-                      {c.body}
-                    </span>
-                    <span className="mt-5 text-sm text-muted">בקרוב</span>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {videos.length > 0 ? (
+            <ul className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {videos.map((v) => (
+                <li key={v.id}>
+                  <VideoCard video={v} />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <div className="mt-10">
+            <Link href="/search" className="link-arrow">
+              לכל החיפוש
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* 3 — PHILOSOPHY (ink, asymmetric) --------------------------------- */}
       <section aria-labelledby="videos-philosophy-title" className="band-dark">
         <Watermark className="top-[-1rem] end-[-0.5rem] text-[5rem] text-background/[0.045] sm:text-[7rem] lg:text-[10rem]">
           מבנה
@@ -139,7 +111,7 @@ export default function VideosPage() {
             <div className="lg:col-span-7">
               <p className="max-w-prose text-lg leading-relaxed text-background/80">
                 הווידאו כאן אינו נועד לבדר או להלהיב. הוא דרך נוספת להתבונן
-                במבנה — לראות את אותו מנגנון פועל בזמן אמת, בקול ובקצב אחר.
+                במבנה: לראות את אותו מנגנון פועל בזמן אמת, בקול ובקצב אחר.
               </p>
               <p className="mt-5 max-w-prose leading-relaxed text-background/70">
                 המאמרים נשארים מקור המסגרת. הווידאו מלווה אותם, לא מחליף אותם.
@@ -149,7 +121,6 @@ export default function VideosPage() {
         </div>
       </section>
 
-      {/* 4 — CTA (background, designed block) → /articles + /members ------ */}
       <section
         aria-labelledby="videos-cta-title"
         className="bg-background text-foreground"
@@ -161,14 +132,14 @@ export default function VideosPage() {
               id="videos-cta-title"
               className="text-3xl font-semibold leading-[1.1] tracking-tight lg:col-span-7 lg:text-4xl"
             >
-              עד שהווידאו עולה, התחילו מהמסגרת.
+              רוצים את המסגרת בכתב.
             </h2>
             <div className="flex flex-col gap-3 sm:flex-row lg:col-span-5 lg:justify-end">
               <Link href="/articles" className="btn btn-primary">
                 לקריאת המאמרים
               </Link>
-              <Link href="/members" className="btn btn-secondary">
-                לאזור החברים
+              <Link href="/contact" className="btn btn-secondary">
+                ליצירת קשר
               </Link>
             </div>
           </div>

@@ -1,24 +1,26 @@
 import Link from "next/link";
 
+import { buildWhatsAppHrefPlain, YOUTUBE_CHANNEL_URL } from "@/lib/whatsapp";
+
 /**
- * SiteFooter — premium dark RTL footer (Polish v2).
- *
- * A deep-ink band that bookends the site: large wordmark, a dry line, the
- * primary navigation, and a copyright rule. Mobile-first and quiet — no
- * shadows, gradients beyond the band glow, animations, or icons.
+ * SiteFooter — premium dark RTL footer.
  */
 
 const footerLinks = [
   { label: "ראשי", href: "/" },
+  { label: "מסלולים", href: "/paths" },
   { label: "מאמרים", href: "/articles" },
   { label: "מנגנונים", href: "/mechanisms" },
   { label: "וידאו", href: "/videos" },
-  { label: "חברים", href: "/members" },
+  { label: "תכנים", href: "/books" },
+  { label: "יצירת קשר", href: "/contact" },
 ];
 
-const currentYear = 2026;
+const currentYear = new Date().getFullYear();
 
 export function SiteFooter() {
+  const whatsappHref = buildWhatsAppHrefPlain();
+
   return (
     <footer className="band-dark text-background">
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-16 lg:py-20">
@@ -33,6 +35,24 @@ export function SiteFooter() {
             <p className="mt-5 max-w-xs leading-relaxed text-background/70">
               ניתוח לוגי של המציאות. הפרדה בין עובדה לבין סיפור, ללא דרמה.
             </p>
+            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-background/80 no-underline transition-colors duration-200 hover:text-background hover:no-underline"
+              >
+                וואטסאפ
+              </a>
+              <a
+                href={YOUTUBE_CHANNEL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-background/80 no-underline transition-colors duration-200 hover:text-background hover:no-underline"
+              >
+                יוטיוב
+              </a>
+            </div>
           </div>
 
           <nav aria-label="ניווט תחתון">
@@ -52,7 +72,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-12 border-t border-background/15 pt-6 text-sm text-background/60">
-          © {currentYear} NeverMinde · יקיר כהן
+          © {currentYear} NeverMinde: יקיר כהן
         </div>
       </div>
     </footer>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
 
 export const metadata: Metadata = {
-  title: "מנגנונים — NeverMinde",
+  title: "מנגנונים",
   description:
     "האתר מאורגן לפי מנגנונים, לא לפי רגשות: יחסים, קיום, זהות.",
 };
@@ -154,7 +154,7 @@ export default function MechanismsPage() {
                 מנגנונים, לא רגשות.
               </h1>
               <p className="mt-7 max-w-prose text-lg leading-relaxed text-background/80">
-                כל התוכן מאורגן סביב שלושה מנגנונים. רגש הוא תוצאה; מנגנון הוא
+                כל התוכן מאורגן סביב שלושה מנגנונים. רגש הוא תוצאה. מנגנון הוא
                 המבנה שמייצר אותה שוב ושוב.
               </p>
             </div>

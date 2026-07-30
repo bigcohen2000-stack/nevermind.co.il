@@ -1,8 +1,9 @@
 # DECISIONS.md
 ## NeverMinde Project - Key Decisions & Open Questions
 
-**Last Updated:** June 18, 2026  
-**Status:** Planning Phase  
+**Last Updated:** July 29, 2026  
+**Status:** Planning + video/search decisions locked  
+
 
 ---
 
@@ -235,6 +236,63 @@
 
 ---
 
+### 11. Database for Video Search Index: New Isolated Supabase Project
+**Decision:** Use a **new** Supabase (PostgreSQL) project under a new user/org for the video/concepts/transcripts search index only. Do not reuse the outdated existing Supabase project or any keys from other Cursor projects/deployments.  
+**Rationale:**
+- Prevents env/API key/RLS collisions across projects
+- Clean schema tailored to Hebrew search (`tsvector` + GIN first; `pgvector` later)
+- Articles remain Git-based MDX (Decision 2) — Supabase is not the article CMS
+- Existing dumps can be mapped/imported into the new schema without blind copy
+
+**Implications:**
+- Create new Supabase project (e.g. `nevermind-co-il-prod` / `nevermind-dev`)
+- Stage dumps under `supabase/imports/` (no PII in git)
+- Env vars only for this app: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, plus `YOUTUBE_API_KEY`, `CRON_SECRET`
+- Vercel env vars must be scoped to the NeverMind project only
+
+**Alternative Rejected:** Reusing the old Supabase project  
+- Stale schema, shared keys, risk of cross-project deploy collisions
+
+**Date Decided:** July 29, 2026  
+**Status:** ✅ LOCKED
+
+---
+
+### 12. YouTube Player: Dual-Layer (Facade + Watch Player)
+**Decision:** Lite facade (thumbnail + play) on list/card surfaces; interactive IFrame API player only on `/watch/[videoId]` with `?t=[seconds]` support.  
+**Rationale:**
+- Protects LCP/INP on browse pages (aligns with Decision 10 and Blueprint lite-embed)
+- Timestamp jumps needed for concept research only on the watch page
+- Avoids loading `react-youtube` (or equivalent) on every list item
+
+**Implications:**
+- Prefer `@next/third-parties` / lite-youtube pattern for lists
+- Watch page is a client island for player controls only
+- `next/image` for `i.ytimg.com` thumbnails
+
+**Alternative Rejected:** `react-youtube` everywhere (heavy CWV cost); lite-only everywhere (weak timestamp UX)
+
+**Date Decided:** July 29, 2026  
+**Status:** ✅ LOCKED
+
+---
+
+### 13. Watch-Page Booking CTA: WhatsApp First
+**Decision:** Stage 1 CTA under the watch player is a Hebrew, context-aware WhatsApp link with prefilled text including `[Concept/Title]`. Calendar/modal booking is deferred.  
+**Rationale:**
+- Zero new external booking infra
+- Fits staged build rules (ask before adding services)
+- Still clear, dry, non-dramatic call to action
+
+**Implications:**
+- Need a WhatsApp business/phone number in env or config later
+- Stage 2 (Cal.com / modal) requires explicit approval
+
+**Date Decided:** July 29, 2026  
+**Status:** ✅ LOCKED
+
+---
+
 ## Open Questions (Needs Decision)
 
 ### Q1: Premium Pricing & Tier Structure
@@ -358,24 +416,14 @@
 ---
 
 ### Q6: Database Choice (If Needed)
-**Status:** ❓ OPEN  
+**Status:** ✅ LOCKED (see Completed Decision 11)  
 **Question:** Which database for users, subscribers, analytics?
 
-**Options:**
-- A) SQLite (local, file-based, < 1GB)
-- B) PostgreSQL on Vercel's Postgres (managed, paid)
-- C) Firebase/Supabase (serverless, real-time)
-- D) No database initially (store only in Resend)
+**Chosen:** New isolated Supabase project for **video search index only** (videos, concepts, transcripts). Not for MDX articles. Auth/subscribers DB still deferred until Phase 9 if needed beyond this.
 
-**Implications:**
-- SQLite: free, simple, no remote backups (Vercel Postgres needed)
-- Postgres: managed, backups included, $12+/month
-- Firebase: serverless, easy scaling, vendor lock-in
-- No database: only emails tracked, can't do analytics
+**Still open for later:** Whether premium users/subscribers reuse the same Supabase project or a separate store — decide before Phase 9.
 
-**Decision Needed:** Before Phase 9 (Premium/Auth)  
-**Owner:** Yakir Cohen  
-**Timeline:** By Phase 8
+**Date Decided:** July 29, 2026  
 
 ---
 
@@ -648,7 +696,8 @@ When a new decision must be made, use this format:
 
 ### Must Be Decided Before Phase 9:
 - ❓ Premium pricing structure
-- ❓ Database choice
+- ✅ Database for video search index (new isolated Supabase — Decision 11)
+- ❓ Whether premium users/subscribers share that Supabase project
 - ❓ Premium content leakage prevention
 
 ---
@@ -667,22 +716,23 @@ When a new decision must be made, use this format:
 - [ ] Q3 (Newsletter Strategy) - decide before Phase 10
 - [ ] Q4 (Premium Leakage Prevention) - decide before Phase 9
 - [ ] Q5 (Analytics) - decide before Phase 11
-- [ ] Q6 (Database) - decide before Phase 9
+- ✅ Q6 (Database) - new isolated Supabase for video index (Decision 11); subscribers store still open for Phase 9
 - [ ] Q7 (Content Audit) - complete spreadsheet by end of Phase 1
 - [ ] Q8 (Video Inventory) - complete by end of Phase 1
-- [ ] No coding started (planning only) ✅
+- ✅ Cursor rule `.cursor/rules/video-search-platform.mdc` — video/search master guidance
+- ✅ Decisions 12–13 locked (dual-layer player, WhatsApp CTA)
 
 ---
 
 ## Next Steps
 
-1. **Yakir reviews all three documents** (BLUEPRINT_REVISED.md, TASKS.md, DECISIONS.md)
-2. **Yakir makes decisions** on all ❓ OPEN questions (use template above)
-3. **Update DECISIONS.md** with chosen options
-4. **Proceed to Phase 2** (Next.js setup) once approved
+1. Create the **new** Supabase project/user; keep old project unused
+2. Place existing dumps for mapping under `supabase/imports/` (no PII in git)
+3. Add `.env.local` for this app only (never copy keys from other Cursor projects)
+4. When ready, implement Modules 1→4 one at a time per the Cursor rule
 
 ---
 
-**Document Status:** 🟡 DRAFT (awaiting decisions)  
-**Last Updated:** June 18, 2026  
-**Next Review:** After Yakir's decision meeting
+**Document Status:** 🟢 UPDATED (video/search decisions locked July 29, 2026)  
+**Last Updated:** July 29, 2026  
+**Next Review:** Before Module 1 (schema migration)

@@ -4,22 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 /**
- * SiteHeader — sticky, translucent RTL site header (Design v1 polish).
- *
- * Text-based wordmark plus primary navigation. Sticks to the top with a subtle
- * blurred off-white backdrop and a hairline border, so it reads as premium over
- * both light and dark bands. The current route is marked with `aria-current`
- * and the red accent. Mobile-first: wordmark and nav stack on small screens and
- * sit side by side from `sm` up. No shadows, gradients, animations beyond a
- * flat color change, or external icons.
+ * SiteHeader — sticky, translucent RTL site header.
+ * Primary nav focuses on live content surfaces; search stays available,
+ * members stays out of the main bar until active.
  */
 
 const navLinks = [
   { label: "ראשי", href: "/" },
+  { label: "מסלולים", href: "/paths" },
   { label: "מאמרים", href: "/articles" },
   { label: "מנגנונים", href: "/mechanisms" },
   { label: "וידאו", href: "/videos" },
-  { label: "חברים", href: "/members" },
+  { label: "תכנים", href: "/books" },
+  { label: "יצירת קשר", href: "/contact" },
 ];
 
 function isActive(pathname: string, href: string) {

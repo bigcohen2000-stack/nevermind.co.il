@@ -27,7 +27,7 @@ export async function generateMetadata({
   if (!article) return {};
 
   return {
-    title: `${article.meta.title} — NeverMinde`,
+    title: article.meta.title,
     description: article.meta.description,
   };
 }
