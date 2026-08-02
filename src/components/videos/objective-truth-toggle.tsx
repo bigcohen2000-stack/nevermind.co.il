@@ -3,11 +3,19 @@
 import Link from "next/link";
 import { useId, useState } from "react";
 
+import { MyListSignInForm } from "@/components/auth/my-list-sign-in-form";
 import { cn } from "@/lib/utils";
 
 type ObjectiveTruthToggleProps = {
   facts: string[];
+  /** Full transcript text. Pass null when guest (do not leak in HTML). */
   transcript: string | null;
+  /** True when a transcript exists server-side (even if locked for guests). */
+  transcriptAvailable?: boolean;
+  /** Personal Auth (Google / email). Club alone does not unlock transcript. */
+  canViewTranscript?: boolean;
+  /** Return path after magic link / Google. */
+  signInNextPath?: string;
   videoTitle?: string;
   concepts?: string[];
 };
@@ -32,11 +40,14 @@ function downloadTranscript(text: string, title: string) {
 
 /**
  * Under-player facts / transcript panel.
- * Compact by default. Download is client-only (text/plain UTF-8).
+ * Facts stay open. Full transcript requires free site account.
  */
 export function ObjectiveTruthToggle({
   facts,
   transcript,
+  transcriptAvailable = Boolean(transcript?.trim()),
+  canViewTranscript = true,
+  signInNextPath = "/my-list",
   videoTitle = "תמליל",
   concepts = [],
 }: ObjectiveTruthToggleProps) {
@@ -44,10 +55,11 @@ export function ObjectiveTruthToggle({
   const [factsOnly, setFactsOnly] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const hasFacts = facts.length > 0;
-  const hasTranscript = Boolean(transcript?.trim());
-  const primaryConcept = concepts.find((c) => c.trim()) ?? null;
+  const hasTranscriptText = Boolean(transcript?.trim()) && canViewTranscript;
+  const showTranscriptGate =
+    transcriptAvailable && !canViewTranscript && !factsOnly;
 
-  if (!hasFacts && !hasTranscript) {
+  if (!hasFacts && !transcriptAvailable) {
     return null;
   }
 
@@ -62,21 +74,9 @@ export function ObjectiveTruthToggle({
             תובנה
           </h2>
           <p className="mt-1 text-sm text-foreground/65">
-            עובדות קצרות מהסרטון, או התמליל במלואו.
-            {primaryConcept ? (
-              <>
-                {" "}
-                מושג קשור:{" "}
-                <Link
-                  href={`/search?q=${encodeURIComponent(primaryConcept)}`}
-                  className="text-action underline-offset-2 hover:underline"
-                >
-                  {primaryConcept}
-                </Link>
-                .
-              </>
-            ) : null}{" "}
-            תוכן נוסף לחברים ב{" "}
+            עובדות קצרות מהסרטון פתוחות לכולם. התמליל המלא לחברים רשומים בחינם.
+            {primaryConceptLine(concepts)}{" "}
+            מאגר חסום ב{" "}
             <Link
               href="/members"
               className="text-action underline-offset-2 hover:underline"
@@ -143,7 +143,22 @@ export function ObjectiveTruthToggle({
             ))}
           </ul>
         </div>
-      ) : hasTranscript ? (
+      ) : showTranscriptGate ? (
+        <div
+          className="mt-5 border border-foreground/15 bg-paper/40 p-5 sm:p-6"
+          role="region"
+          aria-label="תמליל לחברים רשומים"
+        >
+          <p className="text-sm font-medium tracking-tight">
+            התמליל המלא לחברים רשומים
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-foreground/70">
+            הרשמה בחינם עם Google או קישור לאימייל. בלי סיסמה. אחרי ההתחברות
+            התמליל נפתח כאן.
+          </p>
+          <MyListSignInForm nextPath={signInNextPath} variant="compact" />
+        </div>
+      ) : hasTranscriptText ? (
         <div className="mt-5">
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -180,11 +195,29 @@ export function ObjectiveTruthToggle({
         </p>
       ) : null}
 
-      {!hasFacts && hasTranscript ? (
+      {!hasFacts && hasTranscriptText ? (
         <p className="mt-3 text-xs text-muted">
           עובדות ליבה עדיין לא חולצו לייבוא הזה.
         </p>
       ) : null}
     </section>
+  );
+}
+
+function primaryConceptLine(concepts: string[]) {
+  const primaryConcept = concepts.find((c) => c.trim()) ?? null;
+  if (!primaryConcept) return null;
+  return (
+    <>
+      {" "}
+      מושג קשור:{" "}
+      <Link
+        href={`/search?q=${encodeURIComponent(primaryConcept)}`}
+        className="text-action underline-offset-2 hover:underline"
+      >
+        {primaryConcept}
+      </Link>
+      .
+    </>
   );
 }

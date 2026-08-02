@@ -5,6 +5,7 @@ import { ContactLeadForm } from "@/components/contact/contact-lead-form";
 import { DirectWhatsAppQuestionBox } from "@/components/contact/direct-whatsapp-question-box";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
 import { CONTACT_FAQ, PROCESS_STEPS } from "@/lib/content/offers";
+import { shareImageMetadata } from "@/lib/og/share-image";
 
 export const metadata: Metadata = {
   title: "יצירת קשר",
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://nevermind.co.il/contact",
   },
+  ...shareImageMetadata("מלא פרטים."),
 };
 
 type PageProps = {

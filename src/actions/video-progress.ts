@@ -43,6 +43,20 @@ export async function saveVideoProgress(input: {
       return { ok: true, cleared: true };
     }
 
+    const { data: previous } = await supabase
+      .from("video_progress")
+      .select("progress_seconds")
+      .eq("user_id", user.id)
+      .eq("youtube_id", youtubeId)
+      .maybeSingle();
+
+    const prevSeconds = previous?.progress_seconds ?? 0;
+    const delta = progressSeconds - prevSeconds;
+    // Bound forward deltas to throttle / seek noise (player saves ~every few sec).
+    if (delta > 0 && delta <= 180) {
+      await supabase.rpc("increment_own_watch_time", { p_delta: delta });
+    }
+
     const { error } = await supabase.from("video_progress").upsert(
       {
         user_id: user.id,

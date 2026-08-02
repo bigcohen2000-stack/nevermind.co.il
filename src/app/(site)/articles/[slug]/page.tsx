@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { ArticleBody } from "@/components/content/article-body";
 import { ArticleHeader } from "@/components/content/article-header";
 import { RelatedExploration } from "@/components/search/related-exploration";
+import { JsonLd } from "@/components/seo/json-ld";
+import { ShareExplorationButton } from "@/components/share/share-exploration-button";
 import {
   CATEGORY_LABELS,
   getArticle,
@@ -15,6 +17,8 @@ import {
   getRelatedArticlesForCategory,
   getRelatedVideosForArticle,
 } from "@/lib/search/related-content";
+import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
+import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
 
 // Only the known articles are valid routes; everything else is a 404.
 export const dynamicParams = false;
@@ -32,9 +36,18 @@ export async function generateMetadata({
   const article = await getArticle(slug);
   if (!article) return {};
 
+  const share = shareImageMetadata(article.meta.title);
+
   return {
     title: article.meta.title,
     description: article.meta.description,
+    openGraph: {
+      title: article.meta.title,
+      description: article.meta.description,
+      type: "article",
+      images: shareOgImage(article.meta.title),
+    },
+    twitter: share.twitter,
   };
 }
 
@@ -59,8 +72,15 @@ export default async function ArticlePage({
   );
   const relatedConcepts = bridgeTerms.slice(0, 6).map((name) => ({ name }));
 
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "בית", path: "/" },
+    { name: "מאמרים", path: "/articles" },
+    { name: meta.title, path: `/articles/${meta.slug}` },
+  ]);
+
   return (
     <main className="w-full text-start">
+      <JsonLd data={breadcrumbLd} />
       <ArticleHeader
         title={meta.title}
         description={meta.description}
@@ -105,9 +125,16 @@ export default async function ArticlePage({
           <span aria-hidden="true" className="accent-rule" />
           <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
             <p className="text-xl font-semibold tracking-tight">המשך חקירה.</p>
-            <Link href="/articles" className="btn btn-secondary">
-              חזרה לכל המאמרים ←
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <ShareExplorationButton
+                title={meta.title}
+                text={`חקירה: ${meta.title}`}
+                url={`/articles/${meta.slug}`}
+              />
+              <Link href="/articles" className="btn btn-secondary">
+                חזרה לכל המאמרים ←
+              </Link>
+            </div>
           </div>
         </div>
       </section>

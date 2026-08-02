@@ -44,7 +44,7 @@ export async function getPremiumStatus(): Promise<PremiumStatus> {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("is_premium, has_video_access")
+      .select("is_premium, has_video_access, access_expires_at")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -62,8 +62,14 @@ export async function getPremiumStatus(): Promise<PremiumStatus> {
       };
     }
 
+    const expired =
+      typeof profile.access_expires_at === "string" &&
+      profile.access_expires_at &&
+      new Date(profile.access_expires_at).getTime() < Date.now();
+
     const hasVideoAccess =
-      Boolean(profile.has_video_access) || Boolean(profile.is_premium);
+      !expired &&
+      (Boolean(profile.has_video_access) || Boolean(profile.is_premium));
 
     return {
       isAuthenticated: true,

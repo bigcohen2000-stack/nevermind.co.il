@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { StudioNav } from "@/components/studio/studio-nav";
+import { ProfileAccessExpiryEditor } from "@/components/studio/profile-access-expiry-editor";
+import { RecordMeetingForm } from "@/components/studio/record-meeting-form";
 import { VideoAccessToggle } from "@/components/studio/video-access-toggle";
 import type {
   StudioOnlineRow,
@@ -144,21 +146,19 @@ export function StudioUsersDashboard({ data }: StudioUsersDashboardProps) {
           actions={
             <Link
               href="/studio/leads"
-              className="rounded-lg border border-zinc-700 px-3 py-2 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
+              className="border border-zinc-700 px-3 py-2 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
             >
-              Leads
+              לידים
             </Link>
           }
         />
         <div>
-          <p className="text-xs font-medium tracking-[0.2em] text-zinc-500 uppercase">
-            NeverMind Admin
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">
+          <p className="text-xs text-zinc-500">ניהול פנימי</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
             משתמשים ומחוברים
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-            מי מחובר עכשיו לדומיין, מי נכנס לאחרונה, ומי מקבל גישה לספרייה.
+            מי מחובר עכשיו, מי נכנס לאחרונה, ומי מקבל גישה לספרייה.
           </p>
         </div>
       </header>
@@ -215,27 +215,49 @@ export function StudioUsersDashboard({ data }: StudioUsersDashboardProps) {
               <thead>
                 <tr className="border-b border-zinc-800 text-zinc-500">
                   <th className="py-2 pe-3 font-medium">אימייל</th>
-                  <th className="py-2 pe-3 font-medium">כניסה אחרונה</th>
-                  <th className="py-2 pe-3 font-medium">הצטרף</th>
-                  <th className="py-2 pe-3 font-medium">וידאו</th>
+                  <th className="py-2 pe-3 font-medium">Auth: כניסה אחרונה</th>
+                  <th className="py-2 pe-3 font-medium">אירוע כניסה</th>
                   <th className="py-2 pe-3 font-medium">כניסות</th>
+                  <th className="py-2 pe-3 font-medium">תפוגת גישה</th>
+                  <th className="py-2 pe-3 font-medium">וידאו</th>
+                  <th className="py-2 pe-3 font-medium">פגישה</th>
                   <th className="py-2 font-medium">מזהה</th>
                 </tr>
               </thead>
               <tbody>
-                {data.users.map((user) => (
+                {data.users.map((user) => {
+                  const accessExpired =
+                    user.accessExpiresAt &&
+                    new Date(user.accessExpiresAt).getTime() < Date.now();
+                  return (
                   <tr
                     key={user.userId}
-                    className="border-b border-zinc-800/80 align-top"
+                    className={`border-b border-zinc-800/80 align-top ${
+                      accessExpired ? "bg-red-950/20" : ""
+                    }`}
                   >
                     <td className="py-2 pe-3 text-zinc-100">
                       {user.email ?? "-"}
                     </td>
                     <td className="py-2 pe-3 text-zinc-300">
-                      {formatDateTime(user.lastSignInAt)}
+                      <span className="block">
+                        {formatDateTime(user.lastSignInAt)}
+                      </span>
+                      <span className="mt-0.5 block text-[10px] text-zinc-600">
+                        הצטרף: {formatDateTime(user.createdAt)}
+                      </span>
                     </td>
-                    <td className="py-2 pe-3 text-zinc-400">
-                      {formatDateTime(user.createdAt)}
+                    <td className="py-2 pe-3 text-zinc-300">
+                      {formatDateTime(user.lastLoginEventAt)}
+                    </td>
+                    <td className="py-2 pe-3 font-mono text-xs text-zinc-400">
+                      {user.loginCount}
+                    </td>
+                    <td className="py-2 pe-3">
+                      <ProfileAccessExpiryEditor
+                        userId={user.userId}
+                        accessExpiresAt={user.accessExpiresAt}
+                      />
                     </td>
                     <td className="py-2 pe-3">
                       <VideoAccessToggle
@@ -243,14 +265,15 @@ export function StudioUsersDashboard({ data }: StudioUsersDashboardProps) {
                         enabled={user.hasVideoAccess}
                       />
                     </td>
-                    <td className="py-2 pe-3 font-mono text-xs text-zinc-400">
-                      {user.loginCount}
+                    <td className="py-2 pe-3">
+                      <RecordMeetingForm userId={user.userId} />
                     </td>
                     <td className="py-2 font-mono text-[10px] text-zinc-600">
                       {user.userId}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -58,17 +58,20 @@ export async function HeroSearchSection({
   } else if (!popularConcepts) {
     try {
       const supabase = await createClient();
+      // Aggregate counts only: avoid shipping every video_id for chip ranking.
       const { data } = await supabase
         .from("concepts")
-        .select("id, name, category, video_concepts(video_id)")
+        .select("id, name, category, video_concepts(count)")
         .order("name")
         .limit(40);
 
       const ranked =
         data
           ?.map((c) => {
-            const links = c.video_concepts;
-            const videoCount = Array.isArray(links) ? links.length : 0;
+            const links = c.video_concepts as { count: number }[] | null;
+            const videoCount = Array.isArray(links)
+              ? Number(links[0]?.count ?? 0)
+              : 0;
             return {
               id: c.id,
               name: c.name,

@@ -220,11 +220,12 @@ export async function SearchResults({ query, page: pageProp }: SearchResultsProp
             </p>
           ) : null}
           <ul className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {pageVideos.map((v) => (
+            {pageVideos.map((v, index) => (
               <li key={v.id}>
                 <VideoCard
                   video={v}
                   initialSaved={savedIds.has(v.youtube_id)}
+                  priority={index === 0}
                 />
               </li>
             ))}

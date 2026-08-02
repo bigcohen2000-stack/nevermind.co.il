@@ -30,6 +30,12 @@ type WatchPlayerProps = {
   isAuthenticated?: boolean;
   /** Fires when the YouTube player reaches the ENDED state. */
   onEnded?: () => void;
+  /**
+   * Club teaser: pause and fire onPreviewEnd when playback reaches this second.
+   * Default unset = full video.
+   */
+  previewEndSeconds?: number;
+  onPreviewEnd?: () => void;
 };
 
 type YtPlayer = {
@@ -38,6 +44,7 @@ type YtPlayer = {
   getDuration: () => number;
   getPlayerState: () => number;
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  pauseVideo: () => void;
 };
 
 type YtNamespace = {
@@ -104,6 +111,8 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
       thumbnailUrl = null,
       isAuthenticated = false,
       onEnded,
+      previewEndSeconds,
+      onPreviewEnd,
     },
     ref,
   ) {
@@ -112,8 +121,13 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
     const playerRef = useRef<YtPlayer | null>(null);
     const lastSavedAtRef = useRef(0);
     const historyRecordedRef = useRef(false);
+    const previewFiredRef = useRef(false);
     const onEndedRef = useRef(onEnded);
     onEndedRef.current = onEnded;
+    const onPreviewEndRef = useRef(onPreviewEnd);
+    onPreviewEndRef.current = onPreviewEnd;
+    const previewEndRef = useRef(previewEndSeconds);
+    previewEndRef.current = previewEndSeconds;
     const metaRef = useRef({ title, thumbnailUrl, isAuthenticated });
     metaRef.current = { title, thumbnailUrl, isAuthenticated };
 
@@ -138,6 +152,28 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
       let cancelled = false;
       let pollId: number | undefined;
       historyRecordedRef.current = false;
+      previewFiredRef.current = false;
+
+      const firePreviewEnd = (player: YtPlayer) => {
+        if (previewFiredRef.current) return;
+        const limit = previewEndRef.current;
+        if (limit == null || limit <= 0) return;
+        let current = 0;
+        try {
+          current = player.getCurrentTime() || 0;
+        } catch {
+          return;
+        }
+        if (current < limit) return;
+        previewFiredRef.current = true;
+        try {
+          player.pauseVideo();
+          player.seekTo(limit, true);
+        } catch {
+          /* ignore */
+        }
+        onPreviewEndRef.current?.();
+      };
 
       const persist = (force = false) => {
         const player = playerRef.current;
@@ -186,11 +222,18 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
         if (cancelled || !window.YT?.Player) return;
 
         const urlStart = Math.max(0, Math.floor(startSeconds));
+        const limit = previewEndRef.current;
+        const cappedStart =
+          limit != null && limit > 0
+            ? Math.min(urlStart, Math.max(0, limit - 1))
+            : urlStart;
         const local = getLocalVideoProgress(youtubeId);
         const resumeAt =
-          urlStart > 0
-            ? urlStart
-            : local && local.progressSeconds > 5
+          cappedStart > 0
+            ? cappedStart
+            : local &&
+                local.progressSeconds > 5 &&
+                (limit == null || local.progressSeconds < limit)
               ? local.progressSeconds
               : 0;
 
@@ -204,6 +247,7 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
             playsinline: 1,
             hl: "he",
             start: resumeAt > 0 ? Math.floor(resumeAt) : 0,
+            ...(limit != null && limit > 0 ? { end: Math.floor(limit) } : {}),
           },
           events: {
             onReady: (event) => {
@@ -216,12 +260,22 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
               if (!state) return;
               if (event.data === state.PLAYING) {
                 markWatchStart();
+                firePreviewEnd(event.target);
               }
               if (event.data === state.PAUSED || event.data === state.ENDED) {
                 persist(true);
+                firePreviewEnd(event.target);
               }
               if (event.data === state.ENDED) {
-                onEndedRef.current?.();
+                if (limit != null && limit > 0) {
+                  // Short dedicated teaser clips end before the safety cap.
+                  if (!previewFiredRef.current) {
+                    previewFiredRef.current = true;
+                    onPreviewEndRef.current?.();
+                  }
+                } else {
+                  onEndedRef.current?.();
+                }
               }
             },
           },
@@ -232,11 +286,14 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
           const playing = window.YT?.PlayerState?.PLAYING;
           if (!player || playing == null) return;
           try {
-            if (player.getPlayerState() === playing) persist(false);
+            if (player.getPlayerState() === playing) {
+              persist(false);
+              firePreviewEnd(player);
+            }
           } catch {
             /* player may be mid-destroy */
           }
-        }, SAVE_EVERY_MS);
+        }, Math.min(SAVE_EVERY_MS, 1000));
       };
 
       void mount();
@@ -252,7 +309,7 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
         }
         playerRef.current = null;
       };
-    }, [elementId, startSeconds, youtubeId]);
+    }, [elementId, startSeconds, youtubeId, previewEndSeconds]);
 
     return (
       <div

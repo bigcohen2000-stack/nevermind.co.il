@@ -1,8 +1,8 @@
 # DECISIONS.md
 ## NeverMinde Project - Key Decisions & Open Questions
 
-**Last Updated:** July 29, 2026  
-**Status:** Planning + video/search decisions locked  
+**Last Updated:** August 2, 2026  
+**Status:** Planning + video/search + investigation protocol locked  
 
 
 ---
@@ -278,17 +278,38 @@
 ---
 
 ### 13. Watch-Page Booking CTA: WhatsApp First
-**Decision:** Stage 1 CTA under the watch player is a Hebrew, context-aware WhatsApp link with prefilled text including `[Concept/Title]`. Calendar/modal booking is deferred.  
+**Decision:** Stage 1 CTA under the watch player is context-aware. Primary path: dark booking modal (name / phone / email) emailed to admin via Resend Server Action. WhatsApp remains available on `/contact` and other lead surfaces.  
 **Rationale:**
-- Zero new external booking infra
-- Fits staged build rules (ask before adding services)
-- Still clear, dry, non-dramatic call to action
+- User explicitly approved Resend + contextual modal (Aug 2026)
+- Keeps keys server-side (`RESEND_API_KEY`, `BOOKING_ADMIN_EMAIL`)
+- Prefills video title or search query as context
 
 **Implications:**
-- Need a WhatsApp business/phone number in env or config later
-- Stage 2 (Cal.com / modal) requires explicit approval
+- Set `RESEND_API_KEY`, `BOOKING_ADMIN_EMAIL`, optional `RESEND_FROM_EMAIL` in `.env.local` and Vercel
+- Without those keys the modal shows a clear config error (no silent fail)
 
-**Date Decided:** July 29, 2026  
+**Date Decided:** July 29, 2026 (WhatsApp-first). Updated August 1, 2026.  
+**Status:** ✅ LOCKED (modal + Resend + WhatsApp)
+
+---
+
+### 14. Investigation Protocol: Breakdown Levels + Tags + Soft Metrics
+**Decision:** Videos get a single `breakdown_level` (primary / no_difference / perspective_flip / unfiltered). Investigation tags are curated concepts with `category = investigation`. Watch pages show "מדדי חקירה" from duration + concept-density peaks (not YouTube Analytics). Public watch pages show a "המשך החקירה" club teaser (`club_teaser_label` / `club_teaser_href`, with /members default).  
+**Rationale:**
+- Depth taxonomy helps sync, browse, and Cursor link videos by פירוק level, not only topic
+- Reuses concepts junction instead of a second tag system
+- Honest metrics now: duration + heatmap peaks. Retention and comment word-clouds wait for Analytics/comments APIs
+- Upsell on public pages without building a new paywall
+
+**Implications:**
+- Apply migration `24_investigation_protocol.sql`
+- Re-run YouTube sync to backfill `breakdown_level` (does not overwrite curator values) and investigation concept categories
+- Optional per-video teaser copy via `club_teaser_*` columns
+- Browse filter: `?breakdown=`
+
+**Alternative Rejected:** Fake audience-retention UI without Analytics data.
+
+**Date Decided:** August 2, 2026  
 **Status:** ✅ LOCKED
 
 ---
@@ -733,6 +754,16 @@ When a new decision must be made, use this format:
 
 ---
 
-**Document Status:** 🟢 UPDATED (video/search decisions locked July 29, 2026)  
-**Last Updated:** July 29, 2026  
-**Next Review:** Before Module 1 (schema migration)
+### Local search go-live (Aug 2026)
+
+**Decision:** Local browse/search uses `.env.local`. Production env lives only on Vercel project `nevermind.co.il` (not YakirCohen).
+
+**Mirrored Production keys:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `YOUTUBE_API_KEY`, `CRON_SECRET`, `YOUTUBE_CHANNEL_IDS`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_SITE_URL=https://nevermind.co.il`, `NEXT_PUBLIC_USE_MOCK_SEARCH=false`.
+
+**Helper:** `node scripts/push-vercel-env.mjs` (refuses non-nevermind linked projects).
+
+---
+
+**Document Status:** UPDATED (investigation protocol Aug 2, 2026)  
+**Last Updated:** August 2, 2026  
+**Next Review:** YouTube Analytics retention / comment frequency cloud

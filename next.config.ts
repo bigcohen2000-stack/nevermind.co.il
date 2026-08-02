@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   // can be imported and (later) routed. Articles live in /content for now.
   pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "https",

@@ -1,4 +1,4 @@
-import { StudioUnlockForm } from "@/components/studio/studio-unlock-form";
+import { StudioSessionRequired } from "@/components/studio/studio-session-required";
 import { StudioUsersDashboard } from "@/components/studio/studio-users-dashboard";
 import { isStudioAuthenticated } from "@/lib/studio/session";
 import { getStudioUsersDashboard } from "@/lib/studio/users-dashboard";
@@ -9,11 +9,7 @@ export default async function StudioUsersPage() {
   const unlocked = await isStudioAuthenticated();
 
   if (!unlocked) {
-    return (
-      <main className="mx-auto flex min-h-full w-full max-w-lg flex-col justify-center px-6 py-16">
-        <StudioUnlockForm />
-      </main>
-    );
+    return <StudioSessionRequired />;
   }
 
   const data = await getStudioUsersDashboard();

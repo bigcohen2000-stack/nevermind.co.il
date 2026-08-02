@@ -6,6 +6,7 @@ import {
   VIDEOS_PAGE_SIZE,
   parsePageParam,
 } from "@/lib/videos/browse-params";
+import { isBreakdownLevel, type BreakdownLevel } from "@/lib/videos/investigation";
 import {
   listBrowseVideosPage,
   type VideoBrowseFilter,
@@ -16,6 +17,7 @@ type VideosResultsProps = {
   filter?: VideoBrowseFilter;
   sort?: VideoBrowseSort;
   concept?: string;
+  breakdown?: BreakdownLevel | string;
   page?: number | string;
 };
 
@@ -40,11 +42,15 @@ export async function VideosResults({
   filter: filterProp,
   sort: sortProp,
   concept: conceptProp,
+  breakdown: breakdownProp,
   page: pageProp,
 }: VideosResultsProps) {
   const filter = parseFilter(filterProp);
   const sort = parseSort(sortProp);
   const concept = conceptProp?.trim() || undefined;
+  const breakdown = isBreakdownLevel(breakdownProp)
+    ? breakdownProp
+    : undefined;
   const requestedPage =
     typeof pageProp === "number"
       ? Math.max(1, Math.floor(pageProp) || 1)
@@ -68,6 +74,7 @@ export async function VideosResults({
         filter,
         sort,
         concept,
+        breakdown,
       }),
       getSavedYoutubeIds(),
     ]);
@@ -97,16 +104,22 @@ export async function VideosResults({
         </p>
       </div>
 
-      <VideosBrowseControls filter={filter} sort={sort} concept={concept} />
+      <VideosBrowseControls
+        filter={filter}
+        sort={sort}
+        concept={concept}
+        breakdown={breakdown}
+      />
 
       <div id="videos-results" className="scroll-mt-24">
         {videos.length > 0 ? (
           <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {videos.map((v) => (
+            {videos.map((v, index) => (
               <li key={v.id}>
                 <VideoCard
                   video={v}
                   initialSaved={savedIds.has(v.youtube_id)}
+                  priority={index === 0}
                 />
               </li>
             ))}
@@ -121,6 +134,7 @@ export async function VideosResults({
           filter={filter}
           sort={sort}
           concept={concept}
+          breakdown={breakdown}
         />
       </div>
     </>

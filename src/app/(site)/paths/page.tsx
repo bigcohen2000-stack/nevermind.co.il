@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getPremiumStatus } from "@/actions/premium";
+import { InvestigationFactsStrip } from "@/components/members/investigation-facts-strip";
 import { PricingTracks } from "@/components/paths/pricing-tracks";
 import { WhatsAppTrackCta } from "@/components/paths/whatsapp-track-cta";
 import { buildIntroCallWhatsAppText } from "@/lib/content/offers";
+import { shareImageMetadata } from "@/lib/og/share-image";
 
 export const metadata: Metadata = {
   title: "מסלולים ומחירים",
@@ -13,6 +15,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://nevermind.co.il/paths",
   },
+  ...shareImageMetadata("מסלולים ומחירים. בקשה מדויקת, לא שיחה כללית."),
 };
 
 export default async function PathsPage() {
@@ -22,6 +25,12 @@ export default async function PathsPage() {
 
   return (
     <main className="w-full text-start">
+      <InvestigationFactsStrip
+        tone="paper"
+        factIds={["hours", "concepts", "levels", "views", "since"]}
+        moreHref="/members"
+        moreLabel="למאגר המועדון"
+      />
       <PricingTracks hasVideoAccess={Boolean(premium.hasVideoAccess)} />
 
       <section className="border-t border-[#1A1A1A] bg-[#1A1A1A] text-[#FAFAF8]">

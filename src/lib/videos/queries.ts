@@ -1,15 +1,56 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { isCuratedConcept, isQualityConceptName } from "@/lib/concepts/quality";
 import { searchArticles } from "@/lib/search/articles";
 import { SEARCH_FETCH_CAP } from "@/lib/search/search-params";
 import type { SuggestItem } from "@/lib/search/types";
 import { createClient } from "@/lib/supabase/server";
 import type { TranscriptSegment } from "@/lib/videos/heatmap";
+import { isBreakdownLevel } from "@/lib/videos/investigation";
 import { isYoutubeUnavailableTitle } from "@/lib/videos/youtube-availability";
 import type { Concept, Video } from "@/types/supabase";
 
 export type { SuggestItem } from "@/lib/search/types";
+
+/**
+ * Columns needed for cards, browse, search grids, and related rails.
+ * Omits description + core_facts (often large) to cut payload on list paths.
+ */
+const VIDEO_LIST_COLUMNS =
+  "id, youtube_id, title, thumbnail_url, playlist_id, is_unlisted, is_gated, created_at, published_at, duration_seconds, breakdown_level" as const;
+
+type VideoListRow = Pick<
+  Video,
+  | "id"
+  | "youtube_id"
+  | "title"
+  | "thumbnail_url"
+  | "playlist_id"
+  | "is_unlisted"
+  | "is_gated"
+  | "created_at"
+  | "published_at"
+  | "duration_seconds"
+  | "breakdown_level"
+>;
+
+function toListVideo(row: VideoListRow): Video {
+  return {
+    ...row,
+    description: null,
+    core_facts: [],
+    breakdown_level: row.breakdown_level ?? null,
+    club_teaser_label: null,
+    club_teaser_href: null,
+    teaser_youtube_id: null,
+  };
+}
+
+function toListVideos(rows: VideoListRow[] | null | undefined): Video[] {
+  return (rows ?? []).map(toListVideo);
+}
 
 /** Strip characters that break plainto_tsquery / PostgREST textSearch. */
 function sanitizeSearchQuery(raw: string): string {
@@ -208,6 +249,8 @@ export type ListBrowseVideosOptions = {
   sort?: VideoBrowseSort;
   /** Exact concept name (Hebrew). Limits results to linked videos. */
   concept?: string;
+  /** Investigation breakdown level. */
+  breakdown?: string;
 };
 
 export type BrowseVideosPage = {
@@ -247,11 +290,6 @@ export async function listPublicVideos(limit = 24): Promise<Video[]> {
   return listBrowseVideos({ limit, filter: "all", sort: "newest" });
 }
 
-/**
- * Resolve video ids linked to a concept.
- * Prefers exact name match. Falls back to a single curated/ilike hit only when
- * exactly one quality concept matches (avoids weakly related noise).
- */
 /**
  * Resolve video ids linked to a concept.
  * Prefers exact name match. Falls back to a single curated/ilike hit only when
@@ -355,13 +393,15 @@ export async function listVideosForConceptName(
 
   const supabase = await tryCreateClient();
   const viaRls = supabase
-    ? (
-        await supabase
-          .from("videos")
-          .select("*")
-          .in("id", ids)
-          .order("created_at", { ascending: false })
-      ).data ?? []
+    ? toListVideos(
+        (
+          await supabase
+            .from("videos")
+            .select(VIDEO_LIST_COLUMNS)
+            .in("id", ids)
+            .order("created_at", { ascending: false })
+        ).data as VideoListRow[] | null,
+      )
     : [];
 
   let gatedTeasers: Video[] = [];
@@ -370,11 +410,11 @@ export async function listVideosForConceptName(
     const admin = getSupabaseAdmin();
     const { data } = await admin
       .from("videos")
-      .select("*")
+      .select(VIDEO_LIST_COLUMNS)
       .in("id", ids)
       .or("is_gated.eq.true,is_unlisted.eq.true")
       .order("created_at", { ascending: false });
-    gatedTeasers = data ?? [];
+    gatedTeasers = toListVideos(data as VideoListRow[] | null);
   } catch {
     gatedTeasers = [];
   }
@@ -451,6 +491,9 @@ async function collectBrowseVideos(
   const filter = options.filter ?? "all";
   const sort = options.sort ?? "newest";
   const conceptName = options.concept?.trim() || undefined;
+  const breakdown = isBreakdownLevel(options.breakdown)
+    ? options.breakdown
+    : undefined;
 
   const conceptIds = conceptName
     ? await resolveConceptVideoIds(conceptName)
@@ -462,14 +505,19 @@ async function collectBrowseVideos(
   if (filter !== "club" && supabase) {
     let viaRlsQuery = supabase
       .from("videos")
-      .select("*")
+      .select(VIDEO_LIST_COLUMNS)
       .order("created_at", { ascending: false });
+    if (breakdown) {
+      viaRlsQuery = viaRlsQuery.eq("breakdown_level", breakdown);
+    }
     if (conceptIds) {
       viaRlsQuery = viaRlsQuery.in("id", conceptIds);
     } else {
       viaRlsQuery = viaRlsQuery.limit(fetchCap);
     }
-    viaRls = (await viaRlsQuery).data ?? [];
+    viaRls = toListVideos(
+      (await viaRlsQuery).data as VideoListRow[] | null,
+    );
   }
 
   let gatedTeasers: Video[] = [];
@@ -479,16 +527,19 @@ async function collectBrowseVideos(
       const admin = getSupabaseAdmin();
       let gatedQuery = admin
         .from("videos")
-        .select("*")
+        .select(VIDEO_LIST_COLUMNS)
         .or("is_gated.eq.true,is_unlisted.eq.true")
         .order("created_at", { ascending: false });
+      if (breakdown) {
+        gatedQuery = gatedQuery.eq("breakdown_level", breakdown);
+      }
       if (conceptIds) {
         gatedQuery = gatedQuery.in("id", conceptIds);
       } else {
         gatedQuery = gatedQuery.limit(fetchCap);
       }
       const { data } = await gatedQuery;
-      gatedTeasers = data ?? [];
+      gatedTeasers = toListVideos(data as VideoListRow[] | null);
     } catch {
       gatedTeasers = [];
     }
@@ -497,6 +548,7 @@ async function collectBrowseVideos(
   const byId = new Map<string, Video>();
   for (const v of [...gatedTeasers, ...viaRls]) {
     if (conceptIds && !conceptIds.includes(v.id)) continue;
+    if (breakdown && v.breakdown_level !== breakdown) continue;
     if (filter === "open" && (v.is_gated || v.is_unlisted)) continue;
     if (filter === "club" && !(v.is_gated || v.is_unlisted)) continue;
     if (isYoutubeUnavailableTitle(v.title)) continue;
@@ -550,35 +602,45 @@ async function getVideoById(id: string): Promise<Video | null> {
  * Watch-page loader. Accepts opaque UUID (preferred for members-only) or
  * YouTube id (public videos / legacy links). Anon RLS hides gated rows, so
  * guests fall back to service-role metadata for the lock UI only.
+ * Cached per-request so generateMetadata + page share one fetch.
  */
-export async function getVideoForWatch(
-  videoParam: string,
-): Promise<Video | null> {
-  const param = videoParam.trim();
-  if (!param) return null;
+export const getVideoForWatch = cache(
+  async (videoParam: string): Promise<Video | null> => {
+    const param = videoParam.trim();
+    if (!param) return null;
 
-  const { isUuidParam } = await import("@/lib/videos/watch-path");
-  if (isUuidParam(param)) {
-    return getVideoById(param);
-  }
+    const { isUuidParam } = await import("@/lib/videos/watch-path");
+    if (isUuidParam(param)) {
+      return getVideoById(param);
+    }
 
-  const viaUser = await getVideoByYoutubeId(param);
-  if (viaUser) return viaUser;
+    const viaUser = await getVideoByYoutubeId(param);
+    if (viaUser) return viaUser;
 
-  try {
-    const { getSupabaseAdmin } = await import("@/lib/supabase/admin");
-    const admin = getSupabaseAdmin();
-    const { data } = await admin
-      .from("videos")
-      .select("*")
-      .eq("youtube_id", param)
-      .or("is_gated.eq.true,is_unlisted.eq.true")
-      .maybeSingle();
-    return data;
-  } catch {
-    return null;
-  }
-}
+    try {
+      const { getSupabaseAdmin } = await import("@/lib/supabase/admin");
+      const admin = getSupabaseAdmin();
+      const byFull = await admin
+        .from("videos")
+        .select("*")
+        .eq("youtube_id", param)
+        .or("is_gated.eq.true,is_unlisted.eq.true")
+        .maybeSingle();
+      if (byFull.data) return byFull.data;
+
+      // Public teaser clip ids can resolve to the gated parent for the lock UI.
+      const byTeaser = await admin
+        .from("videos")
+        .select("*")
+        .eq("teaser_youtube_id", param)
+        .or("is_gated.eq.true,is_unlisted.eq.true")
+        .maybeSingle();
+      return byTeaser.data;
+    } catch {
+      return null;
+    }
+  },
+);
 
 export async function getVideoTranscript(
   videoId: string,
@@ -713,22 +775,27 @@ export async function getRelatedVideos(
   const ids = [...scored.keys()].slice(0, limit);
   if (ids.length === 0) return [];
 
-  const { data: videos } = await supabase.from("videos").select("*").in("id", ids);
+  const { data: videos } = await supabase
+    .from("videos")
+    .select(VIDEO_LIST_COLUMNS)
+    .in("id", ids);
   if (!videos) return [];
 
   // Entitled: may still miss gated rows under RLS. Merge via service role.
-  let merged = videos;
+  let merged = toListVideos(videos as VideoListRow[]);
   if (opts?.entitled) {
-    const missing = ids.filter((id) => !videos.some((v) => v.id === id));
+    const missing = ids.filter((id) => !merged.some((v) => v.id === id));
     if (missing.length > 0) {
       try {
         const { getSupabaseAdmin } = await import("@/lib/supabase/admin");
         const admin = getSupabaseAdmin();
         const { data: gatedExtra } = await admin
           .from("videos")
-          .select("*")
+          .select(VIDEO_LIST_COLUMNS)
           .in("id", missing);
-        if (gatedExtra?.length) merged = [...videos, ...gatedExtra];
+        if (gatedExtra?.length) {
+          merged = [...merged, ...toListVideos(gatedExtra as VideoListRow[])];
+        }
       } catch {
         /* keep RLS set */
       }
@@ -765,7 +832,7 @@ export async function searchVideos(query: string): Promise<Video[]> {
     await Promise.all([
       supabase
         .from("videos")
-        .select("*")
+        .select(VIDEO_LIST_COLUMNS)
         .ilike("title", pattern)
         .order("created_at", { ascending: false })
         .limit(limit),
@@ -784,12 +851,12 @@ export async function searchVideos(query: string): Promise<Video[]> {
     const admin = getSupabaseAdmin();
     const { data } = await admin
       .from("videos")
-      .select("*")
+      .select(VIDEO_LIST_COLUMNS)
       .or("is_gated.eq.true,is_unlisted.eq.true")
       .ilike("title", pattern)
       .order("created_at", { ascending: false })
       .limit(limit);
-    gatedByTitle = data ?? [];
+    gatedByTitle = toListVideos(data as VideoListRow[] | null);
   } catch {
     gatedByTitle = [];
   }
@@ -800,7 +867,11 @@ export async function searchVideos(query: string): Promise<Video[]> {
     scores.set(id, Math.max(scores.get(id) ?? 0, points));
   };
 
-  for (const v of [...gatedByTitle, ...(byTitle ?? [])]) {
+  const titleHits = [
+    ...gatedByTitle,
+    ...toListVideos(byTitle as VideoListRow[] | null),
+  ];
+  for (const v of titleHits) {
     const titleHit =
       v.title.trim().localeCompare(q, "he", { sensitivity: "base" }) === 0;
     bump(v.id, titleHit ? 95 : 70);
@@ -853,7 +924,7 @@ export async function searchVideos(query: string): Promise<Video[]> {
 
   // Prefer already-fetched title hits; load the rest by id.
   const byId = new Map<string, Video>();
-  for (const v of [...gatedByTitle, ...(byTitle ?? [])]) {
+  for (const v of titleHits) {
     byId.set(v.id, v);
   }
 
@@ -861,9 +932,9 @@ export async function searchVideos(query: string): Promise<Video[]> {
   if (missing.length > 0) {
     const { data: extra } = await supabase
       .from("videos")
-      .select("*")
+      .select(VIDEO_LIST_COLUMNS)
       .in("id", missing);
-    for (const v of extra ?? []) {
+    for (const v of toListVideos(extra as VideoListRow[] | null)) {
       byId.set(v.id, v);
     }
     // Gated ids may still be missing under anon RLS.
@@ -874,10 +945,10 @@ export async function searchVideos(query: string): Promise<Video[]> {
         const admin = getSupabaseAdmin();
         const { data: gatedExtra } = await admin
           .from("videos")
-          .select("*")
+          .select(VIDEO_LIST_COLUMNS)
           .in("id", stillMissing)
           .or("is_gated.eq.true,is_unlisted.eq.true");
-        for (const v of gatedExtra ?? []) {
+        for (const v of toListVideos(gatedExtra as VideoListRow[] | null)) {
           byId.set(v.id, v);
         }
       } catch {
@@ -972,12 +1043,13 @@ export async function getLearningJourney(
 
   const { data: videos } = await supabase
     .from("videos")
-    .select("*")
+    .select(VIDEO_LIST_COLUMNS)
     .in("id", rankedIds);
 
   if (!videos?.length) return [];
 
-  const byId = new Map(videos.map((v) => [v.id, v]));
+  const listed = toListVideos(videos as VideoListRow[]);
+  const byId = new Map(listed.map((v) => [v.id, v]));
   const ordered = rankedIds
     .map((id) => byId.get(id))
     .filter((v): v is Video => Boolean(v))
@@ -1007,14 +1079,14 @@ export async function listConceptsWithVideoCounts(): Promise<
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("concepts")
-    .select("id, name, category, video_concepts(video_id)")
+    .select("id, name, category, video_concepts(count)")
     .order("name", { ascending: true });
 
   if (error || !data) return [];
 
   const items: ConceptDirectoryItem[] = data.map((row) => {
-    const links = row.video_concepts;
-    const videoCount = Array.isArray(links) ? links.length : 0;
+    const links = row.video_concepts as { count: number }[] | null;
+    const videoCount = Array.isArray(links) ? Number(links[0]?.count ?? 0) : 0;
     return {
       id: row.id,
       name: row.name,

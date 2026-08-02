@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { JsonLd } from "@/components/seo/json-ld";
+import { ShareExplorationButton } from "@/components/share/share-exploration-button";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
+import { shareImageMetadata } from "@/lib/og/share-image";
+import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
 
 export const metadata: Metadata = {
   title: "מנגנונים",
   description:
     "האתר מאורגן לפי מנגנונים, לא לפי רגשות: יחסים, קיום, זהות.",
+  ...shareImageMetadata("מנגנונים, לא רגשות."),
 };
 
 /* -------------------------------------------------------------------------- */
@@ -135,8 +140,14 @@ function MechanismBand({
 /* -------------------------------------------------------------------------- */
 
 export default function MechanismsPage() {
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "בית", path: "/" },
+    { name: "מנגנונים", path: "/mechanisms" },
+  ]);
+
   return (
     <main className="w-full text-start">
+      <JsonLd data={breadcrumbLd} />
       {/* 1 — HERO (ink, asymmetric, index panel) --------------------------- */}
       <section aria-labelledby="mechanisms-hero-title" className="band-dark">
         <Watermark className="bottom-[-1.5rem] start-[-0.5rem] text-[6rem] text-foreground/[0.045] sm:text-[9rem] lg:text-[13rem]">
@@ -237,6 +248,12 @@ export default function MechanismsPage() {
               התחילו לקרוא לפי מנגנון.
             </h2>
             <div className="lg:col-span-4 lg:flex lg:flex-col lg:items-end lg:gap-3 lg:text-end">
+              <ShareExplorationButton
+                title="מנגנונים"
+                text="חקירה לפי מנגנונים ב-NeverMinde"
+                url="/mechanisms"
+                className="lg:items-end"
+              />
               <Link href="/concepts" className="btn btn-primary">
                 למדריך המושגים
               </Link>

@@ -87,12 +87,12 @@ function AnalyticsTable({ rows }: { rows: SearchAnalytics[] }) {
       <table className="w-full min-w-[40rem] border-collapse text-start text-sm">
         <thead>
           <tr className="border-b border-zinc-800 text-zinc-500">
-            <th className="px-2 py-3 font-medium">Search Query</th>
-            <th className="px-2 py-3 font-medium">Date & Time</th>
-            <th className="px-2 py-3 font-medium">User</th>
-            <th className="px-2 py-3 font-medium">Results</th>
-            <th className="px-2 py-3 font-medium">Feedback</th>
-            <th className="px-2 py-3 font-medium">Note</th>
+            <th className="px-2 py-3 font-medium">שאילתה</th>
+            <th className="px-2 py-3 font-medium">תאריך ושעה</th>
+            <th className="px-2 py-3 font-medium">משתמש</th>
+            <th className="px-2 py-3 font-medium">תוצאות</th>
+            <th className="px-2 py-3 font-medium">משוב</th>
+            <th className="px-2 py-3 font-medium">הערה</th>
           </tr>
         </thead>
         <tbody>
@@ -100,10 +100,10 @@ function AnalyticsTable({ rows }: { rows: SearchAnalytics[] }) {
             const zero = row.results_count === 0;
             const feedbackLabel =
               row.user_feedback === true
-                ? "Up"
+                ? "חיובי"
                 : row.user_feedback === false
-                  ? "Down"
-                  : "—";
+                  ? "שלילי"
+                  : "-";
             return (
               <tr
                 key={row.id}
@@ -169,63 +169,61 @@ export function SearchAnalyticsDashboard({
           actions={
             <Link
               href="/studio"
-              className="rounded-lg border border-zinc-700 px-3 py-2 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
+              className="border border-zinc-700 px-3 py-2 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
             >
-              Ingest video
+              חזרה לסטודיו
             </Link>
           }
         />
         <div>
-          <p className="text-xs font-medium tracking-[0.2em] text-zinc-500 uppercase">
-            NeverMind Admin
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-50">
-            Search Analytics
+          <p className="text-xs text-zinc-500">ניהול פנימי</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
+            חיפושים
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-            What people search for, and where the library has gaps (0 results).
+            מה אנשים מחפשים, ואיפה יש חורים במאגר (0 תוצאות).
           </p>
         </div>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard title="Searches today">
+        <SummaryCard title="חיפושים היום">
           <p className="mt-4 text-4xl font-semibold tracking-tight text-zinc-50">
             {data.totalToday}
           </p>
-          <p className="mt-2 text-xs text-zinc-500">Since local midnight</p>
+          <p className="mt-2 text-xs text-zinc-500">מחצות מקומית</p>
         </SummaryCard>
 
-        <SummaryCard title="Top 5 this week">
+        <SummaryCard title="טופ 5 השבוע">
           <TermList
             items={data.topTermsThisWeek}
-            emptyLabel="No searches in the last 7 days."
+            emptyLabel="אין חיפושים ב־7 הימים האחרונים."
           />
         </SummaryCard>
 
-        <SummaryCard title="Top 3 zero-result gaps">
+        <SummaryCard title="חורים (0 תוצאות)">
           <TermList
             items={data.topZeroResultTerms}
-            emptyLabel="No zero-result searches yet."
+            emptyLabel="עדיין אין חיפושים בלי תוצאות."
             emphasizeZero
           />
           <p className="mt-4 text-xs leading-relaxed text-zinc-500">
-            Good candidates for the next video.
+            מועמדים טובים לסרטון הבא.
           </p>
         </SummaryCard>
 
-        <SummaryCard title="Thumbs down (7 days)">
+        <SummaryCard title="דיסלייק (7 ימים)">
           <p className="mt-4 text-4xl font-semibold tracking-tight text-zinc-50">
             {data.thumbsDownThisWeek}
           </p>
-          <p className="mt-2 text-xs text-zinc-500">Quality feedback</p>
+          <p className="mt-2 text-xs text-zinc-500">משוב איכות</p>
         </SummaryCard>
       </div>
 
       {data.feedbackNotes.length > 0 ? (
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 sm:p-8">
-          <h2 className="text-lg font-semibold text-zinc-100">
-            Recent feedback notes
+        <section className="border border-zinc-800 bg-zinc-900/40 p-5 sm:p-6">
+          <h2 className="text-base font-semibold text-zinc-100">
+            הערות משוב אחרונות
           </h2>
           <ul className="mt-4 space-y-3">
             {data.feedbackNotes.map((item) => (
@@ -244,20 +242,21 @@ export function SearchAnalyticsDashboard({
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 sm:p-8">
+      <section className="border border-zinc-800 bg-zinc-900/40 p-5 sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">All searches</h2>
+            <h2 className="text-base font-semibold text-zinc-100">
+              כל החיפושים
+            </h2>
             <p className="mt-1 text-xs text-zinc-500">
-              {data.rows.length} event{data.rows.length === 1 ? "" : "s"} (newest
-              first)
+              {data.rows.length} אירועים (חדש למעלה)
             </p>
           </div>
           <Link
             href="/studio"
             className="text-xs text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
           >
-            Back to ingestion
+            חזרה לסטודיו
           </Link>
         </div>
         <AnalyticsTable rows={data.rows} />

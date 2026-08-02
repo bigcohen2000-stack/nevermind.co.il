@@ -63,6 +63,9 @@ export interface ArchivePricingRow {
   id: string;
   frame: string;
   validity: string;
+  /** Numeric ILS before VAT. Source of truth for discounted displays. */
+  amountIls: number;
+  /** Display string derived from amountIls. Keep in sync when editing rows. */
   price: string;
   analysis: string;
 }
@@ -97,7 +100,7 @@ export const RESPONSE_SLA_NOTE =
   "בדיקת ההתאמה ומתן המענה יתבצעו בתוך 24 שעות עסקים.";
 
 export const ARCHIVE_TOOLS_NOTE =
-  "המאגר כולל מנוע חיפוש פנימי לאיתור מושגים וטקסטים מתוך הסרטונים. המערכת מנטרת נתוני חיפוש כדי לדייק פיתוח תכנים עתידיים.";
+  "המאגר כולל מנוע חיפוש פנימי לאיתור מושגים וטקסטים מתוך הסרטונים, מדדי חקירה, ופיד פודקאסט פרטי לחברים. המערכת מנטרת נתוני חיפוש כדי לדייק פיתוח תכנים עתידיים.";
 
 export const VAT_FOOTER_NOTE =
   "כל המחירים אינם כוללים מע\"מ ויוספו כחוק בחשבונית.";
@@ -166,6 +169,26 @@ export function buildIntroCallWhatsAppText(): string {
     detail: "כ-10 דקות. אינה שיחת ייעוץ.",
     requiresFitCall: false,
   });
+}
+
+/** Paid open-mic guest seat in the weekly unlisted live. */
+export const LIVE_OPEN_MIC = {
+  id: "live-open-mic" as const,
+  title: "אורח עם מיקרופון פתוח",
+  body: "מקום בשידור החי השבועי. יושבים עם מיקרופון פתוח בחקירה ספונטנית. נדרשת שיחת התאמה לפני אישור.",
+  priceBeforeVat: '980 ש"ח',
+  tags: ["שידור חי", "מיקרופון פתוח", '980 ש"ח + מע"מ'],
+  ctaLabel: "בקשת מקום עם מיקרופון",
+  whatsappText: buildTrackWhatsAppText({
+    track: "אורח עם מיקרופון פתוח בשידור חי מהאין",
+    priceBeforeVat: '980 ש"ח',
+    detail: "מקום בשיחה השבועית. מיקרופון פתוח.",
+    requiresFitCall: true,
+  }),
+};
+
+export function buildLiveOpenMicWhatsAppText(): string {
+  return LIVE_OPEN_MIC.whatsappText;
 }
 
 export function getCapacityLabel(status: CapacityStatus = CAPACITY_STATUS): string {
@@ -244,6 +267,7 @@ export const ARCHIVE_PRICING_ROWS: ArchivePricingRow[] = [
     id: "daily",
     frame: "יומי",
     validity: "24 שעות",
+    amountIls: 150,
     price: '150 ש"ח',
     analysis: "מסנן כניסה מיידי. למי שזקוק למידע דחוף וממוקד.",
   },
@@ -251,6 +275,7 @@ export const ARCHIVE_PRICING_ROWS: ArchivePricingRow[] = [
     id: "weekly",
     frame: "שבועי",
     validity: "7 ימים",
+    amountIls: 450,
     price: '450 ש"ח',
     analysis: "עלות שוות ערך ל-3 ימים במסלול היומי.",
   },
@@ -258,6 +283,7 @@ export const ARCHIVE_PRICING_ROWS: ArchivePricingRow[] = [
     id: "monthly",
     frame: "חודשי",
     validity: "30 ימים",
+    amountIls: 1250,
     price: '1,250 ש"ח',
     analysis: "גישה חודשית לכלל המנגנונים.",
   },
@@ -265,6 +291,7 @@ export const ARCHIVE_PRICING_ROWS: ArchivePricingRow[] = [
     id: "yearly",
     frame: "שנתי",
     validity: "12 חודשים",
+    amountIls: 7500,
     price: '7,500 ש"ח',
     analysis: 'מסלול יעד לעבודה רציפה (625 ש"ח לחודש).',
   },
@@ -272,6 +299,7 @@ export const ARCHIVE_PRICING_ROWS: ArchivePricingRow[] = [
     id: "bi-yearly",
     frame: "דו שנתי",
     validity: "24 חודשים",
+    amountIls: 12000,
     price: '12,000 ש"ח',
     analysis: "למשתמשים המבינים את ערך השיטה לטווח ארוך.",
   },
@@ -279,17 +307,32 @@ export const ARCHIVE_PRICING_ROWS: ArchivePricingRow[] = [
     id: "5years",
     frame: "5 שנים",
     validity: "60 חודשים",
+    amountIls: 24000,
     price: '24,000 ש"ח',
     analysis: "ודאות כלכלית ומסגרת ארוכת טווח.",
   },
   {
     id: "lifetime",
-    frame: "קבוע",
+    frame: "לכל החיים",
     validity: "לצמיתות",
+    amountIls: 45000,
     price: '45,000 ש"ח',
-    analysis: "תשלום חד פעמי. גישה לצמיתות.",
+    analysis: "תשלום חד פעמי. גישה לצמיתות למאגר החקירה.",
   },
 ];
+
+/** Format ILS amount as Hebrew price label (before VAT). */
+export function formatIlsPrice(amountIls: number): string {
+  return `${amountIls.toLocaleString("he-IL")} ש"ח`;
+}
+
+/** Club-member discounted price from the archive price list. Floor at 0. */
+export function discountedArchiveAmount(
+  amountIls: number,
+  discountIls: number,
+): number {
+  return Math.max(0, amountIls - discountIls);
+}
 
 export function getArchivePricingById(
   id: string,

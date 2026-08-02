@@ -8,6 +8,8 @@ type AuthMode = "email" | "sms";
 
 type MyListSignInFormProps = {
   nextPath?: string;
+  /** Compact: Google + email only (no SMS), for inline gates like transcript. */
+  variant?: "full" | "compact";
 };
 
 /**
@@ -15,7 +17,11 @@ type MyListSignInFormProps = {
  *
  * Google + email are free. Phone OTP needs Supabase Phone provider + paid SMS.
  */
-export function MyListSignInForm({ nextPath = "/my-list" }: MyListSignInFormProps) {
+export function MyListSignInForm({
+  nextPath = "/my-list",
+  variant = "full",
+}: MyListSignInFormProps) {
+  const compact = variant === "compact";
   const [mode, setMode] = useState<AuthMode>("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -149,6 +155,52 @@ export function MyListSignInForm({ nextPath = "/my-list" }: MyListSignInFormProp
 
       window.location.assign(nextPath);
     });
+  }
+
+  if (compact) {
+    return (
+      <div className="mt-4 max-w-md space-y-3">
+        <button
+          type="button"
+          onClick={onGoogleSignIn}
+          disabled={pending}
+          className="btn btn-secondary w-full text-sm"
+        >
+          {pending ? "מעביר ל-Google..." : "התחברות עם Google (חינם)"}
+        </button>
+        <form onSubmit={onEmailSubmit} className="space-y-3" noValidate>
+          <div>
+            <label htmlFor="transcript-auth-email" className="block text-sm font-medium">
+              אימייל
+            </label>
+            <input
+              id="transcript-auth-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1.5 w-full rounded-md border border-foreground/20 bg-background px-3 py-2 text-sm"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+          {error ? (
+            <p className="text-sm text-action" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {message ? (
+            <p className="text-sm text-foreground/80" role="status">
+              {message}
+            </p>
+          ) : null}
+          <button type="submit" disabled={pending} className="btn btn-primary w-full text-sm">
+            {pending ? "שולח..." : "שלח קישור חינם לאימייל"}
+          </button>
+        </form>
+      </div>
+    );
   }
 
   return (

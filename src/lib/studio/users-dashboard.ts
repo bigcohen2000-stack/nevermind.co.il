@@ -12,6 +12,7 @@ export type StudioUserRow = {
   isPremium: boolean;
   loginCount: number;
   lastLoginEventAt: string | null;
+  accessExpiresAt: string | null;
 };
 
 export type StudioOnlineRow = {
@@ -66,7 +67,7 @@ export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardDat
       { data: presenceRows, error: presenceError },
     ] = await Promise.all([
       admin.auth.admin.listUsers({ page: 1, perPage: 200 }),
-      admin.from("profiles").select("id, is_premium, has_video_access"),
+      admin.from("profiles").select("id, is_premium, has_video_access, access_expires_at"),
       admin
         .from("auth_login_events")
         .select("*")
@@ -84,13 +85,18 @@ export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardDat
 
     const profileMap = new Map<
       string,
-      { is_premium: boolean; has_video_access: boolean }
+      {
+        is_premium: boolean;
+        has_video_access: boolean;
+        access_expires_at: string | null;
+      }
     >();
     if (!profilesError && profiles) {
       for (const row of profiles) {
         profileMap.set(row.id, {
           is_premium: Boolean(row.is_premium),
           has_video_access: Boolean(row.has_video_access),
+          access_expires_at: row.access_expires_at ?? null,
         });
       }
     }
@@ -124,6 +130,7 @@ export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardDat
         isPremium: Boolean(profile?.is_premium),
         loginCount: loginCountByUser.get(user.id) ?? 0,
         lastLoginEventAt: lastEventByUser.get(user.id) ?? null,
+        accessExpiresAt: profile?.access_expires_at ?? null,
       };
     });
 

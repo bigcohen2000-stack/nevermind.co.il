@@ -3,7 +3,7 @@ import Link from "next/link";
 import { InstallAppButton } from "@/components/layout/install-app-button";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { getApplePodcastUrl, getSpotifyShowUrl } from "@/lib/podcast/links";
-import { FOOTER_NAV } from "@/lib/site-nav";
+import { FOOTER_NAV, LEGAL_NAV } from "@/lib/site-nav";
 import { buildWhatsAppHrefPlain, YOUTUBE_CHANNEL_URL } from "@/lib/whatsapp";
 
 /**
@@ -35,7 +35,7 @@ export function SiteFooter() {
 
   return (
     <footer className="band-dark text-foreground">
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-16 lg:py-20">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:py-20">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-5">
             <SiteLogo variant="on-dark" size="footer" />
@@ -89,10 +89,7 @@ export function SiteFooter() {
             </div>
           </div>
 
-          <nav
-            aria-label="חקירה"
-            className="lg:col-span-3"
-          >
+          <nav aria-label="חקירה" className="lg:col-span-3">
             <p className="text-xs font-medium tracking-wide text-muted">חקירה</p>
             <ul className="mt-3 flex flex-col gap-1 text-sm">
               <li>
@@ -116,10 +113,7 @@ export function SiteFooter() {
             </ul>
           </nav>
 
-          <nav
-            aria-label="המשך וחשבון"
-            className="lg:col-span-4"
-          >
+          <nav aria-label="המשך וחשבון" className="lg:col-span-4">
             <p className="text-xs font-medium tracking-wide text-muted">
               המשך וחשבון
             </p>
@@ -138,8 +132,19 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-12 border-t border-foreground/15 pt-6 text-sm text-foreground/60">
-          © {currentYear} השם לא משנה · NeverMinde: יקיר כהן
+        <div className="mt-12 flex flex-col gap-4 border-t border-foreground/15 pt-6 text-sm text-foreground/60 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {currentYear} השם לא משנה · NeverMinde: יקיר כהן</p>
+          <nav aria-label="מידע משפטי" className="flex flex-wrap gap-x-4 gap-y-2">
+            {LEGAL_NAV.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="inline-flex min-h-11 items-center text-foreground/70 no-underline transition-colors hover:text-foreground hover:no-underline"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </div>
     </footer>

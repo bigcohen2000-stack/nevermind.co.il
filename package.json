@@ -15,6 +15,9 @@
     "unlisted:mark": "node scripts/mark-unlisted.mjs",
     "members:stats": "node scripts/members-stats.mjs",
     "videos:meta": "node scripts/backfill-video-meta.mjs",
+    "videos:audit": "node scripts/audit-videos.mjs",
+    "videos:sync": "npx tsx scripts/sync-library.ts",
+    "investigation:apply": "node scripts/apply-investigation-protocol.mjs",
     "perf:check": "node scripts/perf-check.mjs",
     "vapid:generate": "web-push generate-vapid-keys"
   },

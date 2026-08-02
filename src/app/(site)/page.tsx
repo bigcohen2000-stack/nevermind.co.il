@@ -1,16 +1,29 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { ExploreLinks } from "@/components/search/explore-links";
 import { HeroSearchSection } from "@/components/search/hero-search-section";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
+import { HeartQuestionsStrip } from "@/components/community/heart-questions-strip";
+import { HomeLiveStrip } from "@/components/live/home-live-strip";
+import { InvestigationFactsStrip } from "@/components/members/investigation-facts-strip";
+import { SiteBanner } from "@/components/site/site-banner";
 import { ContinueWatchingSection } from "@/components/videos/continue-watching-section";
 import { getLatestContinueWatching } from "@/actions/video-progress";
 import { CATEGORY_LABELS, getAllArticles } from "@/lib/content/articles";
+import { CORE_INVESTIGATION_TOPICS } from "@/lib/videos/core-library";
 import { PATH_OFFERS, PROCESS_STEPS } from "@/lib/content/offers";
+import { getLivePublicStatus } from "@/lib/live/status";
 import { getSpotifyShowUrl } from "@/lib/podcast/links";
+import { shareImageMetadata } from "@/lib/og/share-image";
 import { buildWhatsAppHref, YOUTUBE_CHANNEL_URL } from "@/lib/whatsapp";
+
+const HOME_OG_TITLE = "להפריד עובדה מסיפור.";
+
+/** Flagship lecture preview on the home video band. */
+const HOME_LECTURE_PREVIEW = CORE_INVESTIGATION_TOPICS[0];
 
 export const metadata: Metadata = {
   title: {
@@ -21,6 +34,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://nevermind.co.il",
   },
+  ...shareImageMetadata(HOME_OG_TITLE),
 };
 
 const HOME_PLACEHOLDERS = [
@@ -42,11 +56,12 @@ function HomeSearchFallback() {
   );
 }
 
-const mechanisms = [
-  { index: "01", label: "יחסים", body: "משפחה, תקשורת, האשמה, ניהול קונפליקט." },
-  { index: "02", label: "קיום", body: "הישרדות, כסף, לחץ, עבודה, הרגלים." },
-  { index: "03", label: "זהות", body: "האגו, רצון חופשי, תפיסת המציאות, תודעה." },
-];
+const mechanisms = CORE_INVESTIGATION_TOPICS.slice(0, 3).map((topic, i) => ({
+  index: String(i + 1).padStart(2, "0"),
+  label: topic.label,
+  body: topic.probe,
+  youtubeId: topic.youtubeId,
+}));
 
 const mechanismStagger = ["lg:mt-0", "lg:mt-10", "lg:mt-20"];
 
@@ -57,6 +72,7 @@ export default async function Home() {
     "היי, אני באתר ויש לי שאלה. מתי נוח לך שנדבר?",
   );
   const continueWatching = await getLatestContinueWatching().catch(() => null);
+  const liveStatus = await getLivePublicStatus();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -130,6 +146,12 @@ export default async function Home() {
         </div>
       </section>
 
+      <HomeLiveStrip status={liveStatus} />
+
+      <InvestigationFactsStrip tone="paper" />
+
+      <HeartQuestionsStrip surface="home" />
+
       <ContinueWatchingSection serverItem={continueWatching} />
 
       {/* 2 — CORE MECHANISMS ----------------------------------------------- */}
@@ -147,8 +169,8 @@ export default async function Home() {
               שלושה צירים. בלי דרמה.
             </h2>
             <p className="mt-4 max-w-prose leading-relaxed">
-              מנגנון הוא תבנית חוזרת שפועלת באופן צפוי תחת תנאים מסוימים. הרגש
-              הוא התוצאה הגלויה. המנגנון הוא המבנה שמתחת.
+              חקירה של מנגנונים שחוזרים: פחד, הזדהות, בחירה. בלי שמות אורחים
+              כקטגוריה. רק המושג.
             </p>
           </div>
 
@@ -156,18 +178,18 @@ export default async function Home() {
             {mechanisms.map((m, i) => (
               <li key={m.label} className={mechanismStagger[i]}>
                 <Link
-                  href={`/search?q=${encodeURIComponent(m.label)}`}
+                  href={`/watch/${m.youtubeId}`}
                   className="card card-hover group flex h-full flex-col p-6 text-foreground no-underline hover:no-underline sm:p-8"
                 >
                   <span className="text-5xl font-semibold tracking-tight text-foreground/15">
                     {m.index}
                   </span>
-                  <span className="mt-6 text-xl font-semibold tracking-tight transition-colors duration-200 group-hover:text-action lg:text-2xl">
+                  <h3 className="mt-4 text-xl font-semibold tracking-tight group-hover:text-action">
                     {m.label}
-                  </span>
-                  <span className="mt-3 leading-relaxed text-foreground/80">
+                  </h3>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-foreground/75">
                     {m.body}
-                  </span>
+                  </p>
                 </Link>
               </li>
             ))}
@@ -175,7 +197,7 @@ export default async function Home() {
 
           <div className="mt-12">
             <Link href="/mechanisms" className="link-arrow">
-              למפת המנגנונים ←
+              למפת המנגנונים
             </Link>
           </div>
         </div>
@@ -201,6 +223,10 @@ export default async function Home() {
             <Link href="/paths" className="link-arrow self-start sm:self-auto">
               לכל המסלולים ←
             </Link>
+          </div>
+
+          <div className="mt-8 max-w-xl">
+            <SiteBanner slot="home_join" density="compact" />
           </div>
 
           <ul className="mt-10 grid gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6">
@@ -267,11 +293,11 @@ export default async function Home() {
       {/* 5 — ARTICLES PREVIEW ---------------------------------------------- */}
       <section
         aria-labelledby="articles-title"
-        className="band-paper border-y border-foreground/10"
+        className="bg-background text-foreground border-y border-foreground/10"
       >
         <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-28">
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
+            <div className="max-w-xl">
               <Eyebrow>מאמרים</Eyebrow>
               <h2
                 id="articles-title"
@@ -279,40 +305,42 @@ export default async function Home() {
               >
                 חקירה בכתב.
               </h2>
+              <p className="mt-4 leading-relaxed text-foreground/75">
+                ניתוח לוגי של מנגנון אחד בכל מאמר. הפרדה בין עובדה לבין סיפור.
+              </p>
             </div>
             <Link href="/articles" className="link-arrow">
               כל המאמרים ←
             </Link>
           </div>
 
-          <ul className="mt-14 grid gap-8 lg:grid-cols-12">
-            {articles.map((article, i) => (
-              <li
-                key={article.slug}
-                className={
-                  i % 2 === 0 ? "lg:col-span-7" : "lg:col-span-5 lg:mt-20"
-                }
-              >
+          <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+            {articles.slice(0, 3).map((article, i) => (
+              <li key={article.slug}>
                 <Link
                   href={`/articles/${article.slug}`}
-                  className="card card-hover group block overflow-hidden text-foreground no-underline hover:no-underline"
+                  className="card card-hover group flex h-full flex-col overflow-hidden text-foreground no-underline hover:no-underline"
                 >
-                  <div className="flex aspect-[16/10] items-center justify-center border-b border-foreground/10 bg-paper">
-                    <span
-                      aria-hidden="true"
-                      className="accent-rule mx-auto"
-                    />
-                  </div>
-                  <div className="p-8">
-                    <span className="block text-sm text-muted">
-                      {CATEGORY_LABELS[article.category]}
-                    </span>
-                    <span className="mt-2 block text-xl font-semibold tracking-tight transition-colors duration-200 group-hover:text-action lg:text-2xl">
+                  <div className="relative flex min-h-[11rem] flex-col justify-between gap-6 bg-ink p-6 text-[#FAFAF8] sm:min-h-[12.5rem] sm:p-7">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-medium tracking-[0.16em] text-[#9CA3AF] uppercase">
+                        {CATEGORY_LABELS[article.category]}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className="text-3xl font-semibold tracking-tight text-[#FAFAF8]/15"
+                      >
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-semibold leading-snug tracking-tight text-[#FAFAF8] transition-colors duration-200 group-hover:text-[#D42B2B] sm:text-2xl">
                       {article.title}
-                    </span>
-                    <span className="mt-3 block max-w-prose leading-relaxed text-foreground/80">
+                    </h3>
+                  </div>
+                  <div className="flex flex-1 flex-col p-6 sm:p-7">
+                    <p className="flex-1 text-sm leading-relaxed text-foreground/80 sm:text-base">
                       {article.description}
-                    </span>
+                    </p>
                     <span className="mt-5 inline-block text-sm font-medium text-action">
                       לקריאה ←
                     </span>
@@ -369,20 +397,31 @@ export default async function Home() {
 
             <div className="lg:col-span-7">
               <Link
-                href="/videos"
-                aria-label="לעמוד הווידאו"
+                href={`/watch/${HOME_LECTURE_PREVIEW.youtubeId}`}
+                aria-label={`לצפייה: ${HOME_LECTURE_PREVIEW.label}`}
                 className="group relative block no-underline hover:no-underline"
               >
-                <div className="media-frame flex aspect-video w-full items-center justify-center transition-colors duration-200 group-hover:border-foreground/50">
-                  <span className="flex h-20 w-20 items-center justify-center rounded-full border border-foreground/40 transition-colors duration-200 group-hover:border-action">
-                    <span
-                      aria-hidden="true"
-                      className="ms-1 h-0 w-0 border-y-[12px] border-s-[20px] border-y-transparent border-s-background transition-colors duration-200 group-hover:border-s-action"
-                    />
+                <div className="media-frame relative aspect-video w-full overflow-hidden transition-colors duration-200 group-hover:border-foreground/50">
+                  <Image
+                    src={`https://i.ytimg.com/vi/${HOME_LECTURE_PREVIEW.youtubeId}/hqdefault.jpg`}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 58vw"
+                    priority={false}
+                  />
+                  <span className="absolute inset-0 bg-black/35 transition-colors duration-200 group-hover:bg-black/25" />
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="flex h-16 w-16 items-center justify-center rounded-full border border-[#FAFAF8]/55 bg-black/45 transition-colors duration-200 group-hover:border-action sm:h-20 sm:w-20">
+                      <span
+                        aria-hidden="true"
+                        className="ms-1 h-0 w-0 border-y-[11px] border-s-[18px] border-y-transparent border-s-[#FAFAF8] transition-colors duration-200 group-hover:border-s-action sm:border-y-[12px] sm:border-s-[20px]"
+                      />
+                    </span>
                   </span>
                 </div>
-                <span className="card relative z-20 mt-[-2rem] block w-max px-4 py-2 text-sm text-foreground shadow-float lg:absolute lg:-bottom-5 lg:-start-5 lg:mt-0">
-                  פודקאסט מרפסת, ספוטיפיי
+                <span className="card relative z-20 mt-[-2rem] ms-4 block w-max max-w-[calc(100%-2rem)] px-4 py-2 text-sm text-foreground shadow-float lg:absolute lg:-bottom-5 lg:-start-5 lg:ms-0 lg:mt-0">
+                  {HOME_LECTURE_PREVIEW.label}
                 </span>
               </Link>
             </div>

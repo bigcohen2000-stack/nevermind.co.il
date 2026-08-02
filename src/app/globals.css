@@ -1,39 +1,36 @@
 @import "tailwindcss";
 
 /*
- * NeverMinde — Design Foundation (dark shell)
+ * NeverMinde — Design Foundation (cream canvas + dark bands)
  *
- * Pure black page with light default text. Dot Background sits behind
- * content. Section rhythm uses near-black paper lifts and raised ink panels.
- * Soft editorial shadows, modest rounded corners, reduced-motion-aware hover.
- * No external fonts. No gradients louder than a whisper.
+ * Off-white page (#FAFAF8), dark text (#1A1A1A). Dark bands use #121212
+ * with light text via scoped CSS variables. Sharp geometry: radius 0, no shadow.
  */
 
 :root {
-  /* Brand tokens — dark-first shell */
-  --background: #000000; /* pure black page */
-  --foreground: #fafaf8; /* light primary text */
-  --action: #d42b2b; /* action red */
-  --muted: #9ca3af; /* muted gray */
+  /* Brand tokens — cream canvas */
+  --background: #fafaf8;
+  --foreground: #1a1a1a;
+  --action: #d42b2b;
+  --muted: #9ca3af;
+
+  accent-color: var(--action);
 
   /* Supporting tones */
-  --ink: #000000; /* aligns with pure black shell */
-  --ink-raised: #141519; /* lifted surface for cards/panels */
-  --paper: #0a0a0b; /* subtle section lift */
+  --ink: #121212;
+  --ink-raised: #1a1a1a;
+  --paper: #fafaf8;
 
-  /* Hairlines (borders) — light on dark */
-  --hairline: rgba(250, 250, 248, 0.12);
-  --hairline-strong: rgba(250, 250, 248, 0.2);
+  /* Hairlines — dark on cream */
+  --hairline: rgba(26, 26, 26, 0.12);
+  --hairline-strong: rgba(26, 26, 26, 0.2);
   --hairline-on-dark: rgba(250, 250, 248, 0.16);
   --hairline-on-dark-strong: rgba(250, 250, 248, 0.3);
 
-  /* Soft editorial shadows on black */
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4),
-    0 12px 30px -16px rgba(0, 0, 0, 0.55);
-  --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.45),
-    0 30px 56px -24px rgba(0, 0, 0, 0.7);
+  /* Sharp protocol: no elevation shadows */
+  --shadow-soft: none;
+  --shadow-float: none;
 
-  /* RTL-friendly system font stack with Hebrew support. No external fonts. */
   --font-sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue",
     "Arial Hebrew", Arial, sans-serif;
 }
@@ -52,9 +49,9 @@
   --shadow-soft: var(--shadow-soft);
   --shadow-float: var(--shadow-float);
 
-  --radius-btn: 0.625rem;
-  --radius-card: 0.875rem;
-  --radius-frame: 1.25rem;
+  --radius-btn: 0;
+  --radius-card: 0;
+  --radius-frame: 0;
 }
 
 *,
@@ -72,7 +69,7 @@ html {
 
 body {
   margin: 0;
-  background: #000000;
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   /* RTL typography defaults (logical alignment) */
@@ -173,13 +170,19 @@ p {
 /* Reusable editorial classes                                              */
 /* ----------------------------------------------------------------------- */
 @layer components {
-  /* Dark band: near-transparent so site-wide dots show through.
-     Wrap inner content in `relative z-10`. */
+  /* Dark band: ink shell with light text (scoped tokens for children). */
   .band-dark {
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    background-color: transparent;
+    --background: #121212;
+    --foreground: #fafaf8;
+    --muted: #9ca3af;
+    --paper: #1a1a1a;
+    --ink-raised: #1a1a1a;
+    --hairline: rgba(250, 250, 248, 0.12);
+    --hairline-strong: rgba(250, 250, 248, 0.2);
+    background-color: var(--ink);
     color: var(--foreground);
   }
   .band-dark::before {
@@ -190,67 +193,56 @@ p {
     pointer-events: none;
     background: radial-gradient(
       55% 45% at 0% 115%,
-      rgba(212, 43, 43, 0.05),
+      rgba(212, 43, 43, 0.06),
       transparent 60%
     );
   }
 
-  /* Raised near-black band for section rhythm. */
+  /* Paper band stays on cream canvas. */
   .band-paper {
     background-color: var(--paper);
     color: var(--foreground);
   }
 
-  /* Editorial card — raised dark surface. */
+  /* Editorial card — sharp 1px border, no shadow. */
   .card {
     border: 1px solid var(--hairline-strong);
     border-radius: var(--radius-card);
-    background-color: var(--ink-raised);
-    box-shadow: var(--shadow-soft);
+    background-color: var(--background);
+    box-shadow: none;
     transition:
-      transform 0.25s ease,
-      box-shadow 0.25s ease,
-      border-color 0.25s ease;
+      border-color 0.2s ease,
+      background-color 0.2s ease;
   }
 
-  /* Visible keyboard focus for interactive cards/rows and quiet links.
-     Mouse users still see only the hover treatment. */
   .card:focus-visible,
   .row-link:focus-visible,
   .link-arrow:focus-visible {
     outline: 2px solid var(--action);
     outline-offset: 3px;
-    border-radius: var(--radius-btn);
+    border-radius: 0;
   }
 
-  /* Editorial card — elevated dark context. */
   .card-dark {
     border: 1px solid var(--hairline-on-dark);
     border-radius: var(--radius-card);
     background-color: var(--ink-raised);
-    box-shadow: 0 24px 48px -30px rgba(0, 0, 0, 0.7);
-    transition:
-      transform 0.25s ease,
-      border-color 0.25s ease;
+    box-shadow: none;
+    transition: border-color 0.2s ease;
   }
 
-  /* Opt-in hover lift for interactive cards. */
   .card-hover:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-float);
+    transform: none;
+    box-shadow: none;
+    border-color: var(--action);
   }
 
-  /* Media frame (video/portrait placeholders). */
   .media-frame {
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-frame);
-    border: 1px solid var(--hairline-on-dark-strong);
-    background: radial-gradient(
-      120% 120% at 50% 0%,
-      rgba(255, 255, 255, 0.06),
-      transparent 62%
-    );
+    border: 1px solid var(--hairline-strong);
+    background: var(--paper);
     transition: border-color 0.25s ease;
   }
   .media-frame-light {
@@ -308,12 +300,12 @@ p {
     background: transparent;
   }
   .btn-secondary:hover {
-    background-color: rgba(250, 250, 248, 0.06);
-    border-color: rgba(250, 250, 248, 0.35);
+    background-color: rgba(26, 26, 26, 0.05);
+    border-color: rgba(26, 26, 26, 0.35);
   }
   .btn-on-dark {
     border-color: var(--hairline-on-dark-strong);
-    color: var(--foreground);
+    color: #fafaf8;
     background: transparent;
   }
   .btn-on-dark:hover {
@@ -354,7 +346,7 @@ p {
     height: 2px;
     width: 4rem;
     background-color: var(--action);
-    border-radius: 999px;
+    border-radius: 0;
   }
 
   /* Eyebrow label — a quiet muted line with a short red editorial tick that
@@ -374,7 +366,7 @@ p {
     flex: none;
     width: 1.5rem;
     height: 2px;
-    border-radius: 999px;
+    border-radius: 0;
     background-color: var(--action);
   }
   .eyebrow-on-dark {
@@ -395,10 +387,41 @@ p {
   .nav-link:focus-visible {
     outline: 2px solid var(--action);
     outline-offset: 4px;
-    border-radius: 4px;
+    border-radius: 0;
   }
   .nav-link[aria-current="page"] {
     color: var(--action);
+  }
+
+  /* Wide-screen header rail: compact pill links, no wrap chaos. */
+  .nav-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25;
+    color: color-mix(in srgb, var(--foreground) 82%, transparent);
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .nav-pill:hover {
+    color: var(--foreground);
+    background-color: color-mix(in srgb, var(--foreground) 6%, transparent);
+    text-decoration: none;
+  }
+  .nav-pill:focus-visible {
+    outline: 2px solid var(--action);
+    outline-offset: 2px;
+  }
+  .nav-pill-active,
+  .nav-pill[aria-current="page"] {
+    color: var(--action);
+    background-color: color-mix(in srgb, var(--action) 12%, transparent);
   }
 
   /* Editorial index row — a numbered article entry that reads like a table of

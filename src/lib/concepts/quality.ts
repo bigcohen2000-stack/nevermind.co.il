@@ -3,6 +3,11 @@
  * Sync and UI chips prefer this list over raw token noise.
  */
 
+import {
+  INVESTIGATION_TAGS,
+  conceptCategoryForName,
+} from "@/lib/videos/investigation";
+
 export const CURATED_CONCEPTS = [
   "מציאות",
   "הזדהות",
@@ -22,6 +27,8 @@ export const CURATED_CONCEPTS = [
   "רצון חופשי",
   "האשמה",
   "תודעה",
+  "אליעד כהן",
+  ...INVESTIGATION_TAGS,
 ] as const;
 
 export type CuratedConcept = (typeof CURATED_CONCEPTS)[number];
@@ -113,4 +120,9 @@ export function extractCuratedConcepts(
 
 export function isCuratedConcept(name: string): boolean {
   return CURATED_SET.has(name.trim());
+}
+
+/** Category to store on concepts upsert (investigation tags vs null). */
+export function curatedConceptCategory(name: string): string | null {
+  return conceptCategoryForName(name);
 }

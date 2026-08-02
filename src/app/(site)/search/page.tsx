@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { RabbitHoleSearchBridge } from "@/components/premium/rabbit-hole-search-bridge";
 import { HeroSearchSection } from "@/components/search/hero-search-section";
+import { JsonLd } from "@/components/seo/json-ld";
 import { Eyebrow } from "@/components/ui/editorial";
 import { SearchResults } from "@/components/videos/search-results";
 import { VideoGridSkeleton } from "@/components/videos/video-grid-skeleton";
@@ -11,6 +12,8 @@ import {
   parseSearchPageParams,
   searchHref,
 } from "@/lib/search/search-params";
+import { shareImageMetadata } from "@/lib/og/share-image";
+import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
 import { buildSmsHref, buildWhatsAppHref } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
@@ -26,17 +29,20 @@ export async function generateMetadata({
   const query = q.trim();
   const titleParts = [query ? `חיפוש: ${query}` : "חיפוש"];
   if (page > 1) titleParts.push(`עמוד ${page}`);
+  const title = titleParts.join(" | ");
+  const ogTitle = query ? `חיפוש: ${query}` : "חקירה לפי נושא";
 
   const canonicalPath = searchHref({ q: query, page });
 
   return {
-    title: titleParts.join(" | "),
+    title,
     description: query
       ? `תוצאות חיפוש עבור ${query}. מאמרים, מושגים וסרטונים ב-NeverMinde.`
       : "חקירה לפי נושא: מאמרים, מושגים וסרטונים ב-NeverMinde.",
     alternates: {
       canonical: `https://nevermind.co.il${canonicalPath}`,
     },
+    ...shareImageMetadata(ogTitle),
     ...(page > 1
       ? { robots: { index: false, follow: true } }
       : {}),
@@ -64,12 +70,15 @@ export default async function SearchPage({ searchParams }: PageProps) {
     },
   };
 
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "בית", path: "/" },
+    { name: "חיפוש", path: "/search" },
+  ]);
+
   return (
     <main className="w-full bg-background text-foreground">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={jsonLd} />
+      <JsonLd data={breadcrumbLd} />
 
       <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-24">
         <RabbitHoleSearchBridge

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import {
   fulfillSingleVideoLead,
@@ -20,6 +20,35 @@ const STATUS_OPTIONS = [
   "sent",
   "closed",
 ] as const;
+
+type StatusFilter = "all" | "open" | "paid" | "sent" | "closed";
+
+const FILTER_CHIPS: { id: StatusFilter; label: string }[] = [
+  { id: "all", label: "הכל" },
+  { id: "open", label: "פתוח" },
+  { id: "paid", label: "שולם" },
+  { id: "sent", label: "נשלח" },
+  { id: "closed", label: "סגור" },
+];
+
+const STATUS_LABEL: Record<(typeof STATUS_OPTIONS)[number], string> = {
+  requested: "פתוח",
+  chatting: "בשיחה",
+  paid: "שולם",
+  sent: "נשלח",
+  closed: "סגור",
+};
+
+function matchesFilter(status: string, filter: StatusFilter): boolean {
+  if (filter === "all") return true;
+  if (filter === "open") {
+    return status === "requested" || status === "chatting";
+  }
+  if (filter === "paid") return status === "paid";
+  if (filter === "sent") return status === "sent";
+  if (filter === "closed") return status === "closed";
+  return true;
+}
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("he-IL", {
@@ -65,7 +94,8 @@ function LeadRow({
             {formatDateTime(lead.created_at)}
           </p>
           <p className="mt-1 text-xs font-medium text-red-400/90">
-            {lead.status}
+            {STATUS_LABEL[lead.status as (typeof STATUS_OPTIONS)[number]] ??
+              lead.status}
           </p>
           <p className="mt-1 font-mono text-[10px] text-zinc-600">
             {lead.source}
@@ -103,7 +133,7 @@ function LeadRow({
           >
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {STATUS_LABEL[s]}
               </option>
             ))}
           </select>
@@ -200,33 +230,60 @@ export function SingleVideoLeadsDashboard({
   data,
 }: SingleVideoLeadsDashboardProps) {
   const [hint, setHint] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  const filteredRows = useMemo(
+    () => data.rows.filter((row) => matchesFilter(row.status, statusFilter)),
+    [data.rows, statusFilter],
+  );
 
   return (
     <section className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-100">
-          Single-video leads
+        <h2 className="text-base font-semibold text-zinc-100">
+          לידים לסרטון בודד
         </h2>
         <p className="mt-1 text-sm text-zinc-400">
-          בקשות צפייה בודדת מ־CTA. רישום לחיצה, עדכון סטטוס, הנפקת קישור מועדון.
+          בקשות צפייה בודדת מה־CTA. רישום לחיצה, עדכון סטטוס, הנפקת קישור.
         </p>
       </div>
 
+      <div
+        className="flex flex-wrap gap-2"
+        role="group"
+        aria-label="סינון לפי סטטוס"
+      >
+        {FILTER_CHIPS.map((chip) => (
+          <button
+            key={chip.id}
+            type="button"
+            onClick={() => setStatusFilter(chip.id)}
+            className={`border px-3 py-1.5 text-xs transition ${
+              statusFilter === chip.id
+                ? "border-zinc-100 bg-zinc-100 text-zinc-950"
+                : "border-zinc-700 text-zinc-300 hover:border-zinc-500"
+            }`}
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-          <p className="text-xs text-zinc-500">Today</p>
+        <div className="border border-zinc-800 bg-zinc-900/60 p-4">
+          <p className="text-xs text-zinc-500">היום</p>
           <p className="mt-2 text-3xl font-semibold text-zinc-50">
             {data.totalToday}
           </p>
         </div>
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-          <p className="text-xs text-zinc-500">Last 7 days</p>
+        <div className="border border-zinc-800 bg-zinc-900/60 p-4">
+          <p className="text-xs text-zinc-500">7 ימים</p>
           <p className="mt-2 text-3xl font-semibold text-zinc-50">
             {data.totalThisWeek}
           </p>
         </div>
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-          <p className="text-xs text-zinc-500">Open</p>
+        <div className="border border-zinc-800 bg-zinc-900/60 p-4">
+          <p className="text-xs text-zinc-500">פתוחים</p>
           <p className="mt-2 text-3xl font-semibold text-zinc-50">
             {data.openCount}
           </p>
@@ -239,13 +296,15 @@ export function SingleVideoLeadsDashboard({
         </p>
       ) : null}
 
-      {data.rows.length === 0 ? (
+      {filteredRows.length === 0 ? (
         <p className="text-sm text-zinc-400">
-          No single-video leads yet. CTA clicks will appear here.
+          {data.rows.length === 0
+            ? "עדיין אין לידים. לחיצות על בקשת סרטון יופיעו כאן."
+            : "אין לידים בסינון הזה."}
         </p>
       ) : (
         <ul className="space-y-4">
-          {data.rows.map((lead) => (
+          {filteredRows.map((lead) => (
             <li key={lead.id}>
               <LeadRow lead={lead} onRefreshHint={setHint} />
             </li>

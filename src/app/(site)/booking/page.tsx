@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { ThoughtDeconstructor } from "@/components/booking/thought-deconstructor";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
+import { shareImageMetadata } from "@/lib/og/share-image";
 
 export const metadata: Metadata = {
   title: "מפרק מחשבות",
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://nevermind.co.il/booking",
   },
+  ...shareImageMetadata("מפרק מחשבות."),
 };
 
 type PageProps = {

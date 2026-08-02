@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { PrivatePodcastBanner } from "@/components/members/private-podcast-banner";
 import { WhatsAppTrackCta } from "@/components/paths/whatsapp-track-cta";
 import {
   ARCHIVE_PRICING_ROWS,
@@ -137,7 +138,8 @@ export function PricingTracks({ hasVideoAccess = false }: PricingTracksProps) {
           </h2>
           <p className="mt-3 max-w-prose text-sm leading-relaxed text-[#9CA3AF]">
             בחרו מסגרת. הכפתור שולח בקשה עם המסגרת והמחיר שלה. הגישה ניתנת ידנית
-            אחרי שיחת התאמה.
+            אחרי שיחת התאמה. כל מסגרת כוללת מאגר מלא ופיד פודקאסט פרטי. חינם
+            בלי מסגרת: סרטונים פתוחים, מאמרים, ופיד RSS ציבורי.
           </p>
 
           {/* Mobile: stacked cards */}
@@ -278,6 +280,13 @@ export function PricingTracks({ hasVideoAccess = false }: PricingTracksProps) {
           <p className="mt-4 max-w-prose text-sm leading-relaxed text-[#9CA3AF]">
             {ARCHIVE_TOOLS_NOTE}
           </p>
+
+          <div className="mt-8">
+            <PrivatePodcastBanner
+              density="compact"
+              memberMode={Boolean(hasVideoAccess)}
+            />
+          </div>
 
           <h3 className="mt-10 text-sm font-medium tracking-wide text-[#D42B2B]">
             מנגנונים במאגר (רשימה שמית)

@@ -20,6 +20,18 @@ export function getPodcastAudioUrl(youtubeId: string): string {
   return `${getPodcastSiteUrl()}/api/podcast/audio/${encodeURIComponent(youtubeId)}`;
 }
 
+/** Personal club vault feed (token required on every request). */
+export function getClubPodcastFeedUrl(rawToken: string): string {
+  return `${getPodcastSiteUrl()}/api/club/podcast.xml?token=${encodeURIComponent(rawToken)}`;
+}
+
+export function getClubPodcastAudioUrl(
+  youtubeId: string,
+  rawToken: string,
+): string {
+  return `${getPodcastSiteUrl()}/api/club/podcast/audio/${encodeURIComponent(youtubeId)}?token=${encodeURIComponent(rawToken)}`;
+}
+
 export function getPodcastOwnerEmail(): string {
   return (
     process.env.PODCAST_OWNER_EMAIL?.trim() ||

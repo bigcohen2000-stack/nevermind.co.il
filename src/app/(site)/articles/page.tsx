@@ -1,19 +1,28 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { JsonLd } from "@/components/seo/json-ld";
 import { Eyebrow } from "@/components/ui/editorial";
 import { CATEGORY_LABELS, getAllArticles } from "@/lib/content/articles";
+import { shareImageMetadata } from "@/lib/og/share-image";
+import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
 
 export const metadata: Metadata = {
   title: "מאמרים",
   description: "ניתוח לוגי בכתב. הפרדה בין עובדה לבין סיפור, ללא דרמה.",
+  ...shareImageMetadata("ניתוח לוגי, מנגנון אחר מנגנון."),
 };
 
 export default function ArticlesPage() {
   const articles = getAllArticles();
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "בית", path: "/" },
+    { name: "מאמרים", path: "/articles" },
+  ]);
 
   return (
     <main className="w-full text-start">
+      <JsonLd data={breadcrumbLd} />
       {/* 1 — HERO (ink) ----------------------------------------------------- */}
       <section aria-labelledby="articles-hero-title" className="band-dark">
         <span

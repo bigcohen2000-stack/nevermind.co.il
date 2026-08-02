@@ -32,12 +32,27 @@ export function ArticleHeader({
 
       <div className="relative z-10 mx-auto w-full max-w-3xl px-6 py-20 lg:py-28">
         <nav aria-label="פירורי לחם" className="text-sm">
-          <Link
-            href="/articles"
-            className="text-foreground/70 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
-          >
-            מאמרים
-          </Link>
+          <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 p-0 text-foreground/70">
+            <li>
+              <Link
+                href="/"
+                className="no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
+              >
+                בית
+              </Link>
+            </li>
+            <li aria-hidden="true" className="text-foreground/40">
+              /
+            </li>
+            <li>
+              <Link
+                href="/articles"
+                className="no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
+              >
+                מאמרים
+              </Link>
+            </li>
+          </ol>
         </nav>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">

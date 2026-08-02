@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { colors } from "@/lib/design-tokens";
+import { shareOgImage, shareOgImageUrl } from "@/lib/og/share-image";
 
 const SITE_URL = "https://nevermind.co.il";
+const DEFAULT_OG_TITLE = "השם לא משנה";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -34,6 +36,11 @@ export const metadata: Metadata = {
     title: "השם לא משנה · NeverMinde",
     description:
       "ניתוח לוגי של המציאות. הפרדה בין עובדה לבין סיפור, ללא דרמה.",
+    images: shareOgImage(DEFAULT_OG_TITLE),
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [shareOgImageUrl(DEFAULT_OG_TITLE)],
   },
 };
 

@@ -23,7 +23,8 @@ type HeaderAuthControlsProps = {
 };
 
 /**
- * Header auth entry: passwordless account + club phone/password path.
+ * Header auth: personal account only (Google / email).
+ * Club gate stays contextual on members / locked watch, not here.
  */
 export function HeaderAuthControls({
   session,
@@ -39,7 +40,7 @@ export function HeaderAuthControls({
 
   const authLabel = formatHeaderAuthLabel(session.authEmail);
   const clubLabel = formatHeaderClubLabel(session.clubPhone);
-  const isSignedIn = Boolean(session.authUserId || session.clubPhone);
+  const hasAuth = Boolean(session.authUserId);
 
   useEffect(() => {
     if (!open) return;
@@ -82,70 +83,54 @@ export function HeaderAuthControls({
     return (
       <div className="space-y-2 border-t border-foreground/10 pt-4">
         <p className="px-2 text-xs font-medium tracking-wide text-muted">
-          התחברות
+          חשבון
         </p>
-        {isSignedIn ? (
+        {hasAuth ? (
           <div className="space-y-1 px-2 text-sm">
             {authLabel ? (
               <p className="text-foreground/90">חשבון: {authLabel}</p>
             ) : null}
             {clubLabel ? (
-              <p className="text-foreground/90">מועדון: {clubLabel}</p>
+              <p className="text-foreground/70">מועדון: {clubLabel}</p>
             ) : null}
             <div className="flex flex-col gap-1 pt-2">
-              {session.authUserId ? (
-                <>
-                  <Link
-                    href="/my-list"
-                    className="nav-link flex min-h-11 items-center"
-                    onClick={onNavigate}
-                  >
-                    <span aria-hidden="true" className="me-2">
-                      ⭐
-                    </span>
-                    הרשימה שלי
-                  </Link>
-                  <Link
-                    href="/profile"
-                    className="nav-link flex min-h-11 items-center"
-                    onClick={onNavigate}
-                  >
-                    <span aria-hidden="true" className="me-2">
-                      👤
-                    </span>
-                    פרופיל
-                  </Link>
-                  <button
-                    type="button"
-                    disabled={pending}
-                    className="flex min-h-11 items-center text-start text-muted hover:text-action disabled:opacity-50"
-                    onClick={signOutAccount}
-                  >
-                    התנתק מהחשבון
-                  </button>
-                </>
-              ) : null}
+              <Link
+                href="/my-list"
+                className="nav-link flex min-h-11 items-center"
+                onClick={onNavigate}
+              >
+                <span aria-hidden="true" className="me-2">
+                  ⭐
+                </span>
+                הרשימה שלי
+              </Link>
+              <Link
+                href="/profile"
+                className="nav-link flex min-h-11 items-center"
+                onClick={onNavigate}
+              >
+                <span aria-hidden="true" className="me-2">
+                  👤
+                </span>
+                פרופיל
+              </Link>
+              <button
+                type="button"
+                disabled={pending}
+                className="flex min-h-11 items-center text-start text-muted hover:text-action disabled:opacity-50"
+                onClick={signOutAccount}
+              >
+                התנתק מהחשבון
+              </button>
               {session.clubPhone ? (
-                <>
-                  <Link
-                    href="/members"
-                    className="nav-link flex min-h-11 items-center"
-                    onClick={onNavigate}
-                  >
-                    <span aria-hidden="true" className="me-2">
-                      🔑
-                    </span>
-                    אזור מועדון
-                  </Link>
-                  <button
-                    type="button"
-                    disabled={pending}
-                    className="flex min-h-11 items-center text-start text-muted hover:text-action disabled:opacity-50"
-                    onClick={signOutClub}
-                  >
-                    יציאה מהמועדון
-                  </button>
-                </>
+                <button
+                  type="button"
+                  disabled={pending}
+                  className="flex min-h-11 items-center text-start text-muted hover:text-action disabled:opacity-50"
+                  onClick={signOutClub}
+                >
+                  יציאה מהמועדון
+                </button>
               ) : null}
             </div>
           </div>
@@ -160,21 +145,18 @@ export function HeaderAuthControls({
                 <span aria-hidden="true" className="me-2">
                   ✉️
                 </span>
-                חשבון (Google / אימייל)
+                התחברות (Google / אימייל)
               </Link>
             </li>
-            <li>
-              <Link
-                href="/members#login"
-                className="nav-link flex min-h-12 items-center px-2 text-base"
-                onClick={onNavigate}
-              >
-                <span aria-hidden="true" className="me-2">
-                  🔑
-                </span>
-                כניסת מועדון (טלפון + סיסמה)
-              </Link>
-            </li>
+            {session.clubPhone ? (
+              <li className="px-2 pt-2 text-xs text-muted">
+                מועדון פתוח במכשיר ({clubLabel}). יציאה מ{" "}
+                <Link href="/members#login" className="underline" onClick={onNavigate}>
+                  אזור המועדון
+                </Link>
+                .
+              </li>
+            ) : null}
           </ul>
         )}
       </div>
@@ -194,14 +176,14 @@ export function HeaderAuthControls({
         aria-expanded={open}
         aria-controls={menuId}
         aria-haspopup="menu"
-        aria-label={isSignedIn ? "החשבון" : "התחברות"}
+        aria-label={hasAuth ? "החשבון" : "התחברות"}
         onClick={() => setOpen((v) => !v)}
       >
-        <span aria-hidden="true">{isSignedIn ? "👤" : "🔐"}</span>
+        <span aria-hidden="true">{hasAuth ? "👤" : "🔐"}</span>
         {compact ? (
-          <span className="sr-only">{isSignedIn ? "החשבון" : "התחברות"}</span>
+          <span className="sr-only">{hasAuth ? "החשבון" : "התחברות"}</span>
         ) : (
-          <span>{isSignedIn ? "החשבון" : "התחברות"}</span>
+          <span>{hasAuth ? "החשבון" : "התחברות"}</span>
         )}
       </button>
 
@@ -211,7 +193,7 @@ export function HeaderAuthControls({
           role="menu"
           className="absolute end-0 z-[60] mt-2 w-64 border border-foreground/15 bg-background p-2 text-sm shadow-float"
         >
-          {isSignedIn ? (
+          {hasAuth ? (
             <div className="space-y-1">
               {authLabel ? (
                 <p className="px-2 py-1 text-xs text-muted">חשבון: {authLabel}</p>
@@ -219,69 +201,54 @@ export function HeaderAuthControls({
               {clubLabel ? (
                 <p className="px-2 py-1 text-xs text-muted">מועדון: {clubLabel}</p>
               ) : null}
-              {session.authUserId ? (
-                <>
-                  <Link
-                    role="menuitem"
-                    href="/my-list"
-                    className="flex min-h-10 items-center rounded-md px-2 hover:bg-paper"
-                    onClick={() => {
-                      setOpen(false);
-                      onNavigate?.();
-                    }}
-                  >
-                    הרשימה שלי
-                  </Link>
-                  <Link
-                    role="menuitem"
-                    href="/profile"
-                    className="flex min-h-10 items-center rounded-md px-2 hover:bg-paper"
-                    onClick={() => {
-                      setOpen(false);
-                      onNavigate?.();
-                    }}
-                  >
-                    פרופיל
-                  </Link>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    disabled={pending}
-                    className="flex min-h-10 w-full items-center rounded-md px-2 text-start text-muted hover:bg-paper disabled:opacity-50"
-                    onClick={signOutAccount}
-                  >
-                    התנתק מהחשבון
-                  </button>
-                </>
-              ) : null}
+              <Link
+                role="menuitem"
+                href="/my-list"
+                className="flex min-h-10 items-center rounded-md px-2 hover:bg-paper"
+                onClick={() => {
+                  setOpen(false);
+                  onNavigate?.();
+                }}
+              >
+                הרשימה שלי
+              </Link>
+              <Link
+                role="menuitem"
+                href="/profile"
+                className="flex min-h-10 items-center rounded-md px-2 hover:bg-paper"
+                onClick={() => {
+                  setOpen(false);
+                  onNavigate?.();
+                }}
+              >
+                פרופיל
+              </Link>
+              <button
+                type="button"
+                role="menuitem"
+                disabled={pending}
+                className="flex min-h-10 w-full items-center rounded-md px-2 text-start text-muted hover:bg-paper disabled:opacity-50"
+                onClick={signOutAccount}
+              >
+                התנתק מהחשבון
+              </button>
               {session.clubPhone ? (
-                <>
-                  <Link
-                    role="menuitem"
-                    href="/members"
-                    className="flex min-h-10 items-center rounded-md px-2 hover:bg-paper"
-                    onClick={() => {
-                      setOpen(false);
-                      onNavigate?.();
-                    }}
-                  >
-                    אזור מועדון
-                  </Link>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    disabled={pending}
-                    className="flex min-h-10 w-full items-center rounded-md px-2 text-start text-muted hover:bg-paper disabled:opacity-50"
-                    onClick={signOutClub}
-                  >
-                    יציאה מהמועדון
-                  </button>
-                </>
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={pending}
+                  className="flex min-h-10 w-full items-center rounded-md px-2 text-start text-muted hover:bg-paper disabled:opacity-50"
+                  onClick={signOutClub}
+                >
+                  יציאה מהמועדון
+                </button>
               ) : null}
             </div>
           ) : (
             <div className="space-y-1">
-              <p className="px-2 py-1 text-xs text-muted">בחרו איך להתחבר</p>
+              <p className="px-2 py-1 text-xs text-muted">
+                שמירת סרטונים והיסטוריה
+              </p>
               <Link
                 role="menuitem"
                 href="/my-list"
@@ -292,20 +259,24 @@ export function HeaderAuthControls({
                 }}
               >
                 <span aria-hidden="true">✉️</span>
-                חשבון (Google / אימייל)
+                התחברות (Google / אימייל)
               </Link>
-              <Link
-                role="menuitem"
-                href="/members#login"
-                className="flex min-h-10 items-center gap-2 rounded-md px-2 hover:bg-paper"
-                onClick={() => {
-                  setOpen(false);
-                  onNavigate?.();
-                }}
-              >
-                <span aria-hidden="true">🔑</span>
-                מועדון (טלפון + סיסמה)
-              </Link>
+              {session.clubPhone ? (
+                <p className="px-2 py-2 text-xs text-muted">
+                  מועדון פתוח במכשיר ({clubLabel}). ניהול ב{" "}
+                  <Link
+                    href="/members#login"
+                    className="underline"
+                    onClick={() => {
+                      setOpen(false);
+                      onNavigate?.();
+                    }}
+                  >
+                    /members
+                  </Link>
+                  .
+                </p>
+              ) : null}
             </div>
           )}
         </div>

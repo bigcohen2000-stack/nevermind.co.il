@@ -2,10 +2,17 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import { logoutClub } from "@/actions/club-login";
+import { listWatchHistory } from "@/actions/watch-history";
 import { MyListSignInForm } from "@/components/auth/my-list-sign-in-form";
 import { ClearWatchHistoryButton } from "@/components/profile/clear-watch-history-button";
+import { ClubMemberVoucher } from "@/components/profile/club-member-voucher";
+import { ProgressDashboard } from "@/components/profile/progress-dashboard";
 import { SignOutButton } from "@/components/profile/sign-out-button";
-import { listWatchHistory } from "@/actions/watch-history";
+import { resolveVideoEntitlement } from "@/lib/club/access";
+import { maskClubPhone } from "@/lib/club/phone";
+import { getClubVoucherState } from "@/lib/profile/club-voucher";
+import { getProfileProgressStats } from "@/lib/profile/progress-stats";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +36,15 @@ export default async function ProfilePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const club = await resolveVideoEntitlement().catch(() => ({
+    entitled: false,
+    clubSession: false,
+    hasVideoAccess: false,
+    isAuthenticated: false,
+    phone: null as string | null,
+    displayName: null as string | null,
+  }));
+
   if (!user) {
     return (
       <main className="min-h-full w-full bg-[#000000] text-[#FAFAF8]">
@@ -44,6 +60,23 @@ export default async function ProfilePage() {
             בלי סיסמה.
           </p>
           <MyListSignInForm nextPath="/profile" />
+          {club.clubSession ? (
+            <section className="mt-10 border border-[#FAFAF8]/10 bg-[#0A0A0B] p-5 text-sm">
+              <h2 className="font-semibold tracking-tight">מועדון במכשיר</h2>
+              <p className="mt-2 text-[#9CA3AF]">
+                {club.displayName ? `${club.displayName} · ` : ""}
+                {maskClubPhone(club.phone)}. שכבה נפרדת מחשבון האתר.
+              </p>
+              <form action={logoutClub} className="mt-4">
+                <button
+                  type="submit"
+                  className="border border-[#FAFAF8]/25 px-3 py-1.5 text-xs text-[#FAFAF8] transition hover:border-[#D42B2B] hover:text-[#D42B2B]"
+                >
+                  יציאה מהמועדון
+                </button>
+              </form>
+            </section>
+          ) : null}
           <p className="mt-8 text-sm text-[#9CA3AF]">
             או חזור ל{" "}
             <Link
@@ -59,7 +92,14 @@ export default async function ProfilePage() {
     );
   }
 
-  const history = await listWatchHistory(24);
+  const [history, progress, voucher] = await Promise.all([
+    listWatchHistory(24),
+    getProfileProgressStats(user.id),
+    club.clubSession && club.phone
+      ? getClubVoucherState(club.phone)
+      : Promise.resolve(null),
+  ]);
+
   const createdAt = user.created_at
     ? new Date(user.created_at).toLocaleDateString("he-IL", {
         dateStyle: "medium",
@@ -76,7 +116,7 @@ export default async function ProfilePage() {
           הפרופיל שלי
         </h1>
         <p className="mt-4 max-w-prose leading-relaxed text-[#9CA3AF]">
-          פרטי חשבון והיסטוריית צפייה. בלי רעש.
+          פרטי חשבון, מעקב התקדמות והיסטוריית צפייה. בלי רעש.
         </p>
 
         <section
@@ -123,9 +163,58 @@ export default async function ProfilePage() {
         </section>
 
         <section
-          aria-labelledby="watch-history-title"
-          className="mt-14"
+          aria-labelledby="sessions-title"
+          className="mt-10 border border-[#FAFAF8]/10 bg-[#0A0A0B] p-6 sm:p-8"
         >
+          <h2
+            id="sessions-title"
+            className="text-xl font-semibold tracking-tight"
+          >
+            שתי שכבות גישה
+          </h2>
+          <p className="mt-2 max-w-prose text-sm text-[#9CA3AF]">
+            חשבון האתר שומר רשימה והיסטוריה. מועדון פותח מאגר חסום. הן נפרדות.
+          </p>
+          <ul className="mt-6 space-y-4 text-sm">
+            <li className="flex flex-wrap items-center justify-between gap-2 border-b border-[#FAFAF8]/10 pb-4">
+              <span>
+                <span className="text-[#9CA3AF]">חשבון אתר: </span>
+                מחובר ({user.email ?? "משתמש"})
+              </span>
+            </li>
+            <li className="flex flex-wrap items-center justify-between gap-2">
+              <span>
+                <span className="text-[#9CA3AF]">מועדון: </span>
+                {club.clubSession
+                  ? `${club.displayName ? `${club.displayName} · ` : ""}${maskClubPhone(club.phone)}`
+                  : "לא מחובר במכשיר הזה"}
+              </span>
+              {club.clubSession ? (
+                <form action={logoutClub}>
+                  <button
+                    type="submit"
+                    className="border border-[#FAFAF8]/25 px-3 py-1.5 text-xs text-[#FAFAF8] transition hover:border-[#D42B2B] hover:text-[#D42B2B]"
+                  >
+                    יציאה מהמועדון
+                  </button>
+                </form>
+              ) : (
+                <Link
+                  href="/members#login"
+                  className="text-xs text-[#FAFAF8] underline-offset-2 hover:underline"
+                >
+                  כניסה למועדון
+                </Link>
+              )}
+            </li>
+          </ul>
+        </section>
+
+        <ProgressDashboard stats={progress} />
+
+        {voucher ? <ClubMemberVoucher voucher={voucher} /> : null}
+
+        <section aria-labelledby="watch-history-title" className="mt-14">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h2

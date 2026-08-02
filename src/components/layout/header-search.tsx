@@ -18,6 +18,7 @@ import {
 } from "@/lib/search/types";
 import { pushRecentSearch } from "@/lib/recent-searches";
 import { cn } from "@/lib/utils";
+import { useSearchHotkey } from "@/hooks/use-search-hotkey";
 
 type HeaderSearchProps = {
   className?: string;
@@ -51,6 +52,8 @@ export function HeaderSearch({
   const trimmed = query.trim();
   const showSuggest = open && items.length > 0;
   const panelOpen = focused && (loading || showSuggest || trimmed.length >= 2);
+
+  useSearchHotkey(inputRef);
 
   useEffect(() => {
     const q = query.trim();

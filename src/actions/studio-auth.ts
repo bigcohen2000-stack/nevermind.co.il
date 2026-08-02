@@ -1,30 +1,56 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
-import { getServerEnv } from "@/env";
+import {
+  assertStudioUnlockRateLimit,
+  clearStudioUnlockFailures,
+  recordStudioUnlockFailure,
+} from "@/lib/studio/rate-limit";
 import {
   STUDIO_COOKIE,
   studioSessionToken,
 } from "@/lib/studio/session";
+import { getStudioUnlockSecret } from "@/lib/studio/token";
 
 export type StudioAuthResult = { ok: true } | { ok: false; error: string };
 
-export async function unlockStudio(secret: string): Promise<StudioAuthResult> {
+async function clientIp(): Promise<string> {
   try {
-    const env = getServerEnv();
+    const h = await headers();
+    const fwd = h.get("x-forwarded-for");
+    if (fwd) return fwd.split(",")[0]?.trim() || "unknown";
+    return h.get("x-real-ip")?.trim() || "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+export async function unlockStudio(secret: string): Promise<StudioAuthResult> {
+  const ip = await clientIp();
+  const rate = assertStudioUnlockRateLimit(ip);
+  if (!rate.ok) return rate;
+
+  try {
+    const expected = getStudioUnlockSecret();
     const trimmed = secret?.trim() ?? "";
-    if (!trimmed || trimmed !== env.CRON_SECRET) {
-      return { ok: false, error: "Invalid admin secret" };
+    if (!expected || expected.length < 8) {
+      return { ok: false, error: "Studio is not configured." };
+    }
+    if (!trimmed || trimmed !== expected) {
+      recordStudioUnlockFailure(ip);
+      return { ok: false, error: "סוד לא תקין." };
     }
 
+    clearStudioUnlockFailures(ip);
+
     const jar = await cookies();
-    jar.set(STUDIO_COOKIE, studioSessionToken(env.CRON_SECRET), {
+    jar.set(STUDIO_COOKIE, studioSessionToken(expected), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "strict",
       path: "/",
-      maxAge: 60 * 60 * 12,
+      maxAge: 60 * 60 * 8,
     });
 
     return { ok: true };

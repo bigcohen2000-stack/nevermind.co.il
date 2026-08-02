@@ -11,7 +11,7 @@ export type NavLink = {
   emoji?: string;
 };
 
-/** Brand-facing primary destinations (header + mobile drawer). Search is in-header. */
+/** Brand-facing primary destinations (header rail + mobile drawer). */
 export const PRIMARY_NAV: NavLink[] = [
   { label: "וידאו", href: "/videos", emoji: "🎬" },
   { label: "מאמרים", href: "/articles", emoji: "📖" },
@@ -21,7 +21,7 @@ export const PRIMARY_NAV: NavLink[] = [
   { label: "יצירת קשר", href: "/contact", emoji: "✉️" },
 ];
 
-/** Secondary hubs: footer + "עוד" in mobile drawer. Still crawlable. */
+/** Secondary hubs: "עוד" menu, footer, mobile drawer. */
 export const SECONDARY_NAV: NavLink[] = [
   { label: "חיפוש", href: "/search", emoji: "🔍" },
   { label: "מנגנונים", href: "/mechanisms", emoji: "⚙️" },
@@ -29,6 +29,13 @@ export const SECONDARY_NAV: NavLink[] = [
   { label: "תיאום", href: "/booking", emoji: "📅" },
   { label: "הרשימה שלי", href: "/my-list", emoji: "⭐" },
   { label: "פרופיל", href: "/profile", emoji: "👤" },
+  { label: "הצהרת נגישות", href: "/accessibility", emoji: "♿" },
+];
+
+/** Legal / compliance links shown in footer bottom. */
+export const LEGAL_NAV: NavLink[] = [
+  { label: "הצהרת נגישות", href: "/accessibility", emoji: "♿" },
+  { label: "יצירת קשר", href: "/contact", emoji: "✉️" },
 ];
 
 /** Full footer sitemap (primary first, then secondary). Deduped by href. */

@@ -6,10 +6,13 @@ import { PresenceBeacon } from "@/components/layout/presence-beacon";
 import { DotBackground } from "@/components/ui/dot-background";
 import { FocusModeProvider } from "@/components/videos/focus-mode-context";
 import { FocusModeChrome } from "./focus-mode-chrome";
+import { KeyboardShortcutsHud } from "./keyboard-shortcuts-hud";
 import { MobileCtaBar } from "./mobile-cta-bar";
+import { OfflineStatusBar } from "./offline-status-bar";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
 import { SiteShellFrame } from "./site-shell-frame";
+import { SiteStatusBanner } from "./site-status-banner";
 
 /**
  * SiteShell — page frame.
@@ -25,18 +28,39 @@ export async function SiteShell({ children }: { children: ReactNode }) {
   return (
     <FocusModeProvider>
       <SiteShellFrame>
+        <a
+          href="#main-content"
+          className="absolute start-4 top-0 z-[100] -translate-y-[120%] rounded-md bg-action px-4 py-2 text-sm font-semibold text-white transition focus:translate-y-4 focus:outline-none focus:ring-2 focus:ring-white"
+        >
+          דילוג לתוכן הראשי
+        </a>
         <FocusModeChrome>
           <DotBackground />
         </FocusModeChrome>
-        <FocusModeChrome>
-          <SiteHeader session={session} />
-        </FocusModeChrome>
-        <div className="relative z-0 flex flex-1 flex-col">{children}</div>
+        <div className="sticky top-0 z-50">
+          <OfflineStatusBar />
+          <FocusModeChrome>
+            <SiteStatusBanner session={session} />
+          </FocusModeChrome>
+          <FocusModeChrome>
+            <SiteHeader session={session} />
+          </FocusModeChrome>
+        </div>
+        <div
+          id="main-content"
+          tabIndex={-1}
+          className="relative z-0 flex flex-1 flex-col outline-none"
+        >
+          {children}
+        </div>
         <FocusModeChrome>
           <SiteFooter />
         </FocusModeChrome>
         <FocusModeChrome>
           <MobileCtaBar />
+        </FocusModeChrome>
+        <FocusModeChrome>
+          <KeyboardShortcutsHud />
         </FocusModeChrome>
         <FocusModeChrome>
           <DailyResetPrompt />

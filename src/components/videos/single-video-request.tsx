@@ -41,20 +41,15 @@ export function SingleVideoRequestCta({
 
   if (variant === "lock") {
     return (
-      <div className="mt-8 border border-foreground/15 bg-paper px-5 py-5 text-start">
+      <div className="border border-foreground/15 bg-paper px-5 py-5 text-start">
         <p className="text-sm font-medium text-foreground">
-          <span aria-hidden="true">🔒 </span>
-          בקשת צפייה בסרטון הזה ספציפית: {SINGLE_VIDEO_PRICE}
+          בקשת צפייה בסרטון הזה: {SINGLE_VIDEO_PRICE}
         </p>
         <p className="mt-2 text-sm leading-relaxed text-foreground/75">
-          <span aria-hidden="true">💬 </span>
-          כותבים בוואטסאפ איזה סרטון רוצים. אחרי סליקה והתכתבות שולחים קישור
-          צפייה.
+          שולחים בוואטסאפ. אחרי סליקה והתכתבות מקבלים קישור צפייה.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          <span aria-hidden="true">✨ </span>
-          אם תפרטו למה הסרטון מעניין אתכם ומה אתם רוצים לחקור, אוכל להציע
-          הוזלה. זה מראה נכונות אמיתית.
+          אם תפרטו למה הסרטון מעניין ומה רוצים לחקור, אפשר לבדוק הוזלה.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <a
@@ -64,11 +59,11 @@ export function SingleVideoRequestCta({
             className="btn btn-primary text-sm"
             onClick={onRequestClick}
           >
-            בקשת הסרטון הזה ב־{SINGLE_VIDEO_PRICE}
+            בקשה בוואטסאפ · {SINGLE_VIDEO_PRICE}
           </a>
           <SmsContactButton
             message={smsText}
-            label="SMS רגיל"
+            label="SMS"
             className="btn btn-secondary text-sm"
             onBeforeOpen={onRequestClick}
           />
@@ -80,13 +75,11 @@ export function SingleVideoRequestCta({
   return (
     <div className="border border-b-0 border-foreground/15 bg-paper px-3 py-2.5">
       <p className="text-xs leading-snug text-foreground/85">
-        <span aria-hidden="true">🔒 </span>
-        בקש צפייה בסרטון הזה ספציפי:{" "}
+        בקשת צפייה בסרטון הזה:{" "}
         <span className="font-semibold">{SINGLE_VIDEO_PRICE}</span>
       </p>
       <p className="mt-1 text-[11px] leading-snug text-muted">
-        <span aria-hidden="true">✨ </span>
-        פירוט למה זה מעניין יכול להוריד מחיר
+        פירוט קצר למה זה מעניין יכול להוריד מחיר
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
         <a
@@ -96,7 +89,6 @@ export function SingleVideoRequestCta({
           className="inline-flex min-h-9 items-center bg-action px-2.5 text-xs font-medium text-background no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
           onClick={onRequestClick}
         >
-          <span aria-hidden="true">💬 </span>
           בקשה בוואטסאפ
         </a>
         <a

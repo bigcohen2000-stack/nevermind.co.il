@@ -1,0 +1,5 @@
+youtube_id,author_name,body,timestamp_seconds,sort_order,is_creator_hearted
+# Paste verified comments below (one row per comment). Example:
+# mlBIRDAVZNM,שם,השאלה שפתחה חקירה,120,0,true
+# Kxx_Sh84zVY,שם,עוד שאלה,,1,true
+# Ap_YtCBV4cI and HcJIng2-4ps: YouTube API did not return these IDs. Confirm correct IDs before comments.

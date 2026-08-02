@@ -4,8 +4,11 @@ import Link from "next/link";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
 import { getAllArticles } from "@/lib/content/articles";
 import { BOOK_IN_PROGRESS } from "@/lib/content/offers";
+import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
 import { getSpotifyShowUrl } from "@/lib/podcast/links";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
+
+const BOOKS_OG_TITLE = "אין חנות. יש מה שפתוח.";
 
 export const metadata: Metadata = {
   title: "תכנים וספרים",
@@ -20,7 +23,9 @@ export const metadata: Metadata = {
       "אין חנות. ספר אחד בכתיבה, ומאמרים, וידאו ומושגים שכבר פתוחים באתר.",
     url: "https://nevermind.co.il/books",
     type: "website",
+    images: shareOgImage(BOOKS_OG_TITLE),
   },
+  twitter: shareImageMetadata(BOOKS_OG_TITLE).twitter,
 };
 
 const OPEN_PATHS = [

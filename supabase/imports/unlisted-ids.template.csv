@@ -1,0 +1,4 @@
+youtube_id
+# Replace rows below with real 11-char YouTube IDs from YouTube Studio (unlisted / club).
+# Then: npm run unlisted:mark -- --file supabase/imports/unlisted-ids.csv
+# Do not commit real private ID lists if they are sensitive.

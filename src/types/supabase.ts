@@ -21,6 +21,12 @@
  *   19_videos_select_entitled.sql
  *   20_video_publish_duration.sql
  *   21_single_video_leads.sql
+ *   22_unlisted_gate_backfill.sql
+ *   23_site_presence.sql
+ *   24_investigation_protocol.sql
+ *   29_unlisted_live.sql
+ *   29_studio_ops_expiry_feedback.sql
+ *   30_quotes_and_banners.sql
  *
  * Replace with generated types after linking a live project:
  *   npx supabase gen types typescript --project-id <YOUR_NEW_PROJECT_ID> > src/types/supabase.ts
@@ -51,6 +57,10 @@ export type Database = {
           created_at: string;
           published_at: string | null;
           duration_seconds: number | null;
+          breakdown_level: string | null;
+          club_teaser_label: string | null;
+          club_teaser_href: string | null;
+          teaser_youtube_id: string | null;
         };
         Insert: {
           id?: string;
@@ -65,6 +75,10 @@ export type Database = {
           created_at?: string;
           published_at?: string | null;
           duration_seconds?: number | null;
+          breakdown_level?: string | null;
+          club_teaser_label?: string | null;
+          club_teaser_href?: string | null;
+          teaser_youtube_id?: string | null;
         };
         Update: {
           id?: string;
@@ -79,8 +93,62 @@ export type Database = {
           created_at?: string;
           published_at?: string | null;
           duration_seconds?: number | null;
+          breakdown_level?: string | null;
+          club_teaser_label?: string | null;
+          club_teaser_href?: string | null;
+          teaser_youtube_id?: string | null;
         };
         Relationships: [];
+      };
+      video_featured_comments: {
+        Row: {
+          id: string;
+          video_id: string;
+          author_name: string | null;
+          body: string;
+          youtube_comment_id: string | null;
+          is_creator_hearted: boolean;
+          sort_order: number;
+          created_at: string;
+          commented_at: string | null;
+          timestamp_seconds: number | null;
+          youtube_url: string | null;
+        };
+        Insert: {
+          id?: string;
+          video_id: string;
+          author_name?: string | null;
+          body: string;
+          youtube_comment_id?: string | null;
+          is_creator_hearted?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          commented_at?: string | null;
+          timestamp_seconds?: number | null;
+          youtube_url?: string | null;
+        };
+        Update: {
+          id?: string;
+          video_id?: string;
+          author_name?: string | null;
+          body?: string;
+          youtube_comment_id?: string | null;
+          is_creator_hearted?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          commented_at?: string | null;
+          timestamp_seconds?: number | null;
+          youtube_url?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "video_featured_comments_video_id_fkey";
+            columns: ["video_id"];
+            isOneToOne: false;
+            referencedRelation: "videos";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       concepts: {
         Row: {
@@ -409,6 +477,9 @@ export type Database = {
           id: string;
           is_premium: boolean;
           has_video_access: boolean;
+          age_confirmed_at: string | null;
+          access_expires_at: string | null;
+          watch_time_seconds: number;
           created_at: string;
           updated_at: string;
         };
@@ -416,6 +487,9 @@ export type Database = {
           id: string;
           is_premium?: boolean;
           has_video_access?: boolean;
+          age_confirmed_at?: string | null;
+          access_expires_at?: string | null;
+          watch_time_seconds?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -423,6 +497,9 @@ export type Database = {
           id?: string;
           is_premium?: boolean;
           has_video_access?: boolean;
+          age_confirmed_at?: string | null;
+          access_expires_at?: string | null;
+          watch_time_seconds?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -435,6 +512,65 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      user_meetings: {
+        Row: {
+          id: string;
+          user_id: string;
+          held_at: string;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          held_at: string;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          held_at?: string;
+          note?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_meetings_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      live_stream_config: {
+        Row: {
+          id: number;
+          is_live: boolean;
+          youtube_url: string;
+          topic: string;
+          started_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          is_live?: boolean;
+          youtube_url?: string;
+          topic?: string;
+          started_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          is_live?: boolean;
+          youtube_url?: string;
+          topic?: string;
+          started_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       auth_login_events: {
         Row: {
@@ -493,10 +629,129 @@ export type Database = {
         };
         Relationships: [];
       };
+      club_feed_tokens: {
+        Row: {
+          id: string;
+          phone: string;
+          token_hash: string;
+          label: string;
+          created_at: string;
+          last_used_at: string | null;
+          revoked_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          phone: string;
+          token_hash: string;
+          label?: string;
+          created_at?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          phone?: string;
+          token_hash?: string;
+          label?: string;
+          created_at?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "club_feed_tokens_phone_fkey";
+            columns: ["phone"];
+            isOneToOne: false;
+            referencedRelation: "club_members";
+            referencedColumns: ["phone"];
+          },
+        ];
+      };
+      club_members: {
+        Row: {
+          phone: string;
+          display_name: string;
+          notes: string | null;
+          expires_at: string | null;
+          created_at: string;
+          updated_at: string;
+          last_seen_at: string | null;
+        };
+        Insert: {
+          phone: string;
+          display_name?: string;
+          notes?: string | null;
+          expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          last_seen_at?: string | null;
+        };
+        Update: {
+          phone?: string;
+          display_name?: string;
+          notes?: string | null;
+          expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          last_seen_at?: string | null;
+        };
+        Relationships: [];
+      };
+      viewer_feedback: {
+        Row: {
+          id: string;
+          kind: "heart_reply" | "dislike" | "reply_request";
+          video_id: string | null;
+          video_title: string | null;
+          body: string;
+          author_name: string | null;
+          contact_phone: string | null;
+          contact_email: string | null;
+          want_reply: boolean;
+          status: "open" | "replied" | "closed";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          kind: "heart_reply" | "dislike" | "reply_request";
+          video_id?: string | null;
+          video_title?: string | null;
+          body: string;
+          author_name?: string | null;
+          contact_phone?: string | null;
+          contact_email?: string | null;
+          want_reply?: boolean;
+          status?: "open" | "replied" | "closed";
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          kind?: "heart_reply" | "dislike" | "reply_request";
+          video_id?: string | null;
+          video_title?: string | null;
+          body?: string;
+          author_name?: string | null;
+          contact_phone?: string | null;
+          contact_email?: string | null;
+          want_reply?: boolean;
+          status?: "open" | "replied" | "closed";
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "viewer_feedback_video_id_fkey";
+            columns: ["video_id"];
+            isOneToOne: false;
+            referencedRelation: "videos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       club_login_events: {
         Row: {
           id: string;
           phone: string;
+          display_name: string | null;
           token_id: string | null;
           source: string;
           user_agent: string | null;
@@ -505,6 +760,7 @@ export type Database = {
         Insert: {
           id?: string;
           phone: string;
+          display_name?: string | null;
           token_id?: string | null;
           source?: string;
           user_agent?: string | null;
@@ -513,6 +769,7 @@ export type Database = {
         Update: {
           id?: string;
           phone?: string;
+          display_name?: string | null;
           token_id?: string | null;
           source?: string;
           user_agent?: string | null;
@@ -525,6 +782,35 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "club_tokens";
             referencedColumns: ["id"];
+          },
+        ];
+      };
+      club_watch_events: {
+        Row: {
+          id: string;
+          phone: string;
+          video_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          phone: string;
+          video_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          phone?: string;
+          video_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "club_watch_events_phone_fkey";
+            columns: ["phone"];
+            isOneToOne: false;
+            referencedRelation: "club_members";
+            referencedColumns: ["phone"];
           },
         ];
       };
@@ -584,12 +870,127 @@ export type Database = {
           },
         ];
       };
+      studio_quotes: {
+        Row: {
+          id: string;
+          public_token: string;
+          status: string;
+          customer_name: string;
+          customer_phone: string | null;
+          customer_email: string | null;
+          product_kind: string;
+          product_label: string;
+          product_ref: string | null;
+          price_ils: number;
+          currency: string;
+          validity_label: string | null;
+          body: string;
+          payment_url: string | null;
+          lead_source: string | null;
+          lead_ref: string | null;
+          approved_at: string | null;
+          paid_at: string | null;
+          expires_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          public_token: string;
+          status?: string;
+          customer_name?: string;
+          customer_phone?: string | null;
+          customer_email?: string | null;
+          product_kind: string;
+          product_label: string;
+          product_ref?: string | null;
+          price_ils: number;
+          currency?: string;
+          validity_label?: string | null;
+          body?: string;
+          payment_url?: string | null;
+          lead_source?: string | null;
+          lead_ref?: string | null;
+          approved_at?: string | null;
+          paid_at?: string | null;
+          expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          public_token?: string;
+          status?: string;
+          customer_name?: string;
+          customer_phone?: string | null;
+          customer_email?: string | null;
+          product_kind?: string;
+          product_label?: string;
+          product_ref?: string | null;
+          price_ils?: number;
+          currency?: string;
+          validity_label?: string | null;
+          body?: string;
+          payment_url?: string | null;
+          lead_source?: string | null;
+          lead_ref?: string | null;
+          approved_at?: string | null;
+          paid_at?: string | null;
+          expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      site_banners: {
+        Row: {
+          id: string;
+          slot: string;
+          title: string;
+          body: string;
+          cta_label: string | null;
+          cta_href: string | null;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slot: string;
+          title: string;
+          body?: string;
+          cta_label?: string | null;
+          cta_href?: string | null;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slot?: string;
+          title?: string;
+          body?: string;
+          cta_label?: string | null;
+          cta_href?: string | null;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       get_random_video: {
         Args: Record<PropertyKey, never>;
         Returns: Database["public"]["Tables"]["videos"]["Row"][];
+      };
+      increment_own_watch_time: {
+        Args: { p_delta: number };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;
@@ -617,5 +1018,15 @@ export type SingleVideoLead =
 export type PushSubscriber =
   Database["public"]["Tables"]["subscribers"]["Row"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type UserMeeting =
+  Database["public"]["Tables"]["user_meetings"]["Row"];
+export type LiveStreamConfig =
+  Database["public"]["Tables"]["live_stream_config"]["Row"];
 export type AuthLoginEvent =
   Database["public"]["Tables"]["auth_login_events"]["Row"];
+export type ViewerFeedback =
+  Database["public"]["Tables"]["viewer_feedback"]["Row"];
+export type StudioQuote =
+  Database["public"]["Tables"]["studio_quotes"]["Row"];
+export type SiteBanner =
+  Database["public"]["Tables"]["site_banners"]["Row"];

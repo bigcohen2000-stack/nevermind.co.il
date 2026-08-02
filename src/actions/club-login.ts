@@ -1,30 +1,47 @@
 "use server";
 
+import { Resend } from "resend";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { CLUB_MAGIC_TTL_MS } from "@/lib/club/constants";
+import { normalizeClubPhone } from "@/lib/club/phone";
+import {
+  assertClubLoginRateLimit,
+  clearClubLoginFailures,
+  recordClubLoginFailure,
+} from "@/lib/club/rate-limit";
 import {
   clearClubSessionCookie,
   formatPasswordHash,
   generateRawClubToken,
+  hashClubFeedToken,
   hashClubToken,
   setClubSessionCookie,
   verifyClubPassword,
 } from "@/lib/club/session";
 import type { ClubPasswordStatus } from "@/lib/club/password-status";
+import { getClubPodcastFeedUrl } from "@/lib/podcast/config";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isStudioAuthenticated } from "@/lib/studio/session";
 
 export type { ClubPasswordStatus } from "@/lib/club/password-status";
 
-function normalizePhone(input: string): string {
-  return input.replace(/[^\d+]/g, "").trim();
-}
-
 function siteOrigin(): string {
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   if (fromEnv) return fromEnv;
   return "https://nevermind.co.il";
+}
+
+async function clientIp(): Promise<string> {
+  try {
+    const h = await headers();
+    const fwd = h.get("x-forwarded-for");
+    if (fwd) return fwd.split(",")[0]?.trim() || "unknown";
+    return h.get("x-real-ip")?.trim() || "unknown";
+  } catch {
+    return "unknown";
+  }
 }
 
 async function userAgent(): Promise<string | null> {
@@ -46,18 +63,73 @@ async function getConfigVersion(): Promise<number> {
   return data?.version ?? 1;
 }
 
+async function upsertMember(input: {
+  phone: string;
+  displayName: string;
+}): Promise<void> {
+  const admin = getSupabaseAdmin();
+  const now = new Date().toISOString();
+  const name = input.displayName.trim();
+  await admin.from("club_members").upsert(
+    {
+      phone: input.phone,
+      display_name: name,
+      updated_at: now,
+      last_seen_at: now,
+    },
+    { onConflict: "phone" },
+  );
+}
+
 async function logLogin(input: {
   phone: string;
+  displayName: string | null;
   tokenId: string | null;
   source: "magic" | "password";
 }) {
   const admin = getSupabaseAdmin();
   await admin.from("club_login_events").insert({
     phone: input.phone,
+    display_name: input.displayName,
     token_id: input.tokenId,
     source: input.source,
     user_agent: await userAgent(),
   });
+}
+
+/**
+ * Email admin only when a brand-new club session cookie is minted.
+ */
+async function notifyAdminClubLogin(input: {
+  phone: string;
+  displayName: string;
+  source: "magic" | "password";
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const adminEmail = process.env.BOOKING_ADMIN_EMAIL?.trim();
+  const fromEmail =
+    process.env.RESEND_FROM_EMAIL?.trim() ||
+    "NeverMinde <onboarding@resend.dev>";
+  if (!apiKey || !adminEmail) return;
+
+  try {
+    const resend = new Resend(apiKey);
+    const when = new Date().toLocaleString("he-IL");
+    await resend.emails.send({
+      from: fromEmail,
+      to: [adminEmail],
+      subject: `כניסת מועדון: ${input.displayName || input.phone}`,
+      text: [
+        "כניסת מועדון חדשה ב-nevermind.co.il",
+        `שם: ${input.displayName || "-"}`,
+        `טלפון: ${input.phone}`,
+        `מקור: ${input.source === "magic" ? "קישור קסם" : "סיסמה"}`,
+        `זמן: ${when}`,
+      ].join("\n"),
+    });
+  } catch {
+    // Never block login on notify failure.
+  }
 }
 
 export type ClubActionResult =
@@ -91,12 +163,27 @@ export async function redeemClubToken(
       return { ok: false, error: "הקישור בוטל." };
     }
     if (new Date(row.expires_at).getTime() < Date.now()) {
+      await admin
+        .from("club_tokens")
+        .update({ revoked_at: new Date().toISOString() })
+        .eq("id", row.id);
       return { ok: false, error: "פג תוקף הקישור." };
     }
 
+    const phone = normalizeClubPhone(row.phone) ?? row.phone.replace(/\D/g, "");
+    const { data: member } = await admin
+      .from("club_members")
+      .select("display_name")
+      .eq("phone", phone)
+      .maybeSingle();
+    const displayName = member?.display_name?.trim() || "";
+
+    await upsertMember({ phone, displayName: displayName || phone.slice(-4) });
+
     const version = await getConfigVersion();
     await setClubSessionCookie({
-      phone: row.phone,
+      phone,
+      name: displayName || null,
       tokenId: row.id,
       v: version,
     });
@@ -107,8 +194,14 @@ export async function redeemClubToken(
       .eq("id", row.id);
 
     await logLogin({
-      phone: row.phone,
+      phone,
+      displayName: displayName || null,
       tokenId: row.id,
+      source: "magic",
+    });
+    await notifyAdminClubLogin({
+      phone,
+      displayName: displayName || phone,
       source: "magic",
     });
 
@@ -122,32 +215,62 @@ export async function redeemClubToken(
 }
 
 /**
- * Backup: phone + shared club password from club_config.
+ * Phone + shared club password. Phone must be on club_members allowlist.
  */
 export async function loginClubPassword(input: {
   phone: string;
   password: string;
+  displayName?: string;
 }): Promise<ClubActionResult> {
-  const phone = normalizePhone(input.phone);
+  const phone = normalizeClubPhone(input.phone);
   const password = input.password.trim();
+  const displayName = (input.displayName ?? "").trim();
+  const ip = await clientIp();
+  const rateKeys = [phone ? `phone:${phone}` : "", `ip:${ip}`].filter(Boolean);
 
-  if (phone.length < 9) {
-    return {
-      ok: false,
-      error:
-        "מספר הטלפון או הסיסמה אינם נכונים. לא עבד? אפשר לכתוב לי בוואטסאפ.",
-    };
+  const rate = assertClubLoginRateLimit(rateKeys);
+  if (!rate.ok) return rate;
+
+  if (!phone) {
+    recordClubLoginFailure(rateKeys);
+    return { ok: false, error: "מספר הטלפון אינו תקין." };
+  }
+  if (!displayName || displayName.length < 2) {
+    return { ok: false, error: "נא להזין שם מלא." };
   }
   if (!password) {
-    return {
-      ok: false,
-      error:
-        "מספר הטלפון או הסיסמה אינם נכונים. לא עבד? אפשר לכתוב לי בוואטסאפ.",
-    };
+    recordClubLoginFailure(rateKeys);
+    return { ok: false, error: "סיסמת המועדון שגויה." };
   }
 
   try {
     const admin = getSupabaseAdmin();
+
+    const { data: member } = await admin
+      .from("club_members")
+      .select("phone, display_name, expires_at")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    if (!member) {
+      recordClubLoginFailure(rateKeys);
+      return {
+        ok: false,
+        error: "מספר הטלפון אינו מורשה במערכת. בקשו גישה בוואטסאפ.",
+      };
+    }
+
+    if (
+      member.expires_at &&
+      new Date(member.expires_at).getTime() < Date.now()
+    ) {
+      recordClubLoginFailure(rateKeys);
+      return {
+        ok: false,
+        error: "תוקף הגישה שלכם הסתיים. פנו בוואטסאפ לחידוש.",
+      };
+    }
+
     const { data: config } = await admin
       .from("club_config")
       .select("password_hash, version")
@@ -156,22 +279,38 @@ export async function loginClubPassword(input: {
 
     const stored = config?.password_hash?.trim() ?? "";
     if (!stored || !verifyClubPassword(password, stored)) {
-      return {
-        ok: false,
-        error:
-          "מספר הטלפון או הסיסמה אינם נכונים. לא עבד? אפשר לכתוב לי בוואטסאפ.",
-      };
+      recordClubLoginFailure(rateKeys);
+      return { ok: false, error: "סיסמת המועדון שגויה." };
     }
+
+    clearClubLoginFailures(rateKeys);
+
+    await upsertMember({ phone, displayName });
 
     await setClubSessionCookie({
       phone,
+      name: displayName,
       tokenId: null,
       v: config?.version ?? 1,
     });
 
-    await logLogin({ phone, tokenId: null, source: "password" });
+    await logLogin({
+      phone,
+      displayName,
+      tokenId: null,
+      source: "password",
+    });
+    await notifyAdminClubLogin({
+      phone,
+      displayName,
+      source: "password",
+    });
 
-    return { ok: true, message: "הגישה למאגר פתוחה במכשיר הזה." };
+    return {
+      ok: true,
+      message:
+        "הגישה למאגר פתוחה במכשיר הזה. הגישה אישית. הסיסמה והקישור אינם להעברה.",
+    };
   } catch (err) {
     return {
       ok: false,
@@ -186,29 +325,132 @@ export async function logoutClub(): Promise<void> {
 }
 
 /**
- * Studio-only: mint personal magic link for WhatsApp.
+ * Studio-only: add or update allowlisted club member.
+ */
+export async function upsertClubMember(input: {
+  phone: string;
+  displayName: string;
+  notes?: string;
+  expiresAt?: string | null;
+}): Promise<ClubActionResult> {
+  const unlocked = await isStudioAuthenticated();
+  if (!unlocked) return { ok: false, error: "Studio locked." };
+
+  const phone = normalizeClubPhone(input.phone);
+  const displayName = input.displayName.trim();
+  if (!phone) return { ok: false, error: "מספר טלפון לא תקין." };
+  if (displayName.length < 2) return { ok: false, error: "נא להזין שם." };
+
+  let expiresAt: string | null | undefined = undefined;
+  if (input.expiresAt !== undefined) {
+    if (input.expiresAt === null) {
+      expiresAt = null;
+    } else {
+      const trimmed = input.expiresAt.trim();
+      if (!trimmed) {
+        expiresAt = null;
+      } else {
+        const parsed = new Date(trimmed);
+        if (Number.isNaN(parsed.getTime())) {
+          return { ok: false, error: "תאריך תפוגה לא תקין." };
+        }
+        expiresAt = parsed.toISOString();
+      }
+    }
+  }
+
+  try {
+    const admin = getSupabaseAdmin();
+    const now = new Date().toISOString();
+    const row: {
+      phone: string;
+      display_name: string;
+      notes: string | null;
+      updated_at: string;
+      expires_at?: string | null;
+    } = {
+      phone,
+      display_name: displayName,
+      notes: input.notes?.trim() || null,
+      updated_at: now,
+    };
+    if (expiresAt !== undefined) {
+      row.expires_at = expiresAt;
+    }
+    const { error } = await admin.from("club_members").upsert(row, {
+      onConflict: "phone",
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, message: `נשמר: ${displayName} (${phone}).` };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "שגיאת שרת.",
+    };
+  }
+}
+
+export async function deleteClubMember(phoneRaw: string): Promise<ClubActionResult> {
+  const unlocked = await isStudioAuthenticated();
+  if (!unlocked) return { ok: false, error: "Studio locked." };
+  const phone = normalizeClubPhone(phoneRaw);
+  if (!phone) return { ok: false, error: "מספר טלפון לא תקין." };
+
+  try {
+    const admin = getSupabaseAdmin();
+    const { error } = await admin.from("club_members").delete().eq("phone", phone);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, message: "החבר הוסר." };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "שגיאת שרת.",
+    };
+  }
+}
+
+/**
+ * Studio-only: mint personal magic link (default 30 minutes).
  */
 export async function mintClubToken(input: {
   phone: string;
-  daysValid: number;
+  /** Minutes until link expires. Default 30. Cap 24h. */
+  minutesValid?: number;
+  displayName?: string;
 }): Promise<ClubActionResult> {
   const unlocked = await isStudioAuthenticated();
   if (!unlocked) {
     return { ok: false, error: "Studio locked." };
   }
 
-  const phone = normalizePhone(input.phone);
-  const days = Math.min(Math.max(1, Math.floor(input.daysValid || 30)), 730);
-  if (phone.length < 9) {
+  const phone = normalizeClubPhone(input.phone);
+  const minutes = Math.min(
+    Math.max(5, Math.floor(input.minutesValid ?? 30)),
+    24 * 60,
+  );
+  if (!phone) {
     return { ok: false, error: "מספר טלפון לא תקין." };
   }
 
   try {
+    const displayName = (input.displayName ?? "").trim();
+    if (displayName.length >= 2) {
+      await upsertMember({ phone, displayName });
+    } else {
+      const admin = getSupabaseAdmin();
+      const { data: existing } = await admin
+        .from("club_members")
+        .select("phone")
+        .eq("phone", phone)
+        .maybeSingle();
+      if (!existing) {
+        await upsertMember({ phone, displayName: phone.slice(-4) });
+      }
+    }
+
     const raw = generateRawClubToken();
     const tokenHash = hashClubToken(raw);
-    const expiresAt = new Date(
-      Date.now() + days * 24 * 60 * 60 * 1000,
-    ).toISOString();
+    const expiresAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
 
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
@@ -229,7 +471,11 @@ export async function mintClubToken(input: {
     }
 
     const url = `${siteOrigin()}/club/login?token=${encodeURIComponent(raw)}`;
-    return { ok: true, url };
+    return {
+      ok: true,
+      url,
+      message: `קישור תקף ל־${minutes} דקות.`,
+    };
   } catch (err) {
     return {
       ok: false,
@@ -238,9 +484,6 @@ export async function mintClubToken(input: {
   }
 }
 
-/**
- * Studio-only: whether a shared club password exists (never returns the hash).
- */
 export async function getClubPasswordStatus(): Promise<ClubPasswordStatus> {
   const empty: ClubPasswordStatus = {
     isSet: false,
@@ -269,9 +512,6 @@ export async function getClubPasswordStatus(): Promise<ClubPasswordStatus> {
   }
 }
 
-/**
- * Studio-only: set shared backup password in club_config (no Vercel redeploy).
- */
 export async function setClubSharedPassword(
   password: string,
 ): Promise<ClubActionResult> {
@@ -311,7 +551,7 @@ export async function setClubSharedPassword(
 
     return {
       ok: true,
-      message: `הסיסמה נשמרה. חברי מועדון נכנסים עם טלפון + הסיסמה הזו ב־/members. גרסה ${nextVersion}.`,
+      message: `הסיסמה נשמרה. חבר חייב להיות ברשימה (טלפון מורשה). גרסה ${nextVersion}.`,
     };
   } catch (err) {
     return {
@@ -321,9 +561,6 @@ export async function setClubSharedPassword(
   }
 }
 
-/**
- * Studio-only: revoke a token by id.
- */
 export async function revokeClubToken(
   tokenId: string,
 ): Promise<ClubActionResult> {
@@ -341,6 +578,130 @@ export async function revokeClubToken(
 
     if (error) return { ok: false, error: error.message };
     return { ok: true, message: "הטוקן בוטל." };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "שגיאת שרת.",
+    };
+  }
+}
+
+export type ClubFeedTokenActionResult =
+  | { ok: true; url: string; message?: string; tokenId: string }
+  | { ok: false; error: string };
+
+/**
+ * Mint a long-lived personal private podcast RSS URL for a club member.
+ * Raw token is returned once in the URL. Store only the hash.
+ */
+export async function mintClubFeedToken(input: {
+  phone: string;
+  label?: string;
+}): Promise<ClubFeedTokenActionResult> {
+  const unlocked = await isStudioAuthenticated();
+  if (!unlocked) {
+    return { ok: false, error: "Studio locked." };
+  }
+
+  const phone = normalizeClubPhone(input.phone);
+  if (!phone) {
+    return { ok: false, error: "מספר טלפון לא תקין." };
+  }
+
+  try {
+    const admin = getSupabaseAdmin();
+    const { data: member } = await admin
+      .from("club_members")
+      .select("phone")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    if (!member) {
+      return { ok: false, error: "הטלפון לא ברשימת חברי המועדון." };
+    }
+
+    const raw = generateRawClubToken();
+    const tokenHash = hashClubFeedToken(raw);
+    const label = (input.label ?? "").trim().slice(0, 120);
+
+    const { data, error } = await admin
+      .from("club_feed_tokens")
+      .insert({
+        token_hash: tokenHash,
+        phone,
+        label,
+      })
+      .select("id")
+      .single();
+
+    if (error || !data) {
+      return {
+        ok: false,
+        error: error?.message ?? "יצירת פיד נכשלה.",
+      };
+    }
+
+    return {
+      ok: true,
+      tokenId: data.id,
+      url: getClubPodcastFeedUrl(raw),
+      message:
+        "פיד פרטי נוצר. העתיקו את הקישור עכשיו. לא יוצג שוב אחרי רענון.",
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "שגיאת שרת.",
+    };
+  }
+}
+
+export async function revokeClubFeedToken(
+  tokenId: string,
+): Promise<ClubActionResult> {
+  const unlocked = await isStudioAuthenticated();
+  if (!unlocked) {
+    return { ok: false, error: "Studio locked." };
+  }
+
+  try {
+    const admin = getSupabaseAdmin();
+    const { error } = await admin
+      .from("club_feed_tokens")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("id", tokenId);
+
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, message: "פיד הפודקאסט בוטל." };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "שגיאת שרת.",
+    };
+  }
+}
+
+export async function revokeAllClubFeedTokensForPhone(
+  phoneInput: string,
+): Promise<ClubActionResult> {
+  const unlocked = await isStudioAuthenticated();
+  if (!unlocked) {
+    return { ok: false, error: "Studio locked." };
+  }
+
+  const phone = normalizeClubPhone(phoneInput);
+  if (!phone) return { ok: false, error: "מספר טלפון לא תקין." };
+
+  try {
+    const admin = getSupabaseAdmin();
+    const { error } = await admin
+      .from("club_feed_tokens")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("phone", phone)
+      .is("revoked_at", null);
+
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, message: "כל פידי הפודקאסט של החבר בוטלו." };
   } catch (err) {
     return {
       ok: false,

@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 import { buildWhatsAppHref, getWhatsAppNumber } from "@/lib/whatsapp";
 
 const PLACEHOLDER =
-  "יש לך שאלה ל'השם לא משנה'? התיבה הזו מחוברת ישירות לוואטסאפ שלו.";
+  "יש לך שאלה אליי? התיבה הזו נפתחת ישירות בוואטסאפ.";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (

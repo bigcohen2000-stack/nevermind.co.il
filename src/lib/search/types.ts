@@ -37,3 +37,26 @@ export function suggestItemHref(item: SuggestItem): string {
   }
   return `/search?q=${encodeURIComponent(item.name)}`;
 }
+
+/** Blind Spot map hit or OpenAI fallback. */
+export type InvertSource = "map" | "llm";
+
+export type InvertCaptionHit = {
+  videoId: string;
+  youtubeId: string;
+  title: string;
+  startSeconds: number;
+  snippet: string;
+  watchUrl: string;
+  embedUrl: string;
+  embedHtml: string;
+};
+
+export type InvertSearchResponse = {
+  premise: string | null;
+  opposite: string | null;
+  tease: string | null;
+  source: InvertSource | null;
+  hits: InvertCaptionHit[];
+  error?: string;
+};

@@ -3,13 +3,17 @@ import "server-only";
 import { google, type youtube_v3 } from "googleapis";
 
 import { getServerEnv, splitCsv } from "@/env";
-import { extractCuratedConcepts } from "@/lib/concepts/quality";
+import {
+  curatedConceptCategory,
+  extractCuratedConcepts,
+} from "@/lib/concepts/quality";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   firstConceptOffsetSeconds,
   type TranscriptSegment,
 } from "@/lib/videos/heatmap";
 import { parseYoutubeDuration } from "@/lib/videos/format-meta";
+import { inferBreakdownLevel } from "@/lib/videos/investigation";
 import { isYoutubeUnavailableTitle } from "@/lib/videos/youtube-availability";
 import { upsertTranscriptForVideo } from "@/lib/youtube/transcripts";
 
@@ -131,7 +135,10 @@ async function upsertConceptsForVideo(
   for (const name of keywords) {
     const { data: concept, error } = await admin
       .from("concepts")
-      .upsert({ name, category: null }, { onConflict: "name" })
+      .upsert(
+        { name, category: curatedConceptCategory(name) },
+        { onConflict: "name" },
+      )
       .select("id")
       .single();
 
@@ -524,37 +531,86 @@ export async function syncYoutubeLibrary(
       is_gated: row.isGated,
     };
 
-    let data: { id: string } | null = null;
+    const inferredBreakdown = inferBreakdownLevel({
+      title: row.title,
+      description: row.description,
+      tags: row.tags,
+      isUnlisted: row.isUnlisted,
+      isGated: row.isGated,
+    });
+
+    let data: { id: string; breakdown_level: string | null } | null = null;
     let error: { message: string } | null = null;
 
     {
-      const full = await admin
+      const existing = await admin
+        .from("videos")
+        .select("id, breakdown_level")
+        .eq("youtube_id", row.youtubeId)
+        .maybeSingle();
+
+      let breakdownLevel =
+        existing.data?.breakdown_level ?? inferredBreakdown;
+
+      let full = await admin
         .from("videos")
         .upsert(
           {
             ...baseRow,
             published_at: row.publishedAt,
             duration_seconds: row.durationSeconds,
+            breakdown_level: breakdownLevel,
           },
           { onConflict: "youtube_id" },
         )
-        .select("id")
+        .select("id, breakdown_level")
         .single();
+
+      // Live DB may still lack migration 25 (archive_shards not in CHECK).
+      if (
+        full.error &&
+        breakdownLevel === "archive_shards" &&
+        /breakdown_level_check|check constraint/i.test(full.error.message)
+      ) {
+        breakdownLevel =
+          existing.data?.breakdown_level &&
+          existing.data.breakdown_level !== "archive_shards"
+            ? existing.data.breakdown_level
+            : "unfiltered";
+        full = await admin
+          .from("videos")
+          .upsert(
+            {
+              ...baseRow,
+              published_at: row.publishedAt,
+              duration_seconds: row.durationSeconds,
+              breakdown_level: breakdownLevel,
+            },
+            { onConflict: "youtube_id" },
+          )
+          .select("id, breakdown_level")
+          .single();
+      }
+
       data = full.data;
       error = full.error;
     }
 
-    // Older DBs may lack published_at / duration_seconds (migration 20).
+    // Older DBs may lack publish/duration/breakdown columns.
     if (
       error &&
-      /duration_seconds|published_at|schema cache/i.test(error.message)
+      /duration_seconds|published_at|breakdown_level|schema cache/i.test(
+        error.message,
+      )
     ) {
       const fallback = await admin
         .from("videos")
         .upsert(baseRow, { onConflict: "youtube_id" })
         .select("id")
         .single();
-      data = fallback.data;
+      data = fallback.data
+        ? { id: fallback.data.id, breakdown_level: null }
+        : null;
       error = fallback.error;
     }
 

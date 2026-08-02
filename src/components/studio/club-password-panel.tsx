@@ -74,8 +74,8 @@ export function ClubPasswordPanel({ status }: ClubPasswordPanelProps) {
 
   return (
     <section
-      id="club-password"
-      className="mt-10 space-y-5 rounded-xl border border-amber-800/40 bg-amber-950/20 p-6"
+      className="scroll-mt-6 space-y-5 border border-amber-800/40 bg-amber-950/20 p-5 sm:p-6"
+      dir="rtl"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

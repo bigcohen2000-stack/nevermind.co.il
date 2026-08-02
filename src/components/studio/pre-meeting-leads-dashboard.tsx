@@ -73,27 +73,26 @@ export function PreMeetingLeadsDashboard({
   return (
     <div className="space-y-10">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-100">
-          Pre-meeting leads
+        <h2 className="text-base font-semibold text-zinc-100">
+          לידים לפני פגישה
         </h2>
         <p className="mt-1 text-sm text-zinc-400">
-          Thought Deconstructor submissions: facts, story, and contact details
-          before a deep-dive call.
+          טפסי מפרק מחשבות: עובדות, סיפור ופרטי קשר לפני שיחת עומק.
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 sm:p-6">
+        <section className="border border-zinc-800 bg-zinc-900/60 p-5">
           <h3 className="text-sm font-medium tracking-wide text-zinc-400">
-            Today
+            היום
           </h3>
           <p className="mt-4 text-4xl font-semibold tracking-tight text-zinc-50">
             {data.totalToday}
           </p>
         </section>
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 sm:p-6">
+        <section className="border border-zinc-800 bg-zinc-900/60 p-5">
           <h3 className="text-sm font-medium tracking-wide text-zinc-400">
-            Last 7 days
+            7 ימים אחרונים
           </h3>
           <p className="mt-4 text-4xl font-semibold tracking-tight text-zinc-50">
             {data.totalThisWeek}
@@ -104,17 +103,18 @@ export function PreMeetingLeadsDashboard({
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold text-zinc-100">Recent leads</h3>
+            <h3 className="text-base font-semibold text-zinc-100">
+              לידים אחרונים
+            </h3>
             <p className="mt-1 text-xs text-zinc-500">
-              {data.rows.length} lead{data.rows.length === 1 ? "" : "s"} (newest
-              first)
+              {data.rows.length} לידים (חדש למעלה)
             </p>
           </div>
         </div>
 
         {data.rows.length === 0 ? (
           <p className="text-sm text-zinc-400">
-            No pre-meeting leads yet. Submissions from /booking will appear here.
+            עדיין אין לידים. שליחות מ־/booking יופיעו כאן.
           </p>
         ) : (
           <ul className="space-y-4">

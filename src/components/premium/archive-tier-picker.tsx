@@ -11,37 +11,51 @@ import { cn } from "@/lib/utils";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 
 type ArchiveTierPickerProps = {
-  /** Called when a WhatsApp / SMS link is activated. */
   onRequest?: () => void;
-  /** Compact = denser grid for modals. */
   density?: "default" | "compact";
   className?: string;
+  /**
+   * Funnel mode: no WhatsApp until the visitor explicitly picks a frame.
+   * Filters out impulse before the chat.
+   */
+  requireExplicitSelect?: boolean;
 };
 
 /**
- * Selectable archive pricing tiers (Hebrew). Default: שנתי.
- * WhatsApp CTA carries the exact selected frame + price.
+ * Selectable archive pricing tiers (Hebrew).
+ * Stepped mode: choose duration first, then WhatsApp.
  */
 export function ArchiveTierPicker({
   onRequest,
   density = "default",
   className,
+  requireExplicitSelect = false,
 }: ArchiveTierPickerProps) {
-  const [selectedId, setSelectedId] = useState(DEFAULT_ACCESS_FRAME_ID);
-  const selected: AccessFrameRow =
-    ACCESS_FRAME_ROWS.find((row) => row.id === selectedId) ??
-    ACCESS_FRAME_ROWS.find((row) => row.id === DEFAULT_ACCESS_FRAME_ID) ??
-    ACCESS_FRAME_ROWS[0];
+  const [selectedId, setSelectedId] = useState<string | null>(
+    requireExplicitSelect ? null : DEFAULT_ACCESS_FRAME_ID,
+  );
 
-  const href = buildWhatsAppHref(selected.whatsappText);
+  const selected: AccessFrameRow | null = selectedId
+    ? ACCESS_FRAME_ROWS.find((row) => row.id === selectedId) ??
+      ACCESS_FRAME_ROWS.find((row) => row.id === DEFAULT_ACCESS_FRAME_ID) ??
+      ACCESS_FRAME_ROWS[0]
+    : null;
+
+  const href = selected ? buildWhatsAppHref(selected.whatsappText) : null;
+  const canWhatsApp = Boolean(selected && href);
 
   return (
     <div className={cn("text-start", className)} dir="rtl">
       <p className="text-xs font-medium tracking-wide text-muted">
-        בחרו מסגרת הרשאה
+        {requireExplicitSelect
+          ? "שלב 1: בחרו משך מנוי"
+          : "בחרו מסגרת הרשאה"}
       </p>
       <p className="mt-1 text-xs leading-relaxed text-muted">
         מחירים לפני מע&quot;מ. אין סליקה באתר.
+        {requireExplicitSelect
+          ? " אחרי הבחירה נפתח שלב הוואטסאפ."
+          : ""}
       </p>
 
       <ul
@@ -55,7 +69,7 @@ export function ArchiveTierPicker({
         aria-label="מסגרות הרשאה למאגר"
       >
         {ACCESS_FRAME_ROWS.map((row) => {
-          const active = row.id === selected.id;
+          const active = row.id === selected?.id;
           const isDefault = row.id === DEFAULT_ACCESS_FRAME_ID;
           return (
             <li key={row.id}>
@@ -90,15 +104,30 @@ export function ArchiveTierPicker({
         })}
       </ul>
 
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-none bg-[#D42B2B] px-4 text-sm font-semibold text-[#FAFAF8] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
-        onClick={() => onRequest?.()}
-      >
-        בקשת מסגרת {selected.frame} ({selected.price})
-      </a>
+      {requireExplicitSelect && !canWhatsApp ? (
+        <p className="mt-5 text-sm text-muted" role="status">
+          בחרו מסגרת כדי להמשיך לוואטסאפ.
+        </p>
+      ) : null}
+
+      {canWhatsApp && selected && href ? (
+        <div className="mt-5">
+          {requireExplicitSelect ? (
+            <p className="mb-2 text-xs font-medium tracking-wide text-muted">
+              שלב 2: וואטסאפ לסגירה ובדיקת התאמה
+            </p>
+          ) : null}
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-none bg-[#D42B2B] px-4 text-sm font-semibold text-[#FAFAF8] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+            onClick={() => onRequest?.()}
+          >
+            בקשת מסגרת {selected.frame} ({selected.price})
+          </a>
+        </div>
+      ) : null}
     </div>
   );
 }

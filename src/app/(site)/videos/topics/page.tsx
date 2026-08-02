@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { ClubBadge } from "@/components/videos/club-badge";
 import { Eyebrow } from "@/components/ui/editorial";
+import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
 import { isMembersOnlyVideo } from "@/lib/videos/access";
 import {
   listConceptsWithVideoCounts,
@@ -18,6 +19,8 @@ import type { Video } from "@/types/supabase";
 
 export const dynamic = "force-dynamic";
 
+const TOPICS_OG_TITLE = "עיון לפי נושא";
+
 export const metadata: Metadata = {
   title: "נושאים בסרטונים",
   description:
@@ -31,7 +34,9 @@ export const metadata: Metadata = {
       "עיון לפי מושג: רשימת נושאים עם סרטונים קשורים מתוך מאגר NeverMinde.",
     url: "https://nevermind.co.il/videos/topics",
     type: "website",
+    images: shareOgImage(TOPICS_OG_TITLE),
   },
+  twitter: shareImageMetadata(TOPICS_OG_TITLE).twitter,
 };
 
 const TOP_CONCEPTS = 24;

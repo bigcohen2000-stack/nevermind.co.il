@@ -33,7 +33,8 @@ export function PodcastSubscribe({
           onDark ? "text-foreground/75" : "text-foreground/70",
         )}
       >
-        פודקאסט מרפסת. פרקים להאזנה בספוטיפיי. אותו ניתוח, בפורמט אודיו.
+        פודקאסט מרפסת. פרקים פתוחים להאזנה. חינם לכולם. מאגר המועדון זמין
+        בפיד RSS פרטי לחברים בלבד.
       </p>
       <div className="flex flex-wrap gap-3">
         <a
@@ -61,7 +62,7 @@ export function PodcastSubscribe({
             onDark ? "text-foreground/80" : "text-foreground/75",
           )}
         >
-          פיד RSS
+          פיד RSS ציבורי (חינם)
         </Link>
       </div>
     </div>

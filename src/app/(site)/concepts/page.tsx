@@ -3,11 +3,17 @@ import Link from "next/link";
 
 import { ConceptDirectoryGrid } from "@/components/concepts/concept-directory-grid";
 import { ConceptKnowledgeGraphView } from "@/components/concepts/concept-knowledge-graph";
+import { InvestigationFactsStrip } from "@/components/members/investigation-facts-strip";
+import { JsonLd } from "@/components/seo/json-ld";
 import { Eyebrow } from "@/components/ui/editorial";
 import { getConceptKnowledgeGraph } from "@/lib/concepts/knowledge-graph";
+import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
+import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
 import { listConceptsWithVideoCounts } from "@/lib/videos/queries";
 
 export const dynamic = "force-dynamic";
+
+const CONCEPTS_OG_TITLE = "מדריך המושגים";
 
 export const metadata: Metadata = {
   title: "מושגים",
@@ -22,7 +28,9 @@ export const metadata: Metadata = {
       "מפת מושגים אינטראקטיבית ורשימה מסרטוני NeverMinde, עם קישור לחיפוש.",
     url: "https://nevermind.co.il/concepts",
     type: "website",
+    images: shareOgImage(CONCEPTS_OG_TITLE),
   },
+  twitter: shareImageMetadata(CONCEPTS_OG_TITLE).twitter,
 };
 
 export default async function ConceptsPage() {
@@ -89,20 +97,17 @@ export default async function ConceptsPage() {
     ],
   };
 
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "בית", path: "/" },
+    { name: "מושגים", path: "/concepts" },
+  ]);
+
   return (
     <main className="w-full bg-background text-foreground" dir="rtl">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(definedTermsLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
-      />
+      <JsonLd data={breadcrumbLd} />
+      <JsonLd data={collectionLd} />
+      <JsonLd data={definedTermsLd} />
+      <JsonLd data={faqLd} />
 
       <div className="mx-auto w-full max-w-6xl px-6 py-16 lg:py-24">
         <Eyebrow>מושגים</Eyebrow>
@@ -113,6 +118,15 @@ export default async function ConceptsPage() {
           מפה של קשרים בין מושגים (סרטון משותף = קו). לחצו על נקודה כדי לפתוח
           חיפוש. מתחת: אותה רשימה בכרטיסים.
         </p>
+
+        <div className="mt-8">
+          <InvestigationFactsStrip
+            tone="inline"
+            factIds={["concepts", "hours", "levels"]}
+            moreHref="/videos"
+            moreLabel="לסרטונים"
+          />
+        </div>
 
         {graph.nodes.length > 0 ? (
           <section className="mt-10" aria-labelledby="concept-graph-title">

@@ -2,6 +2,12 @@ import Link from "next/link";
 
 import { CURATED_CONCEPTS } from "@/lib/concepts/quality";
 import { videosBrowseHref } from "@/lib/videos/browse-params";
+import {
+  BREAKDOWN_LEVELS,
+  BREAKDOWN_LEVEL_LABELS,
+  BREAKDOWN_LEVEL_NUMBERS,
+  type BreakdownLevel,
+} from "@/lib/videos/investigation";
 import type {
   VideoBrowseFilter,
   VideoBrowseSort,
@@ -12,6 +18,7 @@ type VideosBrowseControlsProps = {
   filter: VideoBrowseFilter;
   sort: VideoBrowseSort;
   concept?: string;
+  breakdown?: BreakdownLevel;
 };
 
 const FILTERS: { id: VideoBrowseFilter; label: string }[] = [
@@ -37,8 +44,10 @@ export function VideosBrowseControls({
   filter,
   sort,
   concept,
+  breakdown,
 }: VideosBrowseControlsProps) {
   const activeConcept = concept?.trim() || undefined;
+  const activeBreakdown = breakdown;
   const peekBase = CURATED_CONCEPTS.slice(0, PEEK_CONCEPTS);
   const peek =
     activeConcept &&
@@ -67,6 +76,7 @@ export function VideosBrowseControls({
                       filter: item.id,
                       sort,
                       concept: activeConcept,
+                      breakdown: activeBreakdown,
                     })}
                     className={cn(
                       "inline-flex min-h-10 items-center border px-3 text-sm no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
@@ -95,6 +105,7 @@ export function VideosBrowseControls({
                       filter,
                       sort: item.id,
                       concept: activeConcept,
+                      breakdown: activeBreakdown,
                     })}
                     className={cn(
                       "inline-flex min-h-10 items-center border px-3 text-sm no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
@@ -114,6 +125,54 @@ export function VideosBrowseControls({
       </div>
 
       <div className="mt-5 border-t border-foreground/10 pt-4">
+        <p className="text-sm font-medium text-foreground">רמת פירוק</p>
+        <ul className="mt-2 flex flex-wrap gap-2">
+          <li>
+            <Link
+              href={videosBrowseHref({
+                filter,
+                sort,
+                concept: activeConcept,
+              })}
+              className={cn(
+                "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                !activeBreakdown
+                  ? "border-action bg-action/10 text-action"
+                  : "border-foreground/20 text-foreground",
+              )}
+              aria-current={!activeBreakdown ? "page" : undefined}
+            >
+              כל הרמות
+            </Link>
+          </li>
+          {BREAKDOWN_LEVELS.map((level) => {
+            const active = activeBreakdown === level;
+            return (
+              <li key={level}>
+                <Link
+                  href={videosBrowseHref({
+                    filter,
+                    sort,
+                    concept: activeConcept,
+                    breakdown: level,
+                  })}
+                  className={cn(
+                    "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                    active
+                      ? "border-action bg-action text-background"
+                      : "border-foreground/20 text-foreground",
+                  )}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {BREAKDOWN_LEVEL_NUMBERS[level]}. {BREAKDOWN_LEVEL_LABELS[level]}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <div className="mt-5 border-t border-foreground/10 pt-4">
         <p className="text-sm font-medium text-foreground">
           מושג
           {activeConcept ? (
@@ -126,7 +185,11 @@ export function VideosBrowseControls({
         <ul className="mt-2 flex flex-wrap gap-2">
           <li>
             <Link
-              href={videosBrowseHref({ filter, sort })}
+              href={videosBrowseHref({
+                filter,
+                sort,
+                breakdown: activeBreakdown,
+              })}
               className={cn(
                 "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
                 !activeConcept
@@ -143,7 +206,12 @@ export function VideosBrowseControls({
             return (
               <li key={name}>
                 <Link
-                  href={videosBrowseHref({ filter, sort, concept: name })}
+                  href={videosBrowseHref({
+                    filter,
+                    sort,
+                    concept: name,
+                    breakdown: activeBreakdown,
+                  })}
                   className={cn(
                     "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
                     active
@@ -173,7 +241,12 @@ export function VideosBrowseControls({
                 return (
                   <li key={name}>
                     <Link
-                      href={videosBrowseHref({ filter, sort, concept: name })}
+                      href={videosBrowseHref({
+                        filter,
+                        sort,
+                        concept: name,
+                        breakdown: activeBreakdown,
+                      })}
                       className={cn(
                         "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
                         active
@@ -193,18 +266,13 @@ export function VideosBrowseControls({
 
         <p className="mt-3 text-xs">
           <Link
-            href="/videos/topics"
-            className="text-action no-underline hover:underline"
+            href="/concepts"
+            className="text-muted no-underline hover:text-action hover:no-underline"
           >
-            עיון לפי נושא (אקורדיון מלא)
+            למדריך המושגים המלא
           </Link>
         </p>
       </div>
-
-      <p className="mt-4 text-xs leading-relaxed text-muted">
-        תאריך לפי פרסום ביוטיוב כשיש. אחרת לפי כניסה למאגר. משך מופיע אחרי
-        סנכרון עם עמודות משך.
-      </p>
     </div>
   );
 }

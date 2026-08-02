@@ -3,13 +3,18 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { RandomClubButton } from "@/components/members/random-club-button";
+import { PrivatePodcastBanner } from "@/components/members/private-podcast-banner";
+import { InvestigationFactsStrip } from "@/components/members/investigation-facts-strip";
 import { PodcastSubscribe } from "@/components/podcast/podcast-subscribe";
 import { HeroSearchSection } from "@/components/search/hero-search-section";
+import { JsonLd } from "@/components/seo/json-ld";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
 import { ContinueWatchingSection } from "@/components/videos/continue-watching-section";
 import { VideoGridSkeleton } from "@/components/videos/video-grid-skeleton";
 import { VideosResults } from "@/components/videos/videos-results";
 import { resolveVideoEntitlement } from "@/lib/club/access";
+import { shareImageMetadata } from "@/lib/og/share-image";
+import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
 import { parseVideosBrowseParams } from "@/lib/videos/browse-params";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +24,8 @@ type VideosPageProps = {
     filter?: string;
     sort?: string;
     concept?: string;
+    breakdown?: string;
+    level?: string;
     page?: string;
   }>;
 };
@@ -39,8 +46,13 @@ export async function generateMetadata({
   if (params.filter !== "all") canonicalQs.set("filter", params.filter);
   if (params.sort !== "newest") canonicalQs.set("sort", params.sort);
   if (params.concept) canonicalQs.set("concept", params.concept);
+  if (params.breakdown) canonicalQs.set("breakdown", params.breakdown);
   if (params.page > 1) canonicalQs.set("page", String(params.page));
   const qs = canonicalQs.toString();
+
+  const ogTitle = params.concept
+    ? `סרטונים: ${params.concept}`
+    : "אותו ניתוח, בקול.";
 
   return {
     title: parts.join(" | "),
@@ -50,6 +62,7 @@ export async function generateMetadata({
         ? `https://nevermind.co.il/videos?${qs}`
         : "https://nevermind.co.il/videos",
     },
+    ...shareImageMetadata(ogTitle),
   };
 }
 
@@ -73,12 +86,18 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
   const access = await resolveVideoEntitlement().catch(() => ({
     entitled: false,
   }));
-  const { filter, sort, concept, page } = parseVideosBrowseParams(
+  const { filter, sort, concept, breakdown, page } = parseVideosBrowseParams(
     await searchParams,
   );
 
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "בית", path: "/" },
+    { name: "סרטונים", path: "/videos" },
+  ]);
+
   return (
     <main className="w-full text-start">
+      <JsonLd data={breadcrumbLd} />
       <section aria-labelledby="videos-hero-title" className="band-dark">
         <Watermark className="bottom-[-1.5rem] start-[-0.5rem] text-[6rem] text-foreground/[0.045] sm:text-[9rem] lg:text-[13rem]">
           הרצאות
@@ -117,6 +136,13 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
         </div>
       </section>
 
+      <InvestigationFactsStrip
+        tone="paper"
+        factIds={["hours", "levels", "concepts", "since", "views"]}
+        moreHref="/members"
+        moreLabel="למועדון ולמאגר"
+      />
+
       <ContinueWatchingSection variant="strip" />
 
       <section
@@ -139,6 +165,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
               filter={filter}
               sort={sort}
               concept={concept}
+              breakdown={breakdown}
               page={page}
             />
           </Suspense>
@@ -163,9 +190,16 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
 
           <div className="mt-12 border-t border-foreground/10 pt-10">
             <h3 className="text-lg font-semibold tracking-tight">
-              פודקאסט מרפסת
+              פודקאסט: חינם מול מועדון
             </h3>
+            <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+              חינם: פיד ציבורי להרצאות הפתוחות. מועדון: פיד RSS אישי למאגר
+              הלא-רשום, להאזנה בנהיגה או בהליכה.
+            </p>
             <PodcastSubscribe className="mt-4" variant="light" />
+            <div className="mt-6">
+              <PrivatePodcastBanner density="compact" />
+            </div>
           </div>
         </div>
       </section>

@@ -1,10 +1,8 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Aceternity-style Dot Background (CSS-only).
- *
+ * Subtle dot field on the cream canvas.
  * Pure decorative layer: no client JS, no canvas, no images.
- * Mount behind page content with -z-10 so it never blocks FCP or interaction.
  */
 export function DotBackground({ className }: { className?: string }) {
   return (
@@ -12,7 +10,7 @@ export function DotBackground({ className }: { className?: string }) {
       aria-hidden="true"
       role="presentation"
       className={cn(
-        "pointer-events-none fixed inset-0 -z-10 h-full w-full bg-black",
+        "pointer-events-none fixed inset-0 -z-10 h-full w-full bg-[#FAFAF8]",
         className,
       )}
     >
@@ -21,9 +19,9 @@ export function DotBackground({ className }: { className?: string }) {
         role="presentation"
         className={cn(
           "absolute inset-0",
-          "bg-[radial-gradient(#334155_1px,transparent_1px)]",
+          "bg-[radial-gradient(#9CA3AF_1px,transparent_1px)]",
           "[background-size:20px_20px]",
-          "opacity-40",
+          "opacity-25",
           "[mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_85%)]",
         )}
       />

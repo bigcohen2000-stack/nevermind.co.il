@@ -14,6 +14,8 @@ export function redactMembersOnlySource(video: Video): Video {
   return {
     ...video,
     youtube_id: "",
+    // Teaser ids are only injected on the locked watch page, never in grids.
+    teaser_youtube_id: null,
     thumbnail_url: buildOpaqueThumbPath(video.id),
     // Descriptions sometimes paste YouTube URLs. Keep title only for teasers.
     description: null,

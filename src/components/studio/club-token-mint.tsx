@@ -6,6 +6,7 @@ import {
   mintClubToken,
   revokeClubToken,
 } from "@/actions/club-login";
+import { clubAccessGranted } from "@/lib/studio/whatsapp-templates";
 
 type TokenRow = {
   id: string;
@@ -20,27 +21,27 @@ type ClubTokenMintProps = {
   recentTokens: TokenRow[];
 };
 
-function whatsappMessage(url: string): string {
-  return `הקישור האישי שלך למאגר NeverMind: ${url} הקישור אישי. לא להעביר הלאה.`;
-}
-
 export function ClubTokenMint({ recentTokens }: ClubTokenMintProps) {
   const [phone, setPhone] = useState("");
-  const [days, setDays] = useState(30);
+  const [displayName, setDisplayName] = useState("");
+  const [minutes, setMinutes] = useState(30);
   const [link, setLink] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   return (
-    <section className="mt-12 space-y-8 rounded-xl border border-zinc-700 bg-zinc-900/60 p-6">
+    <section
+      className="scroll-mt-6 space-y-6 border border-zinc-700 bg-zinc-900/50 p-5 sm:p-6"
+      dir="rtl"
+    >
       <div>
-        <h2 className="text-lg font-semibold text-zinc-100">
+        <h2 className="text-base font-semibold text-zinc-100">
           הנפקת קישור מועדון
         </h2>
         <p className="mt-2 text-sm text-zinc-400">
-          טלפון + תוקף. מעתיקים את הקישור ושולחים בוואטסאפ. ביטול מנוי: Revoke
-          על השורה. סיסמה משותפת מוגדרת בנפרד למעלה.
+          טלפון + שם (אופציונלי) + תוקף בדקות (ברירת מחדל 30). מעתיקים ושולחים
+          בוואטסאפ. הקישור אישי. לא להעברה.
         </p>
       </div>
 
@@ -54,17 +55,29 @@ export function ClubTokenMint({ recentTokens }: ClubTokenMintProps) {
           startTransition(async () => {
             const result = await mintClubToken({
               phone,
-              daysValid: days,
+              minutesValid: minutes,
+              displayName: displayName.trim() || undefined,
             });
             if (!result.ok) {
               setError(result.error);
               return;
             }
             setLink(result.url ?? null);
-            setStatus("נוצר קישור. העתיקו ושלחו בוואטסאפ.");
+            setStatus(result.message ?? "נוצר קישור. העתיקו ושלחו בוואטסאפ.");
           });
         }}
       >
+        <div>
+          <label className="block text-xs text-zinc-400" htmlFor="mint-name">
+            שם
+          </label>
+          <input
+            id="mint-name"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="mt-1 rounded-md border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+          />
+        </div>
         <div>
           <label className="block text-xs text-zinc-400" htmlFor="mint-phone">
             טלפון
@@ -79,16 +92,16 @@ export function ClubTokenMint({ recentTokens }: ClubTokenMintProps) {
           />
         </div>
         <div>
-          <label className="block text-xs text-zinc-400" htmlFor="mint-days">
-            ימים
+          <label className="block text-xs text-zinc-400" htmlFor="mint-minutes">
+            דקות
           </label>
           <input
-            id="mint-days"
+            id="mint-minutes"
             type="number"
-            min={1}
-            max={730}
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value) || 30)}
+            min={5}
+            max={1440}
+            value={minutes}
+            onChange={(e) => setMinutes(Number(e.target.value) || 30)}
             className="mt-1 w-24 rounded-md border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
           />
         </div>
@@ -106,16 +119,26 @@ export function ClubTokenMint({ recentTokens }: ClubTokenMintProps) {
           <p className="break-all text-zinc-200" dir="ltr">
             {link}
           </p>
-          <p className="text-zinc-400">{whatsappMessage(link)}</p>
+          <p className="whitespace-pre-wrap text-zinc-400">
+            {clubAccessGranted({
+              name: displayName.trim() || "חבר/ת",
+              magicUrl: link,
+            })}
+          </p>
           <button
             type="button"
             className="rounded-md border border-zinc-500 px-3 py-1.5 text-xs text-zinc-100"
             onClick={() => {
-              void navigator.clipboard.writeText(whatsappMessage(link));
-              setStatus("הועתק ללוח.");
+              void navigator.clipboard.writeText(
+                clubAccessGranted({
+                  name: displayName.trim() || "חבר/ת",
+                  magicUrl: link,
+                }),
+              );
+              setStatus("הודעת וואטסאפ הועתקה.");
             }}
           >
-            העתק טקסט לוואטסאפ
+            העתק הודעת וואטסאפ
           </button>
         </div>
       ) : null}
@@ -135,7 +158,7 @@ export function ClubTokenMint({ recentTokens }: ClubTokenMintProps) {
                 className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 py-2"
               >
                 <span dir="ltr">
-                  {row.phone} · exp {row.expires_at.slice(0, 10)}
+                  {row.phone} · exp {new Date(row.expires_at).toLocaleString("he-IL")}
                   {row.revoked_at ? " · REVOKED" : ""}
                 </span>
                 {!row.revoked_at ? (

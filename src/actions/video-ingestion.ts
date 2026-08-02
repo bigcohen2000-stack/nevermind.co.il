@@ -4,10 +4,11 @@ import { revalidatePath } from "next/cache";
 import { google } from "googleapis";
 
 import { getServerEnv } from "@/env";
-import { extractCuratedConcepts } from "@/lib/concepts/quality";
+import { extractCuratedConcepts, curatedConceptCategory } from "@/lib/concepts/quality";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isStudioAuthenticated } from "@/lib/studio/session";
 import { firstConceptOffsetSeconds } from "@/lib/videos/heatmap";
+import { inferBreakdownLevel } from "@/lib/videos/investigation";
 import { computeIsGated } from "@/lib/youtube/sync";
 import { upsertTranscriptForVideo } from "@/lib/youtube/transcripts";
 
@@ -71,6 +72,21 @@ export async function ingestVideoData(
       force: isUnlisted,
     });
 
+    const existing = await admin
+      .from("videos")
+      .select("breakdown_level")
+      .eq("youtube_id", youtubeId)
+      .maybeSingle();
+
+    const breakdownLevel =
+      existing.data?.breakdown_level ??
+      inferBreakdownLevel({
+        title: metadata.title,
+        description: metadata.description,
+        isUnlisted,
+        isGated,
+      });
+
     const { data: video, error: upsertError } = await admin
       .from("videos")
       .upsert(
@@ -81,6 +97,7 @@ export async function ingestVideoData(
           thumbnail_url: metadata.thumbnailUrl,
           is_unlisted: isUnlisted,
           is_gated: isGated,
+          breakdown_level: breakdownLevel,
         },
         { onConflict: "youtube_id" },
       )
@@ -101,7 +118,10 @@ export async function ingestVideoData(
     for (const name of concepts) {
       const { data: concept, error: conceptError } = await admin
         .from("concepts")
-        .upsert({ name, category: null }, { onConflict: "name" })
+        .upsert(
+          { name, category: curatedConceptCategory(name) },
+          { onConflict: "name" },
+        )
         .select("id")
         .single();
 

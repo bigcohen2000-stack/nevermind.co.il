@@ -2,6 +2,10 @@ import type {
   VideoBrowseFilter,
   VideoBrowseSort,
 } from "@/lib/videos/queries";
+import {
+  isBreakdownLevel,
+  type BreakdownLevel,
+} from "@/lib/videos/investigation";
 
 /** Fair grid size: 3 columns × 4 rows on large screens. */
 export const VIDEOS_PAGE_SIZE = 12;
@@ -10,6 +14,7 @@ export type VideosBrowseParams = {
   filter: VideoBrowseFilter;
   sort: VideoBrowseSort;
   concept?: string;
+  breakdown?: BreakdownLevel;
   page: number;
 };
 
@@ -21,6 +26,8 @@ export function parseVideosBrowseParams(raw: {
   filter?: string;
   sort?: string;
   concept?: string;
+  breakdown?: string;
+  level?: string;
   page?: string;
 }): VideosBrowseParams {
   const filter =
@@ -42,10 +49,14 @@ export function parseVideosBrowseParams(raw: {
       ? conceptRaw
       : undefined;
 
+  const breakdownRaw = (raw.breakdown ?? raw.level)?.trim() ?? "";
+  const breakdown = isBreakdownLevel(breakdownRaw) ? breakdownRaw : undefined;
+
   return {
     filter,
     sort,
     concept,
+    breakdown,
     page: parsePageParam(raw.page),
   };
 }
@@ -69,6 +80,7 @@ export function videosBrowseHref(opts: {
   filter?: VideoBrowseFilter;
   sort?: VideoBrowseSort;
   concept?: string;
+  breakdown?: BreakdownLevel | string;
   page?: number;
   /** Scroll target after navigation (hash without #). */
   hash?: string;
@@ -79,6 +91,9 @@ export function videosBrowseHref(opts: {
   if (filter !== "all") params.set("filter", filter);
   if (sort !== "newest") params.set("sort", sort);
   if (opts.concept?.trim()) params.set("concept", opts.concept.trim());
+  if (isBreakdownLevel(opts.breakdown)) {
+    params.set("breakdown", opts.breakdown);
+  }
   const page = opts.page ?? 1;
   if (page > 1) params.set("page", String(page));
   const qs = params.toString();

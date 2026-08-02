@@ -4,10 +4,13 @@ import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypt
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = "nm_club";
-const MAX_AGE_SEC = 14 * 24 * 60 * 60;
+/** Club session lifetime after successful login (30 days). */
+const MAX_AGE_SEC = 30 * 24 * 60 * 60;
 
 export type ClubSessionPayload = {
   phone: string;
+  /** Display name captured at club login (optional for old cookies). */
+  name?: string | null;
   tokenId: string | null;
   v: number;
   exp: number;
@@ -40,6 +43,13 @@ function fromB64url(input: string): Buffer {
 export function hashClubToken(rawToken: string): string {
   return createHmac("sha256", getClubSecret())
     .update(`token:${rawToken}`)
+    .digest("hex");
+}
+
+/** Long-lived private podcast feed secret (separate namespace from magic links). */
+export function hashClubFeedToken(rawToken: string): string {
+  return createHmac("sha256", getClubSecret())
+    .update(`feed:${rawToken}`)
     .digest("hex");
 }
 
@@ -112,6 +122,7 @@ export async function setClubSessionCookie(
   const exp = payload.exp ?? Math.floor(Date.now() / 1000) + MAX_AGE_SEC;
   const full: ClubSessionPayload = {
     phone: payload.phone,
+    name: payload.name ?? null,
     tokenId: payload.tokenId,
     v: payload.v,
     exp,
@@ -120,7 +131,7 @@ export async function setClubSessionCookie(
   jar.set(COOKIE_NAME, signPayload(full), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
     maxAge: MAX_AGE_SEC,
   });

@@ -3,12 +3,22 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { getVideoProgressSeconds } from "@/actions/video-progress";
-import { getPremiumStatus } from "@/actions/premium";
 import { resolveVideoEntitlement } from "@/lib/club/access";
+import { maskClubPhone } from "@/lib/club/phone";
+import { logClubWatchEvent } from "@/lib/club/watch-events";
 import { RelatedExploration } from "@/components/search/related-exploration";
+import { JsonLd } from "@/components/seo/json-ld";
+import { ShareExplorationButton } from "@/components/share/share-exploration-button";
 import { Eyebrow } from "@/components/ui/editorial";
 import { BookingCta } from "@/components/videos/booking-cta";
+import { ClubWatchIdentity } from "@/components/videos/club-watch-identity";
+import { ContinueExplorationTeaser } from "@/components/videos/continue-exploration-teaser";
+import { CaptionTagCloud } from "@/components/videos/caption-tag-cloud";
+import { FeaturedInvestigators } from "@/components/videos/featured-investigators";
 import { GatedLock } from "@/components/videos/gated-lock";
+import { TeaserWatchGate } from "@/components/videos/teaser-watch-gate";
+import { SiteBanner } from "@/components/site/site-banner";
+import { InvestigationMetrics } from "@/components/videos/investigation-metrics";
 import { ObjectiveTruthToggle } from "@/components/videos/objective-truth-toggle";
 import { RabbitHoleWatchBridge } from "@/components/premium/rabbit-hole-watch-bridge";
 import { RelatedVideoCard } from "@/components/videos/related-video-card";
@@ -16,13 +26,18 @@ import { TranscriptHeatmap } from "@/components/videos/transcript-heatmap";
 import { WatchFocusLayout } from "@/components/videos/watch-focus-layout";
 import { WatchSeekProvider } from "@/components/videos/watch-seek-context";
 import { extractCuratedConcepts } from "@/lib/concepts/quality";
+import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
 import { getRelatedArticlesForTerms } from "@/lib/search/related-content";
+import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
 import {
   buildTranscriptHeatmap,
   segmentsFromFlatTranscript,
 } from "@/lib/videos/heatmap";
 import { isMembersOnlyVideo } from "@/lib/videos/access";
+import { buildCaptionTagCloud } from "@/lib/videos/caption-tag-cloud";
+import { getLockedTeaserYoutubeId } from "@/lib/videos/teaser";
 import { buildOpaqueThumbPath } from "@/lib/videos/thumb-token";
+import { getFeaturedInvestigatorComments } from "@/lib/videos/featured-comments";
 import {
   getRelatedVideos,
   getVideoConcepts,
@@ -51,11 +66,13 @@ export async function generateMetadata({
   const video = await getVideoForWatch(videoId).catch(() => null);
 
   if (!video || isMembersOnlyVideo(video)) {
+    const title = video?.title || "וידאו";
     return {
-      title: video?.title || "וידאו",
+      title,
       robots: video && isMembersOnlyVideo(video)
         ? { index: false, follow: false }
         : undefined,
+      ...shareImageMetadata(title),
     };
   }
 
@@ -63,42 +80,60 @@ export async function generateMetadata({
     return {
       title: "הסרטון לא זמין",
       robots: { index: false, follow: false },
+      ...shareImageMetadata("הסרטון לא זמין"),
     };
   }
 
+  const description = video.description?.slice(0, 160) || video.title;
+  const branded = shareOgImage(video.title);
+
   return {
     title: video.title,
-    description: video.description?.slice(0, 160) || video.title,
+    description,
     alternates: {
       canonical: `https://nevermind.co.il/watch/${video.youtube_id}`,
     },
     openGraph: {
       title: video.title,
-      description: video.description?.slice(0, 160) || video.title,
+      description,
       type: "video.other",
       url: `https://nevermind.co.il/watch/${video.youtube_id}`,
-      images: video.thumbnail_url ? [{ url: video.thumbnail_url }] : undefined,
+      images: video.thumbnail_url
+        ? [{ url: video.thumbnail_url }]
+        : branded,
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: video.thumbnail_url
+        ? [video.thumbnail_url]
+        : branded.map((image) => image.url),
     },
   };
 }
 
 /**
  * Locked members-only watch shell.
- * Server-only gate: no player, iframe, transcript, or seek provider in the tree.
- * Dismissible marketing modals never wrap this path.
- * Thumbnail is opaque (proxied or brand). No YouTube id in markup.
+ * Plays only a dedicated teaser clip id when set. Never the full archive id.
  */
 function LockedWatchPage({
   title,
-  isAuthenticated,
   thumbSrc,
   videoId,
+  teaserYoutubeId,
+  returnPath,
 }: {
   title: string;
-  isAuthenticated: boolean;
   thumbSrc: string;
   videoId: string;
+  teaserYoutubeId: string | null;
+  returnPath: string;
 }) {
+  const teaserThumb = teaserYoutubeId
+    ? `https://i.ytimg.com/vi/${teaserYoutubeId}/hqdefault.jpg`
+    : null;
+
+  const gateBanner = <SiteBanner slot="watch_gate" density="compact" />;
+
   return (
     <main className="w-full bg-background text-foreground" dir="rtl">
       <div className="mx-auto w-full max-w-6xl px-6 py-12 lg:py-16">
@@ -107,12 +142,26 @@ function LockedWatchPage({
           {title}
         </h1>
         <div className="mt-8 max-w-3xl">
-          <GatedLock
-            title={title}
-            isAuthenticated={isAuthenticated}
-            thumbSrc={thumbSrc}
-            videoId={videoId}
-          />
+          {teaserYoutubeId ? (
+            <TeaserWatchGate
+              teaserYoutubeId={teaserYoutubeId}
+              title={title}
+              thumbnailUrl={teaserThumb}
+              lockThumbSrc={thumbSrc}
+              videoId={videoId}
+              returnPath={returnPath}
+              gateBanner={gateBanner}
+            />
+          ) : (
+            <GatedLock
+              title={title}
+              thumbSrc={thumbSrc}
+              videoId={videoId}
+              returnPath={returnPath}
+              hasTeaser={false}
+              gateBanner={gateBanner}
+            />
+          )}
         </div>
       </div>
     </main>
@@ -163,20 +212,17 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
     return <UnavailableWatchPage />;
   }
 
-  const premium = await getPremiumStatus().catch(() => ({
-    isAuthenticated: false,
-    isPremium: false,
-    hasVideoAccess: false,
-    userId: null,
-  }));
+  // resolveVideoEntitlement already resolves premium/profile when needed.
+  // Avoid a second getPremiumStatus round-trip on the critical path.
   const access = await resolveVideoEntitlement().catch(() => ({
     entitled: false,
     clubSession: false,
     hasVideoAccess: false,
-    isAuthenticated: premium.isAuthenticated,
-    phone: null,
+    isAuthenticated: false,
+    phone: null as string | null,
+    displayName: null as string | null,
   }));
-  const authed = access.isAuthenticated || premium.isAuthenticated;
+  const authed = access.isAuthenticated;
   const entitled = access.entitled;
   const locked = isMembersOnlyVideo(video) && !entitled;
 
@@ -191,30 +237,35 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
     permanentRedirect(`${dest}${qs}`);
   }
 
-  // Hard stop: never mount player / related / transcript when locked.
-  // Closing any Dialog elsewhere must not be able to reveal a player here.
+  // Hard stop: never mount full player / related / transcript when locked.
+  // Only a dedicated teaser_youtube_id may reach the client.
   if (locked) {
+    const returnPath = `${getWatchHref(video)}${t ? `?t=${encodeURIComponent(t)}` : ""}`;
     return (
       <LockedWatchPage
         title={video.title}
-        isAuthenticated={authed}
         thumbSrc={buildOpaqueThumbPath(video.id)}
         videoId={video.id}
+        teaserYoutubeId={getLockedTeaserYoutubeId(video)}
+        returnPath={returnPath}
       />
     );
   }
 
+  if (access.clubSession && access.phone && isMembersOnlyVideo(video)) {
+    void logClubWatchEvent({ phone: access.phone, videoId: video.id });
+  }
+
   const urlStart = parseTimestampParam(t);
-  const savedStart =
+  const [concepts, transcriptPayload, savedStart] = await Promise.all([
+    getVideoConcepts(video.id).catch(() => []),
+    getVideoTranscriptPayload(video.id).catch(() => null),
     urlStart <= 0 && authed
-      ? await getVideoProgressSeconds(video.youtube_id).catch(() => 0)
-      : 0;
+      ? getVideoProgressSeconds(video.youtube_id).catch(() => 0)
+      : Promise.resolve(0),
+  ]);
   const startSeconds = urlStart > 0 ? urlStart : savedStart;
 
-  const concepts = await getVideoConcepts(video.id).catch(() => []);
-  const transcriptPayload = await getVideoTranscriptPayload(video.id).catch(
-    () => null,
-  );
   const transcript = transcriptPayload?.content ?? null;
   const coreFacts = Array.isArray(video.core_facts)
     ? video.core_facts.filter((f) => typeof f === "string" && f.trim())
@@ -299,14 +350,19 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
       }
     : null;
 
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "בית", path: "/" },
+    { name: "סרטונים", path: "/videos" },
+    {
+      name: video.title,
+      path: getWatchHref(video),
+    },
+  ]);
+
   return (
     <>
-      {jsonLd ? (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      ) : null}
+      <JsonLd data={breadcrumbLd} />
+      {jsonLd ? <JsonLd data={jsonLd} /> : null}
 
       <WatchSeekProvider>
         <WatchFocusLayout
@@ -329,11 +385,42 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
           }
           belowPlayer={
             <>
+              {access.clubSession ? (
+                <ClubWatchIdentity
+                  displayName={access.displayName}
+                  maskedPhone={maskClubPhone(access.phone)}
+                />
+              ) : null}
+
               <TranscriptHeatmap buckets={heatmapBuckets} />
+
+              <InvestigationMetrics
+                durationSeconds={video.duration_seconds}
+                breakdownLevel={video.breakdown_level}
+                heatmapBuckets={heatmapBuckets}
+                conceptNames={concepts.map((c) => c.name)}
+                watchHref={getWatchHref(video)}
+              />
+
+              <CaptionTagCloud
+                tags={buildCaptionTagCloud(
+                  transcript,
+                  concepts.map((c) => c.name),
+                )}
+              />
+
+              <FeaturedInvestigators
+                videoId={video.id}
+                youtubeId={video.youtube_id}
+                watchHref={getWatchHref(video)}
+              />
 
               <ObjectiveTruthToggle
                 facts={coreFacts}
-                transcript={transcript}
+                transcript={authed ? transcript : null}
+                transcriptAvailable={Boolean(transcript?.trim())}
+                canViewTranscript={authed}
+                signInNextPath={getWatchHref(video)}
                 videoTitle={video.title}
                 concepts={concepts.map((c) => c.name)}
               />
@@ -363,6 +450,21 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
                     ))}
                   </ul>
                 </section>
+              ) : null}
+
+              <div className="mt-8">
+                <ShareExplorationButton
+                  title={video.title}
+                  text={`חקירה: ${video.title}`}
+                  url={getWatchHref(video)}
+                />
+              </div>
+
+              {!isMembersOnlyVideo(video) ? (
+                <ContinueExplorationTeaser
+                  label={video.club_teaser_label}
+                  href={video.club_teaser_href}
+                />
               ) : null}
 
               <div className="mt-8">

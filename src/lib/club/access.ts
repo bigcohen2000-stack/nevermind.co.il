@@ -10,6 +10,8 @@ export type ClubAccessResult = {
   hasVideoAccess: boolean;
   isAuthenticated: boolean;
   phone: string | null;
+  /** Display name from club cookie (if set). */
+  displayName: string | null;
 };
 
 async function clubConfigVersion(): Promise<number> {
@@ -37,12 +39,20 @@ export async function resolveVideoEntitlement(): Promise<ClubAccessResult> {
     if (session.v !== version) {
       await clearClubSessionCookie();
     } else {
+      // Entitled via club cookie. Still resolve auth for progress / save UI.
+      const premium = await getPremiumStatus().catch(() => ({
+        isAuthenticated: false,
+        isPremium: false,
+        hasVideoAccess: false,
+        userId: null,
+      }));
       return {
         entitled: true,
         clubSession: true,
         hasVideoAccess: true,
-        isAuthenticated: false,
+        isAuthenticated: premium.isAuthenticated,
         phone: session.phone,
+        displayName: session.name?.trim() || null,
       };
     }
   }
@@ -63,6 +73,7 @@ export async function resolveVideoEntitlement(): Promise<ClubAccessResult> {
     hasVideoAccess,
     isAuthenticated: premium.isAuthenticated,
     phone: null,
+    displayName: null,
   };
 }
 
