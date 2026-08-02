@@ -23,6 +23,8 @@ export interface ArticleMeta {
   category: ArticleCategory;
   isPremium: boolean;
   description: string;
+  /** Optional Hebrew terms bridging to video concepts / search. */
+  relatedTerms?: string[];
 }
 
 interface ArticleEntry {

@@ -1,42 +1,272 @@
 "use client";
 
+import {
+  forwardRef,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+} from "react";
+
+import { saveVideoProgress } from "@/actions/video-progress";
+import { recordWatchStart } from "@/actions/watch-history";
+import {
+  getLocalVideoProgress,
+  saveLocalVideoProgress,
+} from "@/lib/videos/progress-local";
+import { cn } from "@/lib/utils";
+
+export type WatchPlayerHandle = {
+  getCurrentTime: () => number;
+  seekTo: (seconds: number) => void;
+};
+
 type WatchPlayerProps = {
   youtubeId: string;
   startSeconds?: number;
   title?: string;
+  thumbnailUrl?: string | null;
+  /** When true, also persist progress to Supabase for the signed-in user. */
+  isAuthenticated?: boolean;
+  /** Fires when the YouTube player reaches the ENDED state. */
+  onEnded?: () => void;
 };
 
-/**
- * Standard YouTube iframe embed with ?start= for timestamp deep-links (?t=).
- * Remounts when youtubeId or startSeconds change.
- */
-export function WatchPlayer({
-  youtubeId,
-  startSeconds = 0,
-  title = "נגן YouTube",
-}: WatchPlayerProps) {
-  const start = Math.max(0, Math.floor(startSeconds));
-  const src = new URL(`https://www.youtube.com/embed/${youtubeId}`);
-  src.searchParams.set("rel", "0");
-  src.searchParams.set("modestbranding", "1");
-  src.searchParams.set("playsinline", "1");
-  src.searchParams.set("hl", "he");
-  if (start > 0) {
-    src.searchParams.set("start", String(start));
-  }
+type YtPlayer = {
+  destroy: () => void;
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  getPlayerState: () => number;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+};
 
-  return (
-    <div className="relative aspect-video w-full overflow-hidden border border-foreground/15 bg-ink">
-      <iframe
-        key={`${youtubeId}-${start}`}
-        title={title}
-        src={src.toString()}
-        className="absolute inset-0 h-full w-full"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowFullScreen
-        loading="lazy"
-        referrerPolicy="strict-origin-when-cross-origin"
-      />
-    </div>
-  );
+type YtNamespace = {
+  Player: new (
+    elementId: string,
+    options: {
+      videoId: string;
+      width?: string | number;
+      height?: string | number;
+      playerVars?: Record<string, string | number>;
+      events?: {
+        onReady?: (event: { target: YtPlayer }) => void;
+        onStateChange?: (event: { data: number; target: YtPlayer }) => void;
+      };
+    },
+  ) => YtPlayer;
+  PlayerState: { PLAYING: number; PAUSED: number; ENDED: number };
+};
+
+declare global {
+  interface Window {
+    YT?: YtNamespace;
+    onYouTubeIframeAPIReady?: () => void;
+  }
 }
+
+const SAVE_EVERY_MS = 10_000;
+let ytApiPromise: Promise<void> | null = null;
+
+function loadYoutubeApi(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (window.YT?.Player) return Promise.resolve();
+  if (ytApiPromise) return ytApiPromise;
+
+  ytApiPromise = new Promise((resolve) => {
+    const previous = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      previous?.();
+      resolve();
+    };
+    if (!document.querySelector("script[data-nm-youtube-api]")) {
+      const script = document.createElement("script");
+      script.src = "https://www.youtube.com/iframe_api";
+      script.async = true;
+      script.dataset.nmYoutubeApi = "1";
+      document.body.appendChild(script);
+    }
+    if (window.YT?.Player) resolve();
+  });
+
+  return ytApiPromise;
+}
+
+/**
+ * YouTube IFrame API player with throttled progress persistence
+ * (localStorage always, Supabase when authenticated).
+ */
+export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
+  function WatchPlayer(
+    {
+      youtubeId,
+      startSeconds = 0,
+      title = "נגן YouTube",
+      thumbnailUrl = null,
+      isAuthenticated = false,
+      onEnded,
+    },
+    ref,
+  ) {
+    const reactId = useId().replace(/:/g, "");
+    const elementId = `nm-yt-${reactId}`;
+    const playerRef = useRef<YtPlayer | null>(null);
+    const lastSavedAtRef = useRef(0);
+    const historyRecordedRef = useRef(false);
+    const onEndedRef = useRef(onEnded);
+    onEndedRef.current = onEnded;
+    const metaRef = useRef({ title, thumbnailUrl, isAuthenticated });
+    metaRef.current = { title, thumbnailUrl, isAuthenticated };
+
+    useImperativeHandle(ref, () => ({
+      getCurrentTime: () => {
+        try {
+          return playerRef.current?.getCurrentTime() ?? 0;
+        } catch {
+          return 0;
+        }
+      },
+      seekTo: (seconds: number) => {
+        try {
+          playerRef.current?.seekTo(Math.max(0, seconds), true);
+        } catch {
+          /* player not ready */
+        }
+      },
+    }));
+
+    useEffect(() => {
+      let cancelled = false;
+      let pollId: number | undefined;
+      historyRecordedRef.current = false;
+
+      const persist = (force = false) => {
+        const player = playerRef.current;
+        if (!player) return;
+        const now = Date.now();
+        if (!force && now - lastSavedAtRef.current < SAVE_EVERY_MS) return;
+
+        let current = 0;
+        let duration: number | null = null;
+        try {
+          current = player.getCurrentTime() || 0;
+          duration = player.getDuration() || null;
+        } catch {
+          return;
+        }
+
+        lastSavedAtRef.current = now;
+        const meta = metaRef.current;
+
+        saveLocalVideoProgress({
+          youtubeId,
+          progressSeconds: current,
+          durationSeconds: duration,
+          title: meta.title,
+          thumbnailUrl: meta.thumbnailUrl,
+        });
+
+        if (meta.isAuthenticated) {
+          void saveVideoProgress({
+            youtubeId,
+            progressSeconds: current,
+            durationSeconds: duration,
+          });
+        }
+      };
+
+      const markWatchStart = () => {
+        if (historyRecordedRef.current) return;
+        if (!metaRef.current.isAuthenticated) return;
+        historyRecordedRef.current = true;
+        void recordWatchStart(youtubeId);
+      };
+
+      const mount = async () => {
+        await loadYoutubeApi();
+        if (cancelled || !window.YT?.Player) return;
+
+        const urlStart = Math.max(0, Math.floor(startSeconds));
+        const local = getLocalVideoProgress(youtubeId);
+        const resumeAt =
+          urlStart > 0
+            ? urlStart
+            : local && local.progressSeconds > 5
+              ? local.progressSeconds
+              : 0;
+
+        playerRef.current = new window.YT.Player(elementId, {
+          videoId: youtubeId,
+          width: "100%",
+          height: "100%",
+          playerVars: {
+            rel: 0,
+            modestbranding: 1,
+            playsinline: 1,
+            hl: "he",
+            start: resumeAt > 0 ? Math.floor(resumeAt) : 0,
+          },
+          events: {
+            onReady: (event) => {
+              if (resumeAt > 0) {
+                event.target.seekTo(resumeAt, true);
+              }
+            },
+            onStateChange: (event) => {
+              const state = window.YT?.PlayerState;
+              if (!state) return;
+              if (event.data === state.PLAYING) {
+                markWatchStart();
+              }
+              if (event.data === state.PAUSED || event.data === state.ENDED) {
+                persist(true);
+              }
+              if (event.data === state.ENDED) {
+                onEndedRef.current?.();
+              }
+            },
+          },
+        });
+
+        pollId = window.setInterval(() => {
+          const player = playerRef.current;
+          const playing = window.YT?.PlayerState?.PLAYING;
+          if (!player || playing == null) return;
+          try {
+            if (player.getPlayerState() === playing) persist(false);
+          } catch {
+            /* player may be mid-destroy */
+          }
+        }, SAVE_EVERY_MS);
+      };
+
+      void mount();
+
+      return () => {
+        cancelled = true;
+        if (pollId) window.clearInterval(pollId);
+        persist(true);
+        try {
+          playerRef.current?.destroy();
+        } catch {
+          /* ignore */
+        }
+        playerRef.current = null;
+      };
+    }, [elementId, startSeconds, youtubeId]);
+
+    return (
+      <div
+        className={cn(
+          "relative aspect-video w-full overflow-hidden bg-ink",
+          "border border-foreground/15 [[data-focus-mode=true]_&]:border-transparent",
+        )}
+      >
+        <div
+          id={elementId}
+          className="absolute inset-0 h-full w-full"
+          title={title}
+        />
+      </div>
+    );
+  },
+);

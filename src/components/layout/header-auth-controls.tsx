@@ -1,0 +1,315 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
+
+import { logoutClub } from "@/actions/club-login";
+import {
+  formatHeaderAuthLabel,
+  formatHeaderClubLabel,
+  type HeaderSession,
+} from "@/lib/auth/header-session-shared";
+import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+
+type HeaderAuthControlsProps = {
+  session: HeaderSession;
+  /** Stack vertically in the mobile drawer. */
+  layout?: "inline" | "stack";
+  onNavigate?: () => void;
+  /** Shorter trigger for tight mobile chrome. */
+  compact?: boolean;
+};
+
+/**
+ * Header auth entry: passwordless account + club phone/password path.
+ */
+export function HeaderAuthControls({
+  session,
+  layout = "inline",
+  onNavigate,
+  compact = false,
+}: HeaderAuthControlsProps) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const menuId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const authLabel = formatHeaderAuthLabel(session.authEmail);
+  const clubLabel = formatHeaderClubLabel(session.clubPhone);
+  const isSignedIn = Boolean(session.authUserId || session.clubPhone);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  function signOutAccount() {
+    startTransition(async () => {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      setOpen(false);
+      onNavigate?.();
+      router.refresh();
+      router.push("/");
+    });
+  }
+
+  function signOutClub() {
+    startTransition(async () => {
+      await logoutClub();
+      setOpen(false);
+      onNavigate?.();
+      router.refresh();
+      router.push("/");
+    });
+  }
+
+  if (layout === "stack") {
+    return (
+      <div className="space-y-2 border-t border-foreground/10 pt-4">
+        <p className="px-2 text-xs font-medium tracking-wide text-muted">
+          התחברות
+        </p>
+        {isSignedIn ? (
+          <div className="space-y-1 px-2 text-sm">
+            {authLabel ? (
+              <p className="text-foreground/90">חשבון: {authLabel}</p>
+            ) : null}
+            {clubLabel ? (
+              <p className="text-foreground/90">מועדון: {clubLabel}</p>
+            ) : null}
+            <div className="flex flex-col gap-1 pt-2">
+              {session.authUserId ? (
+                <>
+                  <Link
+                    href="/my-list"
+                    className="nav-link flex min-h-11 items-center"
+                    onClick={onNavigate}
+                  >
+                    <span aria-hidden="true" className="me-2">
+                      ⭐
+                    </span>
+                    הרשימה שלי
+                  </Link>
+                  <Link
+                    href="/profile"
+                    className="nav-link flex min-h-11 items-center"
+                    onClick={onNavigate}
+                  >
+                    <span aria-hidden="true" className="me-2">
+                      👤
+                    </span>
+                    פרופיל
+                  </Link>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    className="flex min-h-11 items-center text-start text-muted hover:text-action disabled:opacity-50"
+                    onClick={signOutAccount}
+                  >
+                    התנתק מהחשבון
+                  </button>
+                </>
+              ) : null}
+              {session.clubPhone ? (
+                <>
+                  <Link
+                    href="/members"
+                    className="nav-link flex min-h-11 items-center"
+                    onClick={onNavigate}
+                  >
+                    <span aria-hidden="true" className="me-2">
+                      🔑
+                    </span>
+                    אזור מועדון
+                  </Link>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    className="flex min-h-11 items-center text-start text-muted hover:text-action disabled:opacity-50"
+                    onClick={signOutClub}
+                  >
+                    יציאה מהמועדון
+                  </button>
+                </>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-1">
+            <li>
+              <Link
+                href="/my-list"
+                className="nav-link flex min-h-12 items-center px-2 text-base"
+                onClick={onNavigate}
+              >
+                <span aria-hidden="true" className="me-2">
+                  ✉️
+                </span>
+                חשבון (Google / אימייל)
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/members#login"
+                className="nav-link flex min-h-12 items-center px-2 text-base"
+                onClick={onNavigate}
+              >
+                <span aria-hidden="true" className="me-2">
+                  🔑
+                </span>
+                כניסת מועדון (טלפון + סיסמה)
+              </Link>
+            </li>
+          </ul>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        className={cn(
+          "inline-flex min-h-10 items-center gap-1.5 rounded-md border border-foreground/20 text-sm text-foreground transition",
+          compact ? "min-w-11 justify-center px-2" : "px-3",
+          "hover:border-action hover:text-action",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+        )}
+        aria-expanded={open}
+        aria-controls={menuId}
+        aria-haspopup="menu"
+        aria-label={isSignedIn ? "החשבון" : "התחברות"}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span aria-hidden="true">{isSignedIn ? "👤" : "🔐"}</span>
+        {compact ? (
+          <span className="sr-only">{isSignedIn ? "החשבון" : "התחברות"}</span>
+        ) : (
+          <span>{isSignedIn ? "החשבון" : "התחברות"}</span>
+        )}
+      </button>
+
+      {open ? (
+        <div
+          id={menuId}
+          role="menu"
+          className="absolute end-0 z-[60] mt-2 w-64 border border-foreground/15 bg-background p-2 text-sm shadow-float"
+        >
+          {isSignedIn ? (
+            <div className="space-y-1">
+              {authLabel ? (
+                <p className="px-2 py-1 text-xs text-muted">חשבון: {authLabel}</p>
+              ) : null}
+              {clubLabel ? (
+                <p className="px-2 py-1 text-xs text-muted">מועדון: {clubLabel}</p>
+              ) : null}
+              {session.authUserId ? (
+                <>
+                  <Link
+                    role="menuitem"
+                    href="/my-list"
+                    className="flex min-h-10 items-center rounded-md px-2 hover:bg-paper"
+                    onClick={() => {
+                      setOpen(false);
+                      onNavigate?.();
+                    }}
+                  >
+                    הרשימה שלי
+                  </Link>
+                  <Link
+                    role="menuitem"
+                    href="/profile"
+                    className="flex min-h-10 items-center rounded-md px-2 hover:bg-paper"
+                    onClick={() => {
+                      setOpen(false);
+                      onNavigate?.();
+                    }}
+                  >
+                    פרופיל
+                  </Link>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={pending}
+                    className="flex min-h-10 w-full items-center rounded-md px-2 text-start text-muted hover:bg-paper disabled:opacity-50"
+                    onClick={signOutAccount}
+                  >
+                    התנתק מהחשבון
+                  </button>
+                </>
+              ) : null}
+              {session.clubPhone ? (
+                <>
+                  <Link
+                    role="menuitem"
+                    href="/members"
+                    className="flex min-h-10 items-center rounded-md px-2 hover:bg-paper"
+                    onClick={() => {
+                      setOpen(false);
+                      onNavigate?.();
+                    }}
+                  >
+                    אזור מועדון
+                  </Link>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={pending}
+                    className="flex min-h-10 w-full items-center rounded-md px-2 text-start text-muted hover:bg-paper disabled:opacity-50"
+                    onClick={signOutClub}
+                  >
+                    יציאה מהמועדון
+                  </button>
+                </>
+              ) : null}
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <p className="px-2 py-1 text-xs text-muted">בחרו איך להתחבר</p>
+              <Link
+                role="menuitem"
+                href="/my-list"
+                className="flex min-h-10 items-center gap-2 rounded-md px-2 hover:bg-paper"
+                onClick={() => {
+                  setOpen(false);
+                  onNavigate?.();
+                }}
+              >
+                <span aria-hidden="true">✉️</span>
+                חשבון (Google / אימייל)
+              </Link>
+              <Link
+                role="menuitem"
+                href="/members#login"
+                className="flex min-h-10 items-center gap-2 rounded-md px-2 hover:bg-paper"
+                onClick={() => {
+                  setOpen(false);
+                  onNavigate?.();
+                }}
+              >
+                <span aria-hidden="true">🔑</span>
+                מועדון (טלפון + סיסמה)
+              </Link>
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}

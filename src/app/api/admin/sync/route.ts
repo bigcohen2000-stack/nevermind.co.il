@@ -4,10 +4,47 @@ import { getServerEnv } from "@/env";
 import { syncYoutubeLibrary, type SyncInput } from "@/lib/youtube/sync";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+/** Full library sync (hundreds of upserts) needs more than the default 60s. */
+export const maxDuration = 300;
 
-function unauthorized() {
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+type SyncErrorCode =
+  | "AUTH"
+  | "ENV"
+  | "EXTERNAL"
+  | "INTERNAL"
+  | "BAD_REQUEST";
+
+function logSync(
+  level: "info" | "warn" | "error",
+  payload: Record<string, unknown>,
+) {
+  const line = JSON.stringify({
+    scope: "api.admin.sync",
+    ts: new Date().toISOString(),
+    ...payload,
+  });
+  if (level === "error") console.error(line);
+  else if (level === "warn") console.warn(line);
+  else console.info(line);
+}
+
+function jsonError(
+  status: number,
+  code: SyncErrorCode,
+  error: string,
+  details?: string,
+) {
+  logSync(status >= 500 ? "error" : "warn", {
+    event: "sync_failed",
+    code,
+    status,
+    error,
+    details: details ?? null,
+  });
+  return NextResponse.json(
+    { ok: false, code, error, details: details ?? null },
+    { status },
+  );
 }
 
 function extractSecret(req: Request): string | null {
@@ -16,8 +53,81 @@ function extractSecret(req: Request): string | null {
     const [scheme, token] = header.split(" ");
     if (scheme?.toLowerCase() === "bearer" && token) return token;
   }
-  // Fallback for cron UIs that prefer a custom header
   return req.headers.get("x-cron-secret");
+}
+
+function classifySyncError(err: unknown): {
+  status: number;
+  code: SyncErrorCode;
+  message: string;
+} {
+  const message = err instanceof Error ? err.message : String(err);
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("youtube") ||
+    lower.includes("quota") ||
+    lower.includes("rate limit") ||
+    lower.includes("429") ||
+    lower.includes("googleapis") ||
+    lower.includes("fetch failed")
+  ) {
+    return { status: 502, code: "EXTERNAL", message };
+  }
+
+  return { status: 500, code: "INTERNAL", message };
+}
+
+async function runAuthorizedSync(req: Request, body: SyncInput = {}) {
+  let env;
+  try {
+    env = getServerEnv();
+  } catch (err) {
+    return jsonError(
+      500,
+      "ENV",
+      "Server environment invalid",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  const token = extractSecret(req);
+  if (!token || token !== env.CRON_SECRET) {
+    return jsonError(401, "AUTH", "Unauthorized");
+  }
+
+  logSync("info", {
+    event: "sync_start",
+    channelIds: body.channelIds?.length ?? null,
+    playlistIds: body.playlistIds?.length ?? null,
+  });
+
+  try {
+    const result = await syncYoutubeLibrary(body);
+    const hasSoftErrors = result.errors.length > 0;
+    logSync(hasSoftErrors ? "warn" : "info", {
+      event: "sync_complete",
+      upserted: result.upserted,
+      transcriptsUpserted: result.transcriptsUpserted,
+      softErrors: result.errors,
+    });
+    return NextResponse.json({ ok: true, ...result });
+  } catch (err) {
+    const classified = classifySyncError(err);
+    return jsonError(
+      classified.status,
+      classified.code,
+      classified.message,
+    );
+  }
+}
+
+/**
+ * GET /api/admin/sync
+ * Used by Vercel Cron (Authorization: Bearer <CRON_SECRET>).
+ */
+export async function GET(req: Request) {
+  return runAuthorizedSync(req);
 }
 
 /**
@@ -27,34 +137,8 @@ function extractSecret(req: Request): string | null {
  *   Authorization: Bearer <CRON_SECRET>
  *   — or —
  *   x-cron-secret: <CRON_SECRET>
- *
- * Body (all optional; falls back to env):
- * {
- *   "channelIds": ["UCxxxx"],
- *   "playlistIds": ["PLxxxx"],
- *   "unlistedVideoIds": ["dQw4w9WgXcQ"],
- *   "gatedVideoIds": ["abc123"]
- * }
  */
 export async function POST(req: Request) {
-  let env;
-  try {
-    env = getServerEnv();
-  } catch (err) {
-    return NextResponse.json(
-      {
-        error: "Server environment invalid",
-        details: err instanceof Error ? err.message : String(err),
-      },
-      { status: 500 },
-    );
-  }
-
-  const token = extractSecret(req);
-  if (!token || token !== env.CRON_SECRET) {
-    return unauthorized();
-  }
-
   let body: SyncInput = {};
   try {
     if (req.headers.get("content-type")?.includes("application/json")) {
@@ -64,16 +148,5 @@ export async function POST(req: Request) {
     body = {};
   }
 
-  try {
-    const result = await syncYoutubeLibrary(body);
-    return NextResponse.json({ ok: true, ...result });
-  } catch (err) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: err instanceof Error ? err.message : String(err),
-      },
-      { status: 500 },
-    );
-  }
+  return runAuthorizedSync(req, body);
 }

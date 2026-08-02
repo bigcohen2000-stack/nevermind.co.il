@@ -17,6 +17,7 @@ declare module "*.mdx" {
     category: "relationships" | "existence" | "identity";
     isPremium: boolean;
     description: string;
+    relatedTerms?: string[];
   };
 
   const MDXComponent: import("react").ComponentType;

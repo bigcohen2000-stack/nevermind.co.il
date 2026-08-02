@@ -1,4 +1,14 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npm run build"
+  "buildCommand": "npm run build",
+  "crons": [
+    {
+      "path": "/api/admin/sync",
+      "schedule": "0 4 * * 0"
+    },
+    {
+      "path": "/api/push/daily-reset",
+      "schedule": "0 7 * * *"
+    }
+  ]
 }

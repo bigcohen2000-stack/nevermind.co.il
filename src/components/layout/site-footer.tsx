@@ -1,46 +1,56 @@
 import Link from "next/link";
 
+import { InstallAppButton } from "@/components/layout/install-app-button";
+import { SiteLogo } from "@/components/layout/site-logo";
+import { getApplePodcastUrl, getSpotifyShowUrl } from "@/lib/podcast/links";
+import { FOOTER_NAV } from "@/lib/site-nav";
 import { buildWhatsAppHrefPlain, YOUTUBE_CHANNEL_URL } from "@/lib/whatsapp";
 
 /**
- * SiteFooter — premium dark RTL footer.
+ * SiteFooter — dark RTL footer with crawlable sitemap groups and install CTA.
  */
-
-const footerLinks = [
-  { label: "ראשי", href: "/" },
-  { label: "מסלולים", href: "/paths" },
-  { label: "מאמרים", href: "/articles" },
-  { label: "מנגנונים", href: "/mechanisms" },
-  { label: "וידאו", href: "/videos" },
-  { label: "תכנים", href: "/books" },
-  { label: "יצירת קשר", href: "/contact" },
-];
 
 const currentYear = new Date().getFullYear();
 
+const exploreLinks = FOOTER_NAV.filter((l) =>
+  [
+    "/search",
+    "/videos",
+    "/articles",
+    "/concepts",
+    "/members",
+    "/mechanisms",
+    "/paths",
+  ].includes(l.href),
+);
+
+const accountLinks = FOOTER_NAV.filter((l) =>
+  ["/books", "/booking", "/contact", "/my-list", "/profile"].includes(l.href),
+);
+
 export function SiteFooter() {
   const whatsappHref = buildWhatsAppHrefPlain();
+  const spotifyUrl = getSpotifyShowUrl();
+  const appleUrl = getApplePodcastUrl();
 
   return (
-    <footer className="band-dark text-background">
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-16 lg:py-20">
-        <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <span className="block text-2xl font-semibold leading-tight tracking-tight">
-              NeverMinde
-            </span>
-            <span className="mt-1 block text-base leading-tight text-background/70">
-              יקיר כהן
-            </span>
-            <p className="mt-5 max-w-xs leading-relaxed text-background/70">
+    <footer className="band-dark text-foreground">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-16 lg:py-20">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+          <div className="lg:col-span-5">
+            <SiteLogo variant="on-dark" size="footer" />
+            <p className="mt-5 max-w-xs text-sm leading-relaxed text-foreground/70 sm:text-base">
               ניתוח לוגי של המציאות. הפרדה בין עובדה לבין סיפור, ללא דרמה.
             </p>
+            <div className="mt-6">
+              <InstallAppButton />
+            </div>
             <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
               <a
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-background/80 no-underline transition-colors duration-200 hover:text-background hover:no-underline"
+                className="inline-flex min-h-11 items-center text-foreground/80 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
               >
                 וואטסאפ
               </a>
@@ -48,20 +58,77 @@ export function SiteFooter() {
                 href={YOUTUBE_CHANNEL_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-background/80 no-underline transition-colors duration-200 hover:text-background hover:no-underline"
+                className="inline-flex min-h-11 items-center text-foreground/80 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
               >
                 יוטיוב
               </a>
+              <a
+                href={spotifyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center text-foreground/80 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
+              >
+                ספוטיפיי
+              </a>
+              {appleUrl ? (
+                <a
+                  href={appleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-11 items-center text-foreground/80 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
+                >
+                  Apple Podcasts
+                </a>
+              ) : null}
+              <Link
+                href="/api/podcast.xml"
+                className="inline-flex min-h-11 items-center text-foreground/80 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
+              >
+                RSS
+              </Link>
             </div>
           </div>
 
-          <nav aria-label="ניווט תחתון">
-            <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              {footerLinks.map((link) => (
-                <li key={link.label}>
+          <nav
+            aria-label="חקירה"
+            className="lg:col-span-3"
+          >
+            <p className="text-xs font-medium tracking-wide text-muted">חקירה</p>
+            <ul className="mt-3 flex flex-col gap-1 text-sm">
+              <li>
+                <Link
+                  href="/"
+                  className="inline-flex min-h-11 items-center text-foreground/80 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
+                >
+                  ראשי
+                </Link>
+              </li>
+              {exploreLinks.map((link) => (
+                <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-background/80 no-underline transition-colors duration-200 hover:text-background hover:no-underline"
+                    className="inline-flex min-h-11 items-center text-foreground/80 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <nav
+            aria-label="המשך וחשבון"
+            className="lg:col-span-4"
+          >
+            <p className="text-xs font-medium tracking-wide text-muted">
+              המשך וחשבון
+            </p>
+            <ul className="mt-3 flex flex-col gap-1 text-sm sm:flex-row sm:flex-wrap sm:gap-x-6 lg:flex-col lg:gap-1">
+              {accountLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="inline-flex min-h-11 items-center text-foreground/80 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
                   >
                     {link.label}
                   </Link>
@@ -71,8 +138,8 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-12 border-t border-background/15 pt-6 text-sm text-background/60">
-          © {currentYear} NeverMinde: יקיר כהן
+        <div className="mt-12 border-t border-foreground/15 pt-6 text-sm text-foreground/60">
+          © {currentYear} השם לא משנה · NeverMinde: יקיר כהן
         </div>
       </div>
     </footer>

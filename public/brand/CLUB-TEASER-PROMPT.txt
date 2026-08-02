@@ -1,0 +1,22 @@
+Club teaser / lock art for NeverMind
+
+Where to save:
+  public/brand/gated-lock.svg   (or gated-lock.png)
+  Optional overlay: public/brand/club-lock-overlay.png
+
+Dimensions:
+  Primary lock / placeholder: 1280 x 720 (16:9), same as YouTube HQ thumbs
+  Overlay mark only: 256 x 256 PNG with transparent background
+  Favicon-style lock if needed: 64 x 64
+
+Prompt (English, for image model):
+Minimal flat lock icon on warm off-white background #FAFAF8.
+Single solid lock shape in near-black #1A1A1A.
+Small accent detail in action red #D42B2B on the shackle.
+No gradients, no glow, no shadows, no 3D, no people, no text.
+Quiet editorial look. Centered. Plenty of empty space.
+Output 1280x720.
+
+Hebrew note for yourself:
+התמונה משמשת כגיבוי כשאין תמונה אטומה דרך /api/thumbs.
+תמונות מועדון אמיתיות מגיעות מפרוקסי התמונות (opaque thumb) בלי לחשוף YouTube id.

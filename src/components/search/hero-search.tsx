@@ -1,8 +1,7 @@
 "use client";
 
-import { Search, X } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -14,26 +13,34 @@ import {
   type ReactNode,
 } from "react";
 
-export type SuggestItem =
-  | {
-      type: "video";
-      id: string;
-      youtubeId: string;
-      title: string;
-      isGated: boolean;
-    }
-  | {
-      type: "concept";
-      id: string;
-      name: string;
-      category: string | null;
-    };
+import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
+import { RandomInvestigationButton } from "@/components/search/random-investigation-button";
+import { logSearchQuery } from "@/actions/search-analytics";
+import { useSearchHotkey } from "@/hooks/use-search-hotkey";
+import { pushRecentSearch, readRecentSearches } from "@/lib/recent-searches";
+import { storeSearchAnalyticsId } from "@/lib/search/analytics-session";
+import {
+  suggestItemHref,
+  suggestItemLabel,
+  type SuggestItem,
+} from "@/lib/search/types";
+import { cn } from "@/lib/utils";
+
+export type { SuggestItem } from "@/lib/search/types";
 
 export type ConceptChip = {
   id: string;
   name: string;
   category?: string | null;
 };
+
+const DEFAULT_PLACEHOLDERS = [
+  "חפש סרטון או מושג",
+  "מציאות",
+  "הזדהות",
+  "סבל",
+  "בחירה חופשית",
+];
 
 function highlightMatch(text: string, query: string) {
   const q = query.trim();
@@ -63,107 +70,265 @@ function highlightMatch(text: string, query: string) {
   return parts.length > 0 ? parts : text;
 }
 
-function itemLabel(item: SuggestItem): string {
-  return item.type === "video" ? item.title : item.name;
-}
-
 type HeroSearchProps = {
   popularConcepts?: ConceptChip[];
   className?: string;
   variant?: "light" | "dark";
   initialQuery?: string;
   placeholder?: string;
+  placeholders?: string[];
+  /** Sync typed query into the URL with history.replaceState (home / search). */
+  syncUrl?: boolean;
+  /** Accessible label for the chip row under the input. */
+  chipsAriaLabel?: string;
 };
 
 /**
- * Client Hero Search — large RTL input, Lucide icons, 300ms autocomplete.
+ * Client Hero Search — Aceternity shell + hardened suggest / a11y / zero-state.
  */
 export function HeroSearch({
   popularConcepts = [],
   className = "",
   variant = "light",
   initialQuery = "",
-  placeholder = "חפש סרטון או מושג…",
+  placeholder,
+  placeholders: placeholdersProp,
+  syncUrl = false,
+  chipsAriaLabel = "מושגים נפוצים",
 }: HeroSearchProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [items, setItems] = useState<SuggestItem[]>([]);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
+  const [recent, setRecent] = useState<string[]>([]);
+  const [focused, setFocused] = useState(false);
+  const [hasFetchedEmpty, setHasFetchedEmpty] = useState(false);
 
   const isDark = variant === "dark";
+  useSearchHotkey(inputRef);
+
+  const placeholders =
+    placeholdersProp && placeholdersProp.length > 0
+      ? placeholdersProp
+      : placeholder && placeholder.trim()
+        ? [
+            placeholder,
+            ...DEFAULT_PLACEHOLDERS.filter((p) => p !== placeholder),
+          ]
+        : DEFAULT_PLACEHOLDERS;
+
+  const trimmed = query.trim();
+  const showZeroState =
+    focused &&
+    trimmed.length === 0 &&
+    (recent.length > 0 || popularConcepts.length > 0);
+  const showEmpty =
+    focused &&
+    trimmed.length >= 2 &&
+    !loading &&
+    hasFetchedEmpty &&
+    items.length === 0;
+  const showSuggest = open && items.length > 0;
+  const panelOpen = showZeroState || showEmpty || showSuggest || loading;
 
   useEffect(() => {
     const q = query.trim();
-    if (q.length < 1) {
+
+    // Guard: no network for < 2 chars or whitespace-only. Clear instantly.
+    if (q.length < 2) {
+      abortRef.current?.abort();
       setItems([]);
-      setOpen(false);
       setLoading(false);
+      setHasFetchedEmpty(false);
+      setActiveIndex(-1);
+      if (syncUrl && q.length === 0) {
+        const base = pathname === "/" ? "/" : pathname;
+        const current = `${window.location.pathname}${window.location.search}`;
+        if (current !== base) {
+          window.history.replaceState(null, "", base);
+        }
+      }
       return;
     }
 
-    setLoading(true);
     const handle = window.setTimeout(async () => {
+      if (syncUrl) {
+        const base = pathname === "/" ? "/" : pathname;
+        const next = `${base}?q=${encodeURIComponent(q)}`;
+        const current = `${window.location.pathname}${window.location.search}`;
+        if (current !== next) {
+          window.history.replaceState(null, "", next);
+        }
+      }
+
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setLoading(true);
+      setHasFetchedEmpty(false);
       try {
         const res = await fetch(
           `/api/search/suggest?q=${encodeURIComponent(q)}`,
+          { signal: controller.signal },
         );
         const data = (await res.json()) as { items?: SuggestItem[] };
-        setItems(data.items ?? []);
+        const nextItems = data.items ?? [];
+        setItems(nextItems);
         setOpen(true);
         setActiveIndex(-1);
-      } catch {
+        setHasFetchedEmpty(nextItems.length === 0);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
         setItems([]);
+        setHasFetchedEmpty(true);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }, 300);
 
-    return () => window.clearTimeout(handle);
-  }, [query]);
+    return () => {
+      window.clearTimeout(handle);
+    };
+  }, [query, pathname, syncUrl]);
+
+  // Focus trap while the suggest / zero-state panel is open.
+  useEffect(() => {
+    if (!panelOpen) return;
+
+    const onKeyDownCapture = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setOpen(false);
+        setActiveIndex(-1);
+        setFocused(true);
+        inputRef.current?.focus();
+        return;
+      }
+
+      if (e.key !== "Tab" || !shellRef.current) return;
+
+      const root = shellRef.current;
+      const focusables = root.querySelectorAll<HTMLElement>(
+        'input:not([disabled]), button:not([disabled]), [href], [role="option"], [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+
+      const list = Array.from(focusables).filter(
+        (el) => !el.hasAttribute("disabled") && el.tabIndex !== -1,
+      );
+      if (list.length === 0) return;
+
+      const first = list[0];
+      const last = list[list.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      if (e.shiftKey) {
+        if (active === first || !root.contains(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDownCapture, true);
+    return () => document.removeEventListener("keydown", onKeyDownCapture, true);
+  }, [panelOpen]);
 
   const goToSearch = useCallback(
     (q: string) => {
-      const trimmed = q.trim();
-      if (!trimmed) return;
+      const trimmedQ = q.trim();
+      if (!trimmedQ) return;
+      setRecent(pushRecentSearch(trimmedQ));
       setOpen(false);
-      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+      setFocused(false);
+
+      // Fire-and-forget: never block navigation / results.
+      const videoSuggestCount = items.filter((item) => item.type === "video")
+        .length;
+      void logSearchQuery(trimmedQ, videoSuggestCount)
+        .then((result) => {
+          if (result.ok) storeSearchAnalyticsId(trimmedQ, result.id);
+        })
+        .catch(() => {
+          /* analytics must not surface to the user */
+        });
+
+      router.push(`/search?q=${encodeURIComponent(trimmedQ)}`);
     },
-    [router],
+    [items, router],
   );
+
+  const goToSuggestItem = useCallback(
+    (item: SuggestItem) => {
+      const label = suggestItemLabel(item);
+      setRecent(pushRecentSearch(label));
+      setOpen(false);
+      setFocused(false);
+      if (item.type === "article") {
+        router.push(suggestItemHref(item));
+        return;
+      }
+
+      const videoSuggestCount =
+        item.type === "video"
+          ? 1
+          : items.filter((row) => row.type === "video").length;
+      void logSearchQuery(label, videoSuggestCount)
+        .then((result) => {
+          if (result.ok) storeSearchAnalyticsId(label, result.id);
+        })
+        .catch(() => {
+          /* analytics must not surface to the user */
+        });
+
+      router.push(`/search?q=${encodeURIComponent(label)}`);
+    },
+    [items, router],
+  );
+
+  const clearQuery = useCallback(() => {
+    setQuery("");
+    setItems([]);
+    setHasFetchedEmpty(false);
+    setActiveIndex(-1);
+    inputRef.current?.focus();
+  }, []);
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (activeIndex >= 0 && items[activeIndex]) {
-      goToSearch(itemLabel(items[activeIndex]));
+      goToSuggestItem(items[activeIndex]);
       return;
     }
     goToSearch(query);
   };
 
-  const clearQuery = () => {
-    setQuery("");
-    setItems([]);
-    setOpen(false);
-    setActiveIndex(-1);
-    inputRef.current?.focus();
-  };
-
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
-      if (open) {
+      e.preventDefault();
+      if (open || panelOpen) {
         setOpen(false);
         setActiveIndex(-1);
+        inputRef.current?.focus();
       } else if (query) {
         clearQuery();
       }
       return;
     }
 
-    if (!open || items.length === 0) return;
+    if (!showSuggest) return;
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -174,150 +339,222 @@ export function HeroSearch({
     }
   };
 
-  const iconMuted = isDark ? "text-background/55" : "text-muted";
-  const fieldShell = [
-    "relative mx-auto w-full max-w-2xl",
-    className,
-  ].join(" ");
+  const fieldShell = ["relative mx-auto w-full max-w-2xl", className].join(" ");
 
   return (
-    <div dir="rtl" className={fieldShell}>
-      <form onSubmit={onSubmit} role="search" className="relative w-full">
+    <div ref={shellRef} dir="rtl" className={fieldShell}>
+      <div className="relative w-full">
         <label htmlFor={`${listId}-input`} className="sr-only">
           חיפוש סרטונים ומושגים
         </label>
 
-        {/* Search icon — logical start (right in RTL) */}
-        <span
-          className={`pointer-events-none absolute top-1/2 start-4 z-10 -translate-y-1/2 ${iconMuted}`}
-          aria-hidden="true"
-        >
-          <Search className="size-5" strokeWidth={1.75} />
-        </span>
-
-        <input
-          ref={inputRef}
+        <PlaceholdersAndVanishInput
           id={`${listId}-input`}
-          type="text"
-          dir="rtl"
-          lang="he"
-          autoComplete="off"
-          spellCheck={false}
+          placeholders={placeholders}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={onKeyDown}
-          onFocus={() => items.length > 0 && setOpen(true)}
-          onBlur={() => {
-            window.setTimeout(() => setOpen(false), 150);
+          inputRef={inputRef}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
           }}
-          placeholder={placeholder}
+          onVoiceResult={(transcript) => {
+            setQuery(transcript);
+            setOpen(true);
+            setFocused(true);
+          }}
+          onSubmit={onSubmit}
+          onKeyDown={onKeyDown}
+          onFocus={() => {
+            setRecent(readRecentSearches());
+            setFocused(true);
+            setOpen(true);
+          }}
+          onBlur={() => {
+            window.setTimeout(() => {
+              setOpen(false);
+              setFocused(false);
+            }, 150);
+          }}
+          aria-label="חיפוש סרטונים ומושגים"
           aria-autocomplete="list"
           aria-controls={listId}
-          aria-expanded={open}
+          aria-expanded={panelOpen}
           aria-activedescendant={
             activeIndex >= 0 ? `${listId}-option-${activeIndex}` : undefined
           }
-          className={[
-            "w-full border text-base outline-none transition",
-            "ps-12 pe-12 py-4 sm:py-5 sm:text-lg",
-            "focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2",
-            isDark
-              ? "border-background/30 bg-background/5 text-background placeholder:text-background/45 focus-visible:ring-offset-ink"
-              : "border-foreground/15 bg-background text-foreground placeholder:text-muted focus-visible:ring-offset-background",
-          ].join(" ")}
         />
 
-        {/* Clear / loading — logical end (left in RTL) */}
-        <div className="absolute top-1/2 end-3 z-10 flex -translate-y-1/2 items-center gap-1">
-          {loading ? (
-            <span
-              className={`text-xs ${iconMuted}`}
+        <div
+          className={cn(
+            "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+            panelOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+          )}
+        >
+          <div className="overflow-hidden">
+            <div
+              id={listId}
+              role="listbox"
               aria-live="polite"
+              dir="rtl"
+              className={cn(
+                "absolute z-40 mt-2 max-h-80 w-full overflow-auto border border-foreground/15 text-start text-foreground shadow-float",
+                "bg-background/90 backdrop-blur-sm",
+                !panelOpen && "pointer-events-none",
+              )}
             >
-              מחפש…
-            </span>
-          ) : null}
-          {query ? (
-            <button
-              type="button"
-              onClick={clearQuery}
-              aria-label="נקה חיפוש"
-              className={[
-                "inline-flex size-9 items-center justify-center rounded-md transition",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
-                isDark
-                  ? "text-background/70 hover:bg-background/10 hover:text-background"
-                  : "text-muted hover:bg-paper hover:text-foreground",
-              ].join(" ")}
-            >
-              <X className="size-4" strokeWidth={1.75} />
-            </button>
-          ) : null}
+              {loading ? (
+                <div className="space-y-3 p-4" aria-hidden="true">
+                  {[0, 1, 2].map((row) => (
+                    <div
+                      key={row}
+                      className="h-4 w-full animate-pulse rounded-sm bg-foreground/10"
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              {!loading && showZeroState ? (
+                <div className="p-3">
+                  {recent.length > 0 ? (
+                    <div className="mb-3">
+                      <p className="px-1 text-xs text-muted">חיפושים אחרונים</p>
+                      <ul className="mt-1">
+                        {recent.map((term) => (
+                          <li key={term} role="presentation">
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={false}
+                              className="flex w-full px-3 py-2 text-start text-sm hover:bg-paper focus-visible:bg-paper focus-visible:outline-none"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => goToSearch(term)}
+                            >
+                              {term}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {popularConcepts.length > 0 ? (
+                    <div>
+                      <p className="px-1 text-xs text-muted">מושגים נפוצים</p>
+                      <ul className="mt-1">
+                        {popularConcepts.slice(0, 6).map((c) => (
+                          <li key={c.id} role="presentation">
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={false}
+                              className="flex w-full px-3 py-2 text-start text-sm hover:bg-paper focus-visible:bg-paper focus-visible:outline-none"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => goToSearch(c.name)}
+                            >
+                              {c.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {!loading && showEmpty ? (
+                <div className="space-y-3 p-4 text-sm">
+                  <p>
+                    לא נמצאו תוצאות ל-&quot;{trimmed}&quot;.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={clearQuery}
+                    >
+                      נקה חיפוש
+                    </button>
+                    <Link
+                      href="/concepts"
+                      className="text-sm text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      למדריך המושגים
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
+
+              {!loading && showSuggest
+                ? items.map((item, index) => {
+                    const label = suggestItemLabel(item);
+                    const meta =
+                      item.type === "video"
+                        ? item.isGated
+                          ? "סרטון · לחברים"
+                          : "סרטון"
+                        : item.type === "article"
+                          ? "מאמר"
+                          : "מושג";
+                    const key =
+                      item.type === "article"
+                        ? `article-${item.slug}`
+                        : `${item.type}-${item.id}`;
+
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        id={`${listId}-option-${index}`}
+                        role="option"
+                        aria-selected={activeIndex === index}
+                        className={cn(
+                          "flex w-full items-start justify-between gap-3 px-4 py-3 text-start text-sm",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-action",
+                          activeIndex === index ? "bg-paper" : "hover:bg-paper",
+                        )}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => goToSuggestItem(item)}
+                      >
+                        <span className="min-w-0 leading-relaxed">
+                          {highlightMatch(label, query)}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted">{meta}</span>
+                      </button>
+                    );
+                  })
+                : null}
+            </div>
+          </div>
         </div>
-
-        {open && items.length > 0 ? (
-          <ul
-            id={listId}
-            role="listbox"
-            dir="rtl"
-            className="absolute z-40 mt-2 max-h-80 w-full overflow-auto border border-foreground/15 bg-background text-start text-foreground shadow-float"
-          >
-            {items.map((item, index) => {
-              const label = itemLabel(item);
-              const meta =
-                item.type === "video"
-                  ? item.isGated
-                    ? "סרטון · לחברים"
-                    : "סרטון"
-                  : "מושג";
-
-              return (
-                <li key={`${item.type}-${item.id}`} role="presentation">
-                  <button
-                    type="button"
-                    id={`${listId}-option-${index}`}
-                    role="option"
-                    aria-selected={activeIndex === index}
-                    className={[
-                      "flex w-full items-start justify-between gap-3 px-4 py-3 text-start text-sm",
-                      activeIndex === index ? "bg-paper" : "hover:bg-paper",
-                    ].join(" ")}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => goToSearch(label)}
-                  >
-                    <span className="min-w-0 leading-relaxed">
-                      {highlightMatch(label, query)}
-                    </span>
-                    <span className="shrink-0 text-xs text-muted">{meta}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : null}
-      </form>
+      </div>
 
       {popularConcepts.length > 0 ? (
         <div
           className="mt-5 flex flex-wrap justify-center gap-2"
-          aria-label="מושגים נפוצים"
+          aria-label={chipsAriaLabel}
         >
           {popularConcepts.map((c) => (
             <Link
               key={c.id}
               href={`/search?q=${encodeURIComponent(c.name)}`}
-              className={[
-                "border px-3 py-1.5 text-sm transition",
+              className={cn(
+                "inline-flex min-h-11 items-center border px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
                 isDark
-                  ? "border-background/30 text-background/90 hover:border-background hover:bg-background/10"
+                  ? "border-white/40 text-white hover:border-white hover:bg-white/10"
                   : "border-foreground/15 text-foreground/80 hover:border-action hover:text-action",
-              ].join(" ")}
+              )}
             >
               {c.name}
             </Link>
           ))}
         </div>
       ) : null}
+
+      <RandomInvestigationButton
+        variant={variant}
+        className="mt-6"
+      />
     </div>
   );
 }

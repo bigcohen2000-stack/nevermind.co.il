@@ -1,42 +1,37 @@
 @import "tailwindcss";
 
 /*
- * NeverMinde — Design Foundation + Polish v2
+ * NeverMinde — Design Foundation (dark shell)
  *
- * Still minimal and dry, but elevated to an editorial, premium feel:
- * - a deep "ink" for dark bands (richer than pure black) with a restrained
- *   layered glow for depth,
- * - a warm "paper" tone for light/light rhythm variation,
- * - soft editorial shadows (never heavy), modest rounded corners,
- * - subtle, reduced-motion-aware hover lift.
- *
- * The four locked brand colors are unchanged; ink + paper are supporting tones
- * only. No external fonts. No gradients louder than a whisper.
+ * Pure black page with light default text. Dot Background sits behind
+ * content. Section rhythm uses near-black paper lifts and raised ink panels.
+ * Soft editorial shadows, modest rounded corners, reduced-motion-aware hover.
+ * No external fonts. No gradients louder than a whisper.
  */
 
 :root {
-  /* Locked brand tokens (unchanged) */
-  --background: #fafaf8; /* off-white page */
-  --foreground: #1a1a1a; /* primary text */
+  /* Brand tokens — dark-first shell */
+  --background: #000000; /* pure black page */
+  --foreground: #fafaf8; /* light primary text */
   --action: #d42b2b; /* action red */
   --muted: #9ca3af; /* muted gray */
 
-  /* v2 supporting tones */
-  --ink: #141519; /* deep ink for premium dark bands */
-  --ink-raised: #1f2127; /* lifted ink for cards/panels on dark */
-  --paper: #f2eee6; /* warm off-white for layered light depth */
+  /* Supporting tones */
+  --ink: #000000; /* aligns with pure black shell */
+  --ink-raised: #141519; /* lifted surface for cards/panels */
+  --paper: #0a0a0b; /* subtle section lift */
 
-  /* Hairlines (borders) */
-  --hairline: rgba(26, 26, 26, 0.1);
-  --hairline-strong: rgba(26, 26, 26, 0.16);
+  /* Hairlines (borders) — light on dark */
+  --hairline: rgba(250, 250, 248, 0.12);
+  --hairline-strong: rgba(250, 250, 248, 0.2);
   --hairline-on-dark: rgba(250, 250, 248, 0.16);
   --hairline-on-dark-strong: rgba(250, 250, 248, 0.3);
 
-  /* Soft editorial shadows */
-  --shadow-soft: 0 1px 2px rgba(20, 21, 25, 0.04),
-    0 12px 30px -16px rgba(20, 21, 25, 0.16);
-  --shadow-float: 0 2px 6px rgba(20, 21, 25, 0.06),
-    0 30px 56px -24px rgba(20, 21, 25, 0.26);
+  /* Soft editorial shadows on black */
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4),
+    0 12px 30px -16px rgba(0, 0, 0, 0.55);
+  --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.45),
+    0 30px 56px -24px rgba(0, 0, 0, 0.7);
 
   /* RTL-friendly system font stack with Hebrew support. No external fonts. */
   --font-sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue",
@@ -72,11 +67,12 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
   margin: 0;
-  background: var(--background);
+  background: #000000;
   color: var(--foreground);
   font-family: var(--font-sans);
   /* RTL typography defaults (logical alignment) */
@@ -84,8 +80,12 @@ body {
   text-align: start;
   line-height: 1.7;
   font-size: 16px;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* iOS notch / home indicator */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 @media (min-width: 768px) {
@@ -94,14 +94,45 @@ body {
   }
 }
 
-/* Links: red action color, no underline by default (added on hover only). */
-a {
-  color: var(--action);
-  text-decoration: none;
+/* Links: action red for prose links only. Keep inside @layer base so
+   @layer components `.btn-*` always wins (unlayered `a` used to paint
+   red text on red primary CTAs). */
+@layer base {
+  a:not(.btn) {
+    color: var(--action);
+    text-decoration: none;
+  }
+
+  a:not(.btn):hover {
+    text-decoration: underline;
+  }
 }
 
-a:hover {
-  text-decoration: underline;
+/*
+ * Contrast lock (unlayered): primary CTAs are action bg + light text.
+ * Never action text on action background. Covers <a> and <button>,
+ * including :visited / :hover which otherwise reintroduce red-on-red.
+ */
+a.btn.btn-primary,
+a.btn.btn-primary:visited,
+a.btn.btn-primary:hover,
+a.btn.btn-primary:focus-visible,
+button.btn.btn-primary,
+button.btn.btn-primary:hover,
+button.btn.btn-primary:focus-visible {
+  color: #fafaf8;
+  background-color: var(--action);
+  border-color: var(--action);
+  text-decoration: none;
+}
+a.btn.btn-secondary,
+a.btn.btn-secondary:visited,
+a.btn.btn-secondary:hover,
+a.btn.btn-on-dark,
+a.btn.btn-on-dark:visited,
+a.btn.btn-on-dark:hover {
+  color: var(--foreground);
+  text-decoration: none;
 }
 
 /* Headings: tight, clear hierarchy. No drama. */
@@ -134,22 +165,22 @@ p {
 }
 
 ::selection {
-  background: rgba(212, 43, 43, 0.16);
+  background: rgba(212, 43, 43, 0.28);
   color: var(--foreground);
 }
 
 /* ----------------------------------------------------------------------- */
-/* Polish v2 — reusable editorial classes                                  */
+/* Reusable editorial classes                                              */
 /* ----------------------------------------------------------------------- */
 @layer components {
-  /* Premium dark band: deep ink + restrained layered glow for depth.
-     Wrap inner content in `relative z-10` so it sits above the glow. */
+  /* Dark band: near-transparent so site-wide dots show through.
+     Wrap inner content in `relative z-10`. */
   .band-dark {
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    background-color: var(--ink);
-    color: var(--background);
+    background-color: transparent;
+    color: var(--foreground);
   }
   .band-dark::before {
     content: "";
@@ -157,41 +188,24 @@ p {
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background:
-      radial-gradient(
-        75% 55% at 85% -10%,
-        rgba(255, 255, 255, 0.07),
-        transparent 60%
-      ),
-      radial-gradient(
-        55% 45% at 0% 115%,
-        rgba(212, 43, 43, 0.06),
-        transparent 60%
-      );
-  }
-  /* Whisper-quiet film grain for tactile, premium depth (content sits at z-10). */
-  .band-dark::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.04;
-    mix-blend-mode: soft-light;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background: radial-gradient(
+      55% 45% at 0% 115%,
+      rgba(212, 43, 43, 0.05),
+      transparent 60%
+    );
   }
 
-  /* Warm paper band for light/light rhythm variation. */
+  /* Raised near-black band for section rhythm. */
   .band-paper {
     background-color: var(--paper);
     color: var(--foreground);
   }
 
-  /* Editorial card — light context. */
+  /* Editorial card — raised dark surface. */
   .card {
     border: 1px solid var(--hairline-strong);
     border-radius: var(--radius-card);
-    background-color: var(--background);
+    background-color: var(--ink-raised);
     box-shadow: var(--shadow-soft);
     transition:
       transform 0.25s ease,
@@ -209,7 +223,7 @@ p {
     border-radius: var(--radius-btn);
   }
 
-  /* Editorial card — dark context. */
+  /* Editorial card — elevated dark context. */
   .card-dark {
     border: 1px solid var(--hairline-on-dark);
     border-radius: var(--radius-card);
@@ -282,10 +296,11 @@ p {
   .btn-primary {
     background-color: var(--action);
     border-color: var(--action);
-    color: var(--background);
+    color: #fafaf8; /* light on action — never text-action on bg-action */
   }
   .btn-primary:hover {
     opacity: 0.92;
+    color: #fafaf8;
   }
   .btn-secondary {
     border-color: var(--hairline-strong);
@@ -293,12 +308,12 @@ p {
     background: transparent;
   }
   .btn-secondary:hover {
-    background-color: rgba(26, 26, 26, 0.05);
-    border-color: rgba(26, 26, 26, 0.28);
+    background-color: rgba(250, 250, 248, 0.06);
+    border-color: rgba(250, 250, 248, 0.35);
   }
   .btn-on-dark {
     border-color: var(--hairline-on-dark-strong);
-    color: var(--background);
+    color: var(--foreground);
     background: transparent;
   }
   .btn-on-dark:hover {
@@ -306,7 +321,7 @@ p {
     border-color: rgba(250, 250, 248, 0.45);
   }
 
-  /* Inline "read more ←" link with an underline that grows from the start. */
+  /* Inline "read more" link with an underline that grows from the start. */
   .link-arrow {
     color: var(--action);
     font-weight: 500;

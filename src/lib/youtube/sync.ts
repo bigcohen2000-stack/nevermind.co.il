@@ -3,7 +3,15 @@ import "server-only";
 import { google, type youtube_v3 } from "googleapis";
 
 import { getServerEnv, splitCsv } from "@/env";
+import { extractCuratedConcepts } from "@/lib/concepts/quality";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  firstConceptOffsetSeconds,
+  type TranscriptSegment,
+} from "@/lib/videos/heatmap";
+import { parseYoutubeDuration } from "@/lib/videos/format-meta";
+import { isYoutubeUnavailableTitle } from "@/lib/videos/youtube-availability";
+import { upsertTranscriptForVideo } from "@/lib/youtube/transcripts";
 
 export type SyncInput = {
   /** YouTube channel IDs — syncs their public uploads playlist. */
@@ -17,6 +25,16 @@ export type SyncInput = {
   unlistedVideoIds?: string[];
   /** Force these youtube_ids to is_gated=true after upsert. */
   gatedVideoIds?: string[];
+  /**
+   * Max new transcript fetches per run (skips videos that already have one).
+   * Keeps Vercel maxDuration safe. Default 12.
+   */
+  maxTranscriptFetches?: number;
+  /**
+   * Skip concept upsert/link for this run (bulk ingest / CLI).
+   * Default false. Use true when only refreshing video rows + gate flags.
+   */
+  skipConcepts?: boolean;
 };
 
 export type SyncResult = {
@@ -25,6 +43,14 @@ export type SyncResult = {
   gatedCount: number;
   unlistedCount: number;
   conceptsLinked: number;
+  transcriptsUpserted: number;
+  /** Playlists actually walked (uploads + discovered + env). */
+  playlistsSynced: number;
+  /**
+   * Rows removed because YouTube returned no playable item
+   * (deleted / private / playlist tombstone titles).
+   */
+  removedUnavailable: number;
   errors: string[];
 };
 
@@ -37,7 +63,39 @@ type CollectedVideo = {
   isUnlisted: boolean;
   isGated: boolean;
   tags: string[];
+  publishedAt: string | null;
+  durationSeconds: number | null;
 };
+
+/**
+ * Optional club marker in the *title* only. Descriptions often pitch the club
+ * ("הצטרפו למועדון") on public videos, so description must not gate.
+ */
+const CLUB_TITLE_MARKER = "מועדון";
+
+/**
+ * Gating rule (YouTube unlisted is the source of truth for club lock):
+ * - privacyStatus "unlisted" → is_unlisted=true AND is_gated=true
+ * - force → gated (YOUTUBE_GATED_VIDEO_IDS or GATED_PLAYLIST_IDS)
+ * - title contains "מועדון" → gated (optional extra signal)
+ * - otherwise public stays open (description marketing copy does not gate)
+ *
+ * Limitation: channel uploads sync (API key) only sees *public* items.
+ * Sync auto-discovers *public* channel playlists so unlisted videos that sit
+ * on those playlists are ingested and auto-gated. Unlisted/private playlists
+ * themselves are invisible to an API key — put their IDs in GATED_PLAYLIST_IDS
+ * / YOUTUBE_PLAYLIST_IDS, or list video IDs in YOUTUBE_UNLISTED_VIDEO_IDS.
+ */
+export function computeIsGated(input: {
+  isUnlisted: boolean;
+  title: string;
+  description: string;
+  force?: boolean;
+}): boolean {
+  if (input.force) return true;
+  if (input.isUnlisted) return true;
+  return input.title.includes(CLUB_TITLE_MARKER);
+}
 
 function thumbnailFromSnippet(
   snippet: youtube_v3.Schema$VideoSnippet | youtube_v3.Schema$PlaylistItemSnippet | null | undefined,
@@ -50,62 +108,21 @@ function thumbnailFromSnippet(
   );
 }
 
-const STOP_WORDS = new Set([
-  "the",
-  "and",
-  "for",
-  "with",
-  "this",
-  "that",
-  "from",
-  "your",
-  "של",
-  "את",
-  "על",
-  "עם",
-  "או",
-  "זה",
-  "זו",
-  "הוא",
-  "היא",
-  "לא",
-  "גם",
-  "כי",
-  "כל",
-  "יש",
-  "מה",
-  "איך",
-  "בין",
-]);
-
-/** Keywords from YouTube tags + Hebrew/Latin tokens in title/description. */
+/**
+ * Concept linker for sync: curated Hebrew terms only (see lib/concepts/quality).
+ */
 export function extractKeywords(
   title: string,
   description: string,
   tags: string[] = [],
 ): string[] {
-  const unique = new Set<string>();
-
-  for (const tag of tags) {
-    const cleaned = tag.trim().slice(0, 64);
-    if (cleaned.length >= 2) unique.add(cleaned);
-  }
-
-  const text = `${title}\n${description}`;
-  const matches = text.match(/[\u0590-\u05FFa-zA-Z]{3,}/g) ?? [];
-  for (const raw of matches) {
-    const lower = raw.toLowerCase();
-    if (STOP_WORDS.has(lower)) continue;
-    unique.add(raw.slice(0, 64));
-    if (unique.size >= 12) break;
-  }
-
-  return [...unique];
+  return extractCuratedConcepts(title, description, tags, 8);
 }
 
 async function upsertConceptsForVideo(
   videoUuid: string,
   keywords: string[],
+  segments: TranscriptSegment[] = [],
 ): Promise<number> {
   if (keywords.length === 0) return 0;
   const admin = getSupabaseAdmin();
@@ -120,11 +137,13 @@ async function upsertConceptsForVideo(
 
     if (error || !concept) continue;
 
+    const startTimestamp = firstConceptOffsetSeconds(name, segments);
+
     const { error: linkError } = await admin.from("video_concepts").upsert(
       {
         video_id: videoUuid,
         concept_id: concept.id,
-        start_timestamp: null,
+        start_timestamp: startTimestamp,
       },
       { onConflict: "video_id,concept_id" },
     );
@@ -133,6 +152,23 @@ async function upsertConceptsForVideo(
   }
 
   return linked;
+}
+
+function parseSegmentsJson(raw: unknown): TranscriptSegment[] {
+  if (!Array.isArray(raw)) return [];
+  const out: TranscriptSegment[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as Record<string, unknown>;
+    const text = typeof row.text === "string" ? row.text.trim() : "";
+    if (!text) continue;
+    out.push({
+      offsetMs: Math.max(0, Math.round(Number(row.offsetMs) || 0)),
+      durationMs: Math.max(0, Math.round(Number(row.durationMs) || 0)),
+      text,
+    });
+  }
+  return out;
 }
 
 function chunk<T>(items: T[], size: number): T[][] {
@@ -161,6 +197,8 @@ function mergeCollected(
     title: existing.title || row.title,
     description: existing.description || row.description,
     thumbnailUrl: existing.thumbnailUrl ?? row.thumbnailUrl,
+    publishedAt: row.publishedAt ?? existing.publishedAt,
+    durationSeconds: row.durationSeconds ?? existing.durationSeconds,
   });
 }
 
@@ -170,22 +208,33 @@ export async function syncYoutubeLibrary(
   const env = getServerEnv();
   const gatedPlaylists = new Set(splitCsv(env.GATED_PLAYLIST_IDS));
 
+  // Explicit empty arrays mean "skip this source" (e.g. unlisted-only mark).
+  // Undefined falls back to env defaults.
   const channelIds =
-    options.channelIds?.length
+    options.channelIds !== undefined
       ? options.channelIds
       : splitCsv(env.YOUTUBE_CHANNEL_IDS);
   const playlistIds =
-    options.playlistIds?.length
+    options.playlistIds !== undefined
       ? options.playlistIds
-      : splitCsv(env.YOUTUBE_PLAYLIST_IDS);
+      : [
+          ...splitCsv(env.YOUTUBE_PLAYLIST_IDS),
+          ...splitCsv(env.GATED_PLAYLIST_IDS),
+        ];
   const unlistedVideoIds =
-    options.unlistedVideoIds?.length
+    options.unlistedVideoIds !== undefined
       ? options.unlistedVideoIds
-      : splitCsv(process.env.YOUTUBE_UNLISTED_VIDEO_IDS ?? "");
+      : splitCsv(env.YOUTUBE_UNLISTED_VIDEO_IDS);
   const gatedVideoIds = new Set([
     ...(options.gatedVideoIds ?? []),
-    ...splitCsv(process.env.YOUTUBE_GATED_VIDEO_IDS ?? ""),
+    ...splitCsv(env.YOUTUBE_GATED_VIDEO_IDS),
   ]);
+  const maxTranscriptFetches = Math.max(
+    0,
+    options.maxTranscriptFetches ?? 12,
+  );
+  const skipConcepts = options.skipConcepts === true;
+  let transcriptFetches = 0;
 
   const youtube = google.youtube({
     version: "v3",
@@ -199,12 +248,20 @@ export async function syncYoutubeLibrary(
     gatedCount: 0,
     unlistedCount: 0,
     conceptsLinked: 0,
+    transcriptsUpserted: 0,
+    playlistsSynced: 0,
+    removedUnavailable: 0,
     errors: [],
   };
 
   const byId = new Map<string, CollectedVideo>();
 
-  // --- Channels → uploads playlists -----------------------------------------
+  // --- Channels → uploads + public playlists --------------------------------
+  // Uploads playlist (API key) only lists *public* videos. Unlisted club items
+  // still appear when someone put them on a *public* playlist (e.g. "רמה 1").
+  // Auto-discover those channel playlists so env does not need every PL id.
+  // Unlisted / private playlists remain invisible without OAuth — put those
+  // IDs in GATED_PLAYLIST_IDS or YOUTUBE_PLAYLIST_IDS manually.
   const resolvedPlaylists = new Set(playlistIds);
   for (const channelId of channelIds) {
     try {
@@ -221,7 +278,30 @@ export async function syncYoutubeLibrary(
         `channel ${channelId}: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
+
+    let playlistPageToken: string | undefined;
+    do {
+      try {
+        const playlistsRes = await youtube.playlists.list({
+          part: ["id"],
+          channelId,
+          maxResults: 50,
+          pageToken: playlistPageToken,
+        });
+        for (const pl of playlistsRes.data.items ?? []) {
+          if (pl.id) resolvedPlaylists.add(pl.id);
+        }
+        playlistPageToken = playlistsRes.data.nextPageToken ?? undefined;
+      } catch (err) {
+        result.errors.push(
+          `channel ${channelId} playlists.list: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        break;
+      }
+    } while (playlistPageToken);
   }
+
+  result.playlistsSynced = resolvedPlaylists.size;
 
   // --- Playlists (paginated) — public + unlisted items when API can see them
   for (const playlistId of resolvedPlaylists) {
@@ -245,19 +325,31 @@ export async function syncYoutubeLibrary(
           const privacy = item.status?.privacyStatus;
           if (privacy === "private") continue;
 
+          const title = item.snippet?.title?.trim() || youtubeId;
+          // Playlist tombstones: keep sync from re-upserting dead rows.
+          if (isYoutubeUnavailableTitle(title)) continue;
+
+          // Unlisted on YouTube → club. Gated playlist / explicit IDs also force gate.
+          const fromGatedPlaylist = gatedPlaylists.has(playlistId);
           const isUnlisted = privacy === "unlisted";
           const isGated =
-            gatedPlaylists.has(playlistId) || gatedVideoIds.has(youtubeId);
+            isUnlisted ||
+            fromGatedPlaylist ||
+            gatedVideoIds.has(youtubeId);
 
           mergeCollected(byId, {
             youtubeId,
-            title: item.snippet?.title?.trim() || youtubeId,
+            title,
             description: item.snippet?.description ?? "",
             thumbnailUrl: thumbnailFromSnippet(item.snippet),
-            playlistId,
+            playlistId: fromGatedPlaylist
+              ? playlistId
+              : (byId.get(youtubeId)?.playlistId ?? playlistId),
             isUnlisted,
             isGated,
             tags: [],
+            publishedAt: item.snippet?.publishedAt ?? null,
+            durationSeconds: null,
           });
         }
 
@@ -275,7 +367,7 @@ export async function syncYoutubeLibrary(
   for (const ids of chunk(unlistedVideoIds, 50)) {
     try {
       const videosRes = await youtube.videos.list({
-        part: ["snippet", "status"],
+        part: ["snippet", "status", "contentDetails"],
         id: ids,
         maxResults: 50,
       });
@@ -296,8 +388,13 @@ export async function syncYoutubeLibrary(
           thumbnailUrl: thumbnailFromSnippet(item.snippet),
           playlistId: null,
           isUnlisted,
-          isGated: gatedVideoIds.has(youtubeId),
+          // Unlisted (or force-listed as unlisted) is always club.
+          isGated: isUnlisted || gatedVideoIds.has(youtubeId),
           tags: item.snippet?.tags ?? [],
+          publishedAt: item.snippet?.publishedAt ?? null,
+          durationSeconds: parseYoutubeDuration(
+            item.contentDetails?.duration,
+          ),
         });
       }
     } catch (err) {
@@ -307,31 +404,63 @@ export async function syncYoutubeLibrary(
     }
   }
 
-  // Enrich playlist-sourced rows with tags via videos.list (batched)
-  const needsTags = [...byId.values()]
-    .filter((v) => v.tags.length === 0)
-    .map((v) => v.youtubeId);
+  // Enrich every collected row via videos.list: tags, duration, and authoritative
+  // privacyStatus (playlistItems privacy can lag; unlisted → club lock).
+  // Writes directly (not mergeCollected) so public/unlisted from videos.list wins.
+  // IDs missing from videos.list (deleted / fully private) are dropped and pruned from DB.
+  const allIds = [...byId.keys()];
+  const unavailableIds: string[] = [];
+  const forcedUnlisted = new Set(unlistedVideoIds);
 
-  for (const ids of chunk(needsTags, 50)) {
+  for (const ids of chunk(allIds, 50)) {
     try {
       const videosRes = await youtube.videos.list({
-        part: ["snippet", "status"],
+        part: ["snippet", "status", "contentDetails"],
         id: ids,
       });
+      const returned = new Set<string>();
       for (const item of videosRes.data.items ?? []) {
         if (!item.id) continue;
         const existing = byId.get(item.id);
         if (!existing) continue;
-        mergeCollected(byId, {
+        if (item.status?.privacyStatus === "private") {
+          byId.delete(item.id);
+          unavailableIds.push(item.id);
+          continue;
+        }
+        const title = item.snippet?.title?.trim() || existing.title;
+        if (isYoutubeUnavailableTitle(title)) {
+          byId.delete(item.id);
+          unavailableIds.push(item.id);
+          continue;
+        }
+        returned.add(item.id);
+        const privacyUnlisted = item.status?.privacyStatus === "unlisted";
+        const isUnlisted = privacyUnlisted || forcedUnlisted.has(item.id);
+        byId.set(item.id, {
           ...existing,
-          tags: item.snippet?.tags ?? [],
-          isUnlisted:
-            existing.isUnlisted ||
-            item.status?.privacyStatus === "unlisted",
-          description: existing.description || (item.snippet?.description ?? ""),
+          title,
+          tags:
+            item.snippet?.tags && item.snippet.tags.length > 0
+              ? item.snippet.tags
+              : existing.tags,
+          isUnlisted,
+          isGated: existing.isGated || isUnlisted,
+          description:
+            existing.description || (item.snippet?.description ?? ""),
           thumbnailUrl:
             existing.thumbnailUrl ?? thumbnailFromSnippet(item.snippet),
+          publishedAt: item.snippet?.publishedAt ?? existing.publishedAt,
+          durationSeconds:
+            parseYoutubeDuration(item.contentDetails?.duration) ??
+            existing.durationSeconds,
         });
+      }
+      for (const id of ids) {
+        if (!returned.has(id) && byId.has(id)) {
+          byId.delete(id);
+          unavailableIds.push(id);
+        }
       }
     } catch (err) {
       result.errors.push(
@@ -340,26 +469,94 @@ export async function syncYoutubeLibrary(
     }
   }
 
+  // Also purge existing DB tombstones left from older syncs.
+  try {
+    const { data: tombstones } = await admin
+      .from("videos")
+      .select("youtube_id, title")
+      .or("title.eq.Deleted video,title.eq.Private video");
+    for (const row of tombstones ?? []) {
+      if (
+        row.youtube_id &&
+        isYoutubeUnavailableTitle(row.title) &&
+        !unavailableIds.includes(row.youtube_id)
+      ) {
+        unavailableIds.push(row.youtube_id);
+      }
+    }
+  } catch (err) {
+    result.errors.push(
+      `tombstone scan: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
+  if (unavailableIds.length > 0) {
+    const uniqueUnavailable = [...new Set(unavailableIds)];
+    for (const ids of chunk(uniqueUnavailable, 50)) {
+      const { error: delError, count } = await admin
+        .from("videos")
+        .delete({ count: "exact" })
+        .in("youtube_id", ids);
+      if (delError) {
+        result.errors.push(`prune unavailable: ${delError.message}`);
+      } else {
+        result.removedUnavailable += count ?? ids.length;
+      }
+    }
+  }
+
   // --- Upsert into Supabase -------------------------------------------------
   for (const row of byId.values()) {
-    if (gatedVideoIds.has(row.youtubeId)) row.isGated = true;
+    row.isGated = computeIsGated({
+      isUnlisted: row.isUnlisted,
+      title: row.title,
+      description: row.description,
+      force: row.isGated || gatedVideoIds.has(row.youtubeId),
+    });
 
-    const { data, error } = await admin
-      .from("videos")
-      .upsert(
-        {
-          youtube_id: row.youtubeId,
-          title: row.title,
-          description: row.description,
-          thumbnail_url: row.thumbnailUrl,
-          playlist_id: row.playlistId,
-          is_unlisted: row.isUnlisted,
-          is_gated: row.isGated,
-        },
-        { onConflict: "youtube_id" },
-      )
-      .select("id")
-      .single();
+    const baseRow = {
+      youtube_id: row.youtubeId,
+      title: row.title,
+      description: row.description,
+      thumbnail_url: row.thumbnailUrl,
+      playlist_id: row.playlistId,
+      is_unlisted: row.isUnlisted,
+      is_gated: row.isGated,
+    };
+
+    let data: { id: string } | null = null;
+    let error: { message: string } | null = null;
+
+    {
+      const full = await admin
+        .from("videos")
+        .upsert(
+          {
+            ...baseRow,
+            published_at: row.publishedAt,
+            duration_seconds: row.durationSeconds,
+          },
+          { onConflict: "youtube_id" },
+        )
+        .select("id")
+        .single();
+      data = full.data;
+      error = full.error;
+    }
+
+    // Older DBs may lack published_at / duration_seconds (migration 20).
+    if (
+      error &&
+      /duration_seconds|published_at|schema cache/i.test(error.message)
+    ) {
+      const fallback = await admin
+        .from("videos")
+        .upsert(baseRow, { onConflict: "youtube_id" })
+        .select("id")
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error || !data) {
       result.errors.push(
@@ -373,8 +570,44 @@ export async function syncYoutubeLibrary(
     if (row.isGated) result.gatedCount += 1;
     if (row.isUnlisted) result.unlistedCount += 1;
 
-    const keywords = extractKeywords(row.title, row.description, row.tags);
-    result.conceptsLinked += await upsertConceptsForVideo(data.id, keywords);
+    const keywords = skipConcepts
+      ? []
+      : extractKeywords(row.title, row.description, row.tags);
+
+    const { data: existingTranscript } = skipConcepts
+      ? { data: null }
+      : await admin
+          .from("video_transcripts")
+          .select("video_id, segments")
+          .eq("video_id", data.id)
+          .maybeSingle();
+
+    let segments: TranscriptSegment[] = parseSegmentsJson(
+      existingTranscript?.segments,
+    );
+
+    if (
+      !skipConcepts &&
+      !existingTranscript &&
+      transcriptFetches < maxTranscriptFetches
+    ) {
+      transcriptFetches += 1;
+      const transcript = await upsertTranscriptForVideo(data.id, row.youtubeId);
+      if (transcript.ok) {
+        result.transcriptsUpserted += 1;
+        segments = transcript.segments;
+      } else {
+        result.errors.push(transcript.error);
+      }
+    }
+
+    if (!skipConcepts) {
+      result.conceptsLinked += await upsertConceptsForVideo(
+        data.id,
+        keywords,
+        segments,
+      );
+    }
   }
 
   return result;

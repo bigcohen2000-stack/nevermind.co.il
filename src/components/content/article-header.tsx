@@ -25,7 +25,7 @@ export function ArticleHeader({
     <section aria-labelledby="article-title" className="band-dark">
       <span
         aria-hidden="true"
-        className="watermark bottom-[-1.5rem] start-[-0.5rem] text-[5rem] text-background/[0.04] sm:text-[7rem] lg:text-[9rem]"
+        className="watermark bottom-[-1.5rem] start-[-0.5rem] text-[5rem] text-foreground/[0.04] sm:text-[7rem] lg:text-[9rem]"
       >
         {categoryLabel}
       </span>
@@ -34,7 +34,7 @@ export function ArticleHeader({
         <nav aria-label="פירורי לחם" className="text-sm">
           <Link
             href="/articles"
-            className="text-background/70 no-underline transition-colors duration-200 hover:text-background hover:no-underline"
+            className="text-foreground/70 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
           >
             מאמרים
           </Link>
@@ -45,7 +45,7 @@ export function ArticleHeader({
             {categoryLabel}
           </span>
           {isPremium && (
-            <span className="rounded-full border border-background/30 px-3 py-0.5 text-xs text-background/80">
+            <span className="rounded-full border border-foreground/30 px-3 py-0.5 text-xs text-foreground/80">
               לחברים
             </span>
           )}
@@ -58,7 +58,7 @@ export function ArticleHeader({
           {title}
         </h1>
 
-        <p className="mt-6 max-w-prose text-lg leading-relaxed text-background/80">
+        <p className="mt-6 max-w-prose text-lg leading-relaxed text-foreground/80">
           {description}
         </p>
       </div>

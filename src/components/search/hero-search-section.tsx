@@ -1,45 +1,97 @@
 import { HeroSearch, type ConceptChip } from "@/components/search/hero-search";
+import { CURATED_CONCEPTS, isCuratedConcept } from "@/lib/concepts/quality";
+import { getTrendingSearches } from "@/lib/search/trending-searches";
 import { createClient } from "@/lib/supabase/server";
 
-/** Fallback chips when Supabase has no concepts yet. */
-const DEFAULT_POPULAR: ConceptChip[] = [
-  { id: "fallback-metziut", name: "מציאות" },
-  { id: "fallback-hizdahut", name: "הזדהות" },
-  { id: "fallback-sevel", name: "סבל" },
-  { id: "fallback-bechira", name: "בחירה חופשית" },
-];
+/** Fallback chips when Supabase has no concepts / trending data yet. */
+const DEFAULT_POPULAR: ConceptChip[] = CURATED_CONCEPTS.slice(0, 4).map(
+  (name, index) => ({
+    id: `fallback-${index}-${name}`,
+    name,
+  }),
+);
 
 type HeroSearchSectionProps = {
   variant?: "light" | "dark";
   className?: string;
   initialQuery?: string;
-  /** Override chips; when omitted, loads from Supabase (or defaults). */
+  /** Override chips; when omitted, loads from concepts or trending. */
   popularConcepts?: ConceptChip[];
+  placeholders?: string[];
+  syncUrl?: boolean;
+  /**
+   * `trending` = top search_analytics terms (7 days, excluding 0-result).
+   * `concepts` = popular curated concepts from Supabase (default).
+   */
+  chipSource?: "concepts" | "trending";
 };
 
 /**
- * Server wrapper for the Hero Search: loads popular concepts, renders client input.
+ * Server wrapper for the Hero Search: loads chips, renders client input.
  */
 export async function HeroSearchSection({
   variant = "light",
   className,
   initialQuery,
   popularConcepts,
+  placeholders,
+  syncUrl = false,
+  chipSource = "concepts",
 }: HeroSearchSectionProps) {
   let chips: ConceptChip[] = popularConcepts ?? [];
+  let chipsAriaLabel = "מושגים נפוצים";
 
-  if (!popularConcepts) {
+  if (!popularConcepts && chipSource === "trending") {
+    chipsAriaLabel = "חיפושים פופולריים";
+    try {
+      const trending = await getTrendingSearches(5);
+      chips =
+        trending.length > 0
+          ? trending.map((item, index) => ({
+              id: `trending-${index}-${item.term}`,
+              name: item.term,
+            }))
+          : DEFAULT_POPULAR;
+    } catch {
+      chips = DEFAULT_POPULAR;
+    }
+  } else if (!popularConcepts) {
     try {
       const supabase = await createClient();
       const { data } = await supabase
         .from("concepts")
-        .select("id, name, category")
+        .select("id, name, category, video_concepts(video_id)")
         .order("name")
-        .limit(8);
+        .limit(40);
+
+      const ranked =
+        data
+          ?.map((c) => {
+            const links = c.video_concepts;
+            const videoCount = Array.isArray(links) ? links.length : 0;
+            return {
+              id: c.id,
+              name: c.name,
+              category: c.category,
+              videoCount,
+            };
+          })
+          .filter(
+            (c) =>
+              c.videoCount > 0 &&
+              (isCuratedConcept(c.name) || c.videoCount >= 2),
+          )
+          .sort(
+            (a, b) =>
+              Number(isCuratedConcept(b.name)) -
+                Number(isCuratedConcept(a.name)) ||
+              b.videoCount - a.videoCount,
+          )
+          .slice(0, 8) ?? [];
 
       chips =
-        data && data.length > 0
-          ? data.map((c) => ({
+        ranked.length > 0
+          ? ranked.map((c) => ({
               id: c.id,
               name: c.name,
               category: c.category,
@@ -57,6 +109,9 @@ export async function HeroSearchSection({
         className={className}
         initialQuery={initialQuery}
         popularConcepts={chips}
+        placeholders={placeholders}
+        syncUrl={syncUrl}
+        chipsAriaLabel={chipsAriaLabel}
       />
     </section>
   );

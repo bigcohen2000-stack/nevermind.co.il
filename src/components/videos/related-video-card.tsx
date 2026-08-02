@@ -2,6 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { RelatedVideo } from "@/lib/videos/queries";
+import { ClubBadge } from "@/components/videos/club-badge";
+import { isMembersOnlyVideo } from "@/lib/videos/access";
+import {
+  getTeaserThumbSrc,
+  getWatchHref,
+} from "@/lib/videos/watch-path";
 
 function formatTimestamp(seconds: number | null): string | null {
   if (seconds == null || seconds < 0) return null;
@@ -15,14 +21,14 @@ type RelatedVideoCardProps = {
 };
 
 export function RelatedVideoCard({ video }: RelatedVideoCardProps) {
-  const thumb =
-    video.thumbnail_url ??
-    `https://i.ytimg.com/vi/${video.youtube_id}/hqdefault.jpg`;
+  const gated = isMembersOnlyVideo(video);
+  const thumb = getTeaserThumbSrc(video, {
+    opaqueThumbPath: video.thumbnail_url,
+  });
   const stamp = formatTimestamp(video.startTimestamp);
-  const href =
-    video.startTimestamp != null
-      ? `/watch/${video.youtube_id}?t=${video.startTimestamp}`
-      : `/watch/${video.youtube_id}`;
+  const href = getWatchHref(video, {
+    startSeconds: gated ? null : video.startTimestamp,
+  });
 
   return (
     <article>
@@ -38,14 +44,33 @@ export function RelatedVideoCard({ video }: RelatedVideoCardProps) {
             sizes="160px"
             className="object-cover"
           />
-          {stamp ? (
+          {gated ? <ClubBadge /> : null}
+          {gated ? (
+            <span
+              className="absolute inset-0 z-[1] flex items-center justify-center bg-black/40"
+              aria-label="תוכן לחברים"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="size-5 text-background"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+              >
+                <rect x="5" y="11" width="14" height="10" rx="1.5" />
+                <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+              </svg>
+            </span>
+          ) : null}
+          {stamp && !gated ? (
             <span className="absolute bottom-1 end-1 bg-foreground/85 px-1.5 py-0.5 text-[11px] tabular-nums text-background">
               {stamp}
             </span>
           ) : null}
         </div>
         <div className="min-w-0 flex-1 text-start">
-          <h3 className="text-sm font-semibold leading-snug tracking-tight group-hover:text-action sm:text-base">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight transition-colors group-hover:text-action group-focus-visible:text-action sm:text-base">
             {video.title}
           </h3>
           {video.sharedConcept ? (
@@ -53,7 +78,7 @@ export function RelatedVideoCard({ video }: RelatedVideoCardProps) {
               מושג משותף: {video.sharedConcept}
             </p>
           ) : null}
-          {stamp ? (
+          {stamp && !gated ? (
             <p className="mt-1 text-xs text-foreground/70">
               נקודת כניסה: {stamp}
             </p>

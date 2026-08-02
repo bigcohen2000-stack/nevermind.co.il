@@ -53,3 +53,9 @@ _old_neverminde-yakir-cohen_delete_later/
 .cursor/
 
 .vercel
+
+# Real video import dumps (templates + README stay tracked)
+supabase/imports/*
+!supabase/imports/README.md
+!supabase/imports/*.template.csv
+!supabase/imports/*.template.json
