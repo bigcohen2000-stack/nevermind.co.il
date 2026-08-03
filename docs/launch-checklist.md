@@ -1,73 +1,108 @@
 # Launch checklist (nevermind.co.il)
 
-## Clean before go-live
+Updated after live cutover (2026-08-03): DNS points at Vercel. Site returns `Server: Vercel`.
 
-- [x] Remove internal prompts / READMEs from `public/` (moved to `docs/`)
-- [x] Remove unused Next.js boilerplate SVGs from `public/`
-- [x] Rename `club-lock-overlay.png.png` to `club-lock-overlay.png`
-- [x] Studio guide tab at `/studio/guide`
-- [x] CF Access JWT helper (`src/lib/studio/cf-access.ts`) with optional cryptographic verify
-- [ ] Do not commit `.next/`, `.env*`, or raw `supabase/imports` dumps
+## Done
 
-## Blocker: DNS still on GitHub Pages
+- [x] DNS apex A `76.76.21.21`, www CNAME `cname.vercel-dns.com` (grey cloud)
+- [x] Production deploy Ready on Vercel
+- [x] Clean `public/` (prompts/READMEs/boilerplate moved or removed)
+- [x] Studio guide at `/studio/guide`
+- [x] CF Access JWT helper (`src/lib/studio/cf-access.ts`)
+- [x] `*.vercel.app` behind Vercel SSO
+- [x] Core env: Supabase, YouTube, CRON, WhatsApp, Resend, Club, Studio flags
+- [x] `STUDIO_REQUIRE_CF_ACCESS=0` until Access app is live (so `/nm-ops` works)
+- [x] `STUDIO_GATE_SLUG=nm-ops`, `STUDIO_ALLOWED_EMAILS=bigcohen2000@gmail.com`
 
-As of 2026-08-03:
+## Keep vs junk (do not delete blindly)
 
-- Nameservers: Cloudflare (`leanna` / `renan`) — keep them
-- Apex + www: CNAME → `bigcohen2000-stack.github.io` (old site)
-- Live `https://nevermind.co.il` returns `Server: GitHub.com`
-- Vercel already aliases `nevermind.co.il` / `www`, but DNS must point at Vercel
-- Cloudflare MCP token is **read-only** for DNS. Edit in Cloudflare dashboard (or grant `DNS:Edit`)
+### Keep (needed even with manual Studio updates)
 
-### DNS change (dashboard)
+| Item | Why |
+| --- | --- |
+| `YOUTUBE_API_KEY` | Studio "ייבוא" still calls YouTube Data API for title, description, privacy, then transcript/concepts. Removing it breaks manual ingest and `getServerEnv()`. |
+| `CRON_SECRET` | Protects `/api/admin/sync` and is Studio secret fallback. |
+| `googleapis` + sync code | Used by Studio library sync button and optional weekly cron. |
+| Supabase keys, Resend, Club secrets | Core product. |
 
-| Name | Action | Value | Proxy |
-| --- | --- | --- | --- |
-| `nevermind.co.il` | Replace GitHub CNAME with **A** | `76.76.21.21` | Grey first, then Orange after SSL OK |
-| `www` | CNAME | `cname.vercel-dns.com` | Same as apex |
-| `club` | Delete AAAA + Workers route `nm-club-auth` | — | — |
+### Optional (manual-only ops)
 
-Do **not** touch MX / SPF / DKIM / DMARC / Resend / `send.`.
+| Item | Recommendation |
+| --- | --- |
+| Weekly cron `/api/admin/sync` in `vercel.json` | Safe to **disable** if you only ingest from Studio and never want auto channel walk. Keep the route for on-demand sync. |
+| `YOUTUBE_CHANNEL_IDS` / playlist ID envs | Keep if you still press "סנכרון ספרייה" in Studio. Harmless if unused. |
+| `OPENAI_API_KEY` | Only for Blind Spot invert + core_facts. Optional. |
 
-Do **not** switch nameservers to `ns1.vercel-dns.com` (breaks CF Email + Access).
+### Delete / retire (junk from old stack)
 
-After edit: wait 1–5 minutes, confirm `Server: Vercel` on `https://nevermind.co.il/`.
+| Item | Action |
+| --- | --- |
+| `club.nevermind.co.il` DNS AAAA + Worker `nm-club-auth` + route | Delete in Cloudflare (API token is read-only: do in dashboard) |
+| Cloudflare Access apps: `/admin/*`, `/dashboard/*`, `/api/dashboard/*`, `/api/club-admin/*` | Delete (old static site) |
+| Cloudflare Access app: `nevermind.co.il/api/admin/*` | **Delete before orange cloud**, or Vercel cron/Studio sync can get blocked by Access |
+| GitHub Pages custom domain on old/new repos | Remove if still set |
+| `nevermind-html` repo | Archive only. Do not point DNS at it again |
 
-Then in GitHub `nevermind-html` → Settings → Pages → remove custom domain.
+**Verdict:** leave `YOUTUBE_API_KEY` in place. Manual Studio updates still need it. Do not remove sync code. Optionally turn off the weekly cron only.
 
-## Vercel Production env
+## Your next clicks (Cloudflare dashboard)
 
-- [x] Core Supabase / YouTube / CRON / WhatsApp / site URL
-- [x] `NEXT_PUBLIC_USE_MOCK_SEARCH=false` on Production
-- [x] Resend: `RESEND_API_KEY`, `BOOKING_ADMIN_EMAIL`, `RESEND_FROM_EMAIL`
-- [x] `CLUB_GATE_SECRET` on Production
-- [x] `*.vercel.app` behind Vercel SSO (anti-bypass)
-- [ ] Re-deploy Production after latest merge
-- [ ] `STUDIO_SECRET` dedicated (or confirm CRON_SECRET fallback is strong)
-- [ ] After Access live: `STUDIO_REQUIRE_CF_ACCESS=1`, `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`
+### 1. Delete club leftovers
 
-Re-push later with: `node scripts/push-vercel-env.mjs`
+1. DNS → delete `club` AAAA `100::`
+2. Workers → Routes → delete `club.nevermind.co.il/*`
+3. Workers → delete script `nm-club-auth` if unused
 
-## Supabase
+### 2. Clean old Access apps
 
-- [ ] Apply pending migrations on production (25–30 especially)
-- [ ] Auth redirect URLs include `https://nevermind.co.il/**` (+ localhost for dev)
-- [ ] Google OAuth for this project only
-- [ ] Club password set in Studio
-- [ ] Gated / unlisted videos synced and marked
+Zero Trust → Access → Applications → delete:
 
-## Security (Zero Trust)
+- Club Admin API (`/api/club-admin/*`)
+- NeverMind Admin (`/admin/*`)
+- NeverMind Dashboard (`/dashboard/*`)
+- NeverMind Dashboard API (`/api/dashboard/*`)
+- NeverMind Admin API (`/api/admin/*`)  ← important before proxy
 
-- [ ] Cloudflare Access app: `/nm-ops*` + `/studio*` → email `bigcohen2000@gmail.com` only
-- [ ] Retire old Access apps for `/admin`, `/dashboard` (static site)
-- [ ] WAF rate limit on `/nm-ops*` (about 10/min/IP)
-- [ ] Run validation matrix (vercel.app blocked, /studio = 404, wrong email blocked, wrong secret rejected, Google user ≠ Studio)
+### 3. Create Studio Access (then orange cloud)
 
-## Smoke test (after DNS cutover)
+1. Add Self-hosted app: **NeverMind Studio**
+2. Paths: `nevermind.co.il/nm-ops*` and `nevermind.co.il/studio*`
+3. Policy: Allow email `bigcohen2000@gmail.com` only
+4. Turn **orange cloud** (Proxied) on apex + www
+5. SSL/TLS mode: **Full (strict)**
+6. Copy team domain + AUD tag into Vercel:
+   - `CF_ACCESS_TEAM_DOMAIN`
+   - `CF_ACCESS_AUD`
+7. Set `STUDIO_REQUIRE_CF_ACCESS=1` and redeploy
+8. WAF rate limit: `/nm-ops*` about 10 req/min/IP → Managed Challenge
 
-- [ ] `/` home, `/search`, `/articles`, public `/watch/...`
-- [ ] Gated watch blocked without club access
-- [ ] Contact / booking email via Resend
-- [ ] `/api/health` returns 200
-- [ ] `/robots.txt` and `/sitemap.xml`
-- [ ] Studio unlock via `/nm-ops` + guide at `/studio/guide`
+Details: `docs/studio-cloudflare-access.md`
+
+## Supabase (dashboard)
+
+- [ ] Apply migrations 25–30 if not applied
+- [ ] Auth URL config: `https://nevermind.co.il/**` (+ localhost)
+- [ ] Google OAuth for this project
+- [ ] Club password in Studio
+- [ ] Confirm gated/unlisted videos look right
+
+## Validation matrix
+
+| Check | Expected |
+| --- | --- |
+| `https://nevermind.co.il` | `Server: Vercel`, home OK |
+| `https://nevermind.co.il/api/health` | `{"ok":true,"db":"ok"}` |
+| `https://nevermind.co.il/studio` (logged out) | Looks like 404 |
+| `https://nevermind.co.il/nm-ops` (before Access) | Gate form |
+| `*.vercel.app/nm-ops` Incognito | Vercel SSO |
+| Google user → `/studio` | 404 |
+| After Access: wrong email | CF blocks |
+| After Access: right email + wrong secret | No Studio session |
+
+## Smoke
+
+- [ ] `/`, `/search`, article, public watch
+- [ ] Gated watch blocked without club
+- [ ] Contact/booking Resend
+- [ ] `/robots.txt`, `/sitemap.xml`
+- [ ] Studio `/nm-ops` → `/studio` → `/studio/guide`
