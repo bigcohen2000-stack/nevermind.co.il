@@ -6,6 +6,7 @@ import { suggestSearch } from "@/lib/videos/queries";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q") ?? "";
+  const breakdown = searchParams.get("breakdown") ?? undefined;
   const trimmed = q.trim();
 
   if (trimmed.length < 2) {
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
     if (isMockSearchEnabled()) {
       return NextResponse.json(getMockSuggest(trimmed));
     }
-    const result = await suggestSearch(q);
+    const result = await suggestSearch(q, { breakdown });
     return NextResponse.json(result);
   } catch (err) {
     console.error(

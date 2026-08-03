@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 
+import { AccessibilityToolbar } from "@/components/a11y/accessibility-toolbar";
+import { WhatsAppFloat } from "@/components/contact/whatsapp-float";
 import { getHeaderSession } from "@/lib/auth/header-session";
 import { getLiveUpdateItems } from "@/lib/site/live-updates";
+import { resolveSiteTheme } from "@/lib/theme/preference";
 import { DailyResetPrompt } from "@/components/push/daily-reset-prompt";
 import { PresenceBeacon } from "@/components/layout/presence-beacon";
 import { DotBackground } from "@/components/ui/dot-background";
@@ -30,13 +33,14 @@ export async function SiteShell({ children }: { children: ReactNode }) {
     getHeaderSession(),
     getLiveUpdateItems().catch(() => []),
   ]);
+  const theme = await resolveSiteTheme(session);
 
   return (
     <FocusModeProvider>
       <SiteShellFrame>
         <a
           href="#main-content"
-          className="absolute start-4 top-0 z-[100] -translate-y-[120%] rounded-md bg-action px-4 py-2 text-sm font-semibold text-white transition focus:translate-y-4 focus:outline-none focus:ring-2 focus:ring-white"
+          className="absolute start-4 top-0 z-[100] -translate-y-[120%] border border-transparent bg-action px-4 py-2 text-sm font-semibold text-white transition focus:translate-y-4 focus:outline-none focus:ring-2 focus:ring-white"
         >
           דילוג לתוכן הראשי
         </a>
@@ -52,7 +56,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
             <SiteStatusBanner session={session} />
           </FocusModeChrome>
           <FocusModeChrome>
-            <SiteHeader session={session} />
+            <SiteHeader session={session} theme={theme} />
           </FocusModeChrome>
         </div>
         <div
@@ -78,6 +82,10 @@ export async function SiteShell({ children }: { children: ReactNode }) {
           <DailyResetPrompt />
         </FocusModeChrome>
         <PresenceBeacon session={session} />
+        <AccessibilityToolbar />
+        <FocusModeChrome>
+          <WhatsAppFloat />
+        </FocusModeChrome>
       </SiteShellFrame>
     </FocusModeProvider>
   );

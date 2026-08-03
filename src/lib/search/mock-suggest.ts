@@ -21,6 +21,9 @@ export const MOCK_SUGGEST_ITEMS: SuggestItem[] = [
     youtubeId: "dQw4w9WgXcQ",
     title: "עובדה מול סיפור (דוגמה)",
     isGated: false,
+    snippet: "המשמעות העודפת נוצרת כשמוסיפים סיפור על העובדה.",
+    startSeconds: 42,
+    breakdownLevel: "primary",
   },
   {
     type: "article",

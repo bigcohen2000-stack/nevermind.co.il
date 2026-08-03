@@ -35,6 +35,59 @@
     "Arial Hebrew", Arial, sans-serif;
 }
 
+/* Connected visitors may opt into a dark canvas (profiles.theme / cookie). */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #121212;
+  --foreground: #fafaf8;
+  --muted: #9ca3af;
+  --paper: #1a1a1a;
+  --ink: #0a0a0a;
+  --ink-raised: #1a1a1a;
+  --hairline: rgba(250, 250, 248, 0.12);
+  --hairline-strong: rgba(250, 250, 248, 0.22);
+}
+
+/* Accessibility toolbar prefs (data-* on <html>). */
+html[data-a11y-font="large"] {
+  font-size: 112.5%;
+}
+html[data-a11y-font="xlarge"] {
+  font-size: 125%;
+}
+html[data-a11y-contrast="high"] {
+  --foreground: #000000;
+  --background: #ffffff;
+  --muted: #4b5563;
+  --hairline: rgba(0, 0, 0, 0.35);
+  --hairline-strong: rgba(0, 0, 0, 0.55);
+}
+html[data-theme="dark"][data-a11y-contrast="high"] {
+  --foreground: #ffffff;
+  --background: #000000;
+  --muted: #d1d5db;
+  --hairline: rgba(255, 255, 255, 0.4);
+  --hairline-strong: rgba(255, 255, 255, 0.65);
+}
+html[data-a11y-links="underline"] a:not(.btn) {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+html[data-a11y-motion="reduce"] *,
+html[data-a11y-motion="reduce"] *::before,
+html[data-a11y-motion="reduce"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+html[data-a11y-spacing="relaxed"] body {
+  line-height: 1.9;
+  letter-spacing: 0.01em;
+}
+html[data-a11y-grayscale="on"] {
+  filter: grayscale(1);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -424,6 +477,7 @@ p {
   .nav-pill[aria-current="page"] {
     color: var(--action);
     background-color: color-mix(in srgb, var(--action) 12%, transparent);
+    box-shadow: inset 0 -2px 0 var(--action);
   }
 
   /* Editorial index row — a numbered article entry that reads like a table of

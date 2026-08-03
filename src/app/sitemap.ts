@@ -18,6 +18,9 @@ const STATIC_PATHS = [
   "/mechanisms",
   "/concepts",
   "/booking",
+  "/members",
+  "/privacy",
+  "/accessibility",
 ] as const;
 
 async function listPublicYoutubeIds(): Promise<

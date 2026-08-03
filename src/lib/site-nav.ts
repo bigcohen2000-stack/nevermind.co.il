@@ -34,6 +34,7 @@ export const SECONDARY_NAV: NavLink[] = [
 
 /** Legal / compliance links shown in footer bottom. */
 export const LEGAL_NAV: NavLink[] = [
+  { label: "מדיניות פרטיות", href: "/privacy", emoji: "🔒" },
   { label: "הצהרת נגישות", href: "/accessibility", emoji: "♿" },
   { label: "יצירת קשר", href: "/contact", emoji: "✉️" },
 ];

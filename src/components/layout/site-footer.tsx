@@ -117,7 +117,12 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-12 flex flex-col gap-4 border-t border-foreground/15 pt-6 text-sm text-foreground/60 sm:flex-row sm:items-center sm:justify-between">
+        <p className="mt-12 border border-foreground/15 bg-foreground/[0.03] px-4 py-3 text-xs leading-relaxed text-foreground/70 sm:text-sm">
+          חיבור מאובטח SSL (Vercel) · קבלה/חשבונית מס מופקת כחוק · תיאום וסליקה
+          בשיחה ישירה בלבד
+        </p>
+
+        <div className="mt-6 flex flex-col gap-4 border-t border-foreground/15 pt-6 text-sm text-foreground/60 sm:flex-row sm:items-center sm:justify-between">
           <p>© {currentYear} השם לא משנה · NeverMinde: יקיר כהן</p>
           <nav aria-label="מידע משפטי" className="flex flex-wrap gap-x-4 gap-y-2">
             {LEGAL_NAV.map((link) => (

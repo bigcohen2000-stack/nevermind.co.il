@@ -1,8 +1,28 @@
 "use client";
 
+import {
+  BookOpen,
+  Calendar,
+  Clapperboard,
+  Compass,
+  Home,
+  KeyRound,
+  Library,
+  Lightbulb,
+  Mail,
+  Menu,
+  MoreHorizontal,
+  Search,
+  Settings2,
+  Accessibility,
+  Bookmark,
+  User,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { HeaderAuthControls } from "@/components/layout/header-auth-controls";
 import { HeaderSearch } from "@/components/layout/header-search";
@@ -14,19 +34,35 @@ import {
   PRIMARY_NAV,
   SECONDARY_NAV,
 } from "@/lib/site-nav";
+import type { SiteTheme } from "@/lib/theme/theme";
 import { cn } from "@/lib/utils";
 
 type SiteHeaderProps = {
   session: HeaderSession;
+  theme: SiteTheme;
 };
 
-function NavEmoji({ emoji }: { emoji?: string }) {
-  if (!emoji) return null;
-  return (
-    <span aria-hidden="true" className="me-1.5 select-none text-[0.95em]">
-      {emoji}
-    </span>
-  );
+const NAV_ICONS: Record<string, LucideIcon> = {
+  "/": Home,
+  "/videos": Clapperboard,
+  "/articles": BookOpen,
+  "/concepts": Lightbulb,
+  "/members": KeyRound,
+  "/paths": Compass,
+  "/contact": Mail,
+  "/search": Search,
+  "/mechanisms": Settings2,
+  "/books": Library,
+  "/booking": Calendar,
+  "/my-list": Bookmark,
+  "/profile": User,
+  "/accessibility": Accessibility,
+};
+
+function NavIcon({ href }: { href: string }) {
+  const Icon = NAV_ICONS[href];
+  if (!Icon) return null;
+  return <Icon className="me-1.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />;
 }
 
 function DesktopMoreMenu() {
@@ -66,9 +102,7 @@ function DesktopMoreMenu() {
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
       >
-        <span aria-hidden="true" className="me-1.5">
-          ···
-        </span>
+        <MoreHorizontal className="me-1.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
         עוד
       </button>
       {open ? (
@@ -86,12 +120,12 @@ function DesktopMoreMenu() {
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-10 items-center rounded-md px-3 text-sm transition hover:bg-paper",
+                  "flex min-h-10 items-center px-3 text-sm transition hover:bg-paper",
                   active ? "text-action" : "text-foreground/90",
                 )}
                 onClick={() => setOpen(false)}
               >
-                <NavEmoji emoji={link.emoji} />
+                <NavIcon href={link.href} />
                 {link.label}
               </Link>
             );
@@ -102,10 +136,38 @@ function DesktopMoreMenu() {
   );
 }
 
+function IconButton({
+  label,
+  onClick,
+  expanded,
+  controls,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  expanded?: boolean;
+  controls?: string;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className="inline-flex min-h-11 min-w-11 items-center justify-center border border-foreground/20 text-foreground transition hover:border-action hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+      aria-expanded={expanded}
+      aria-controls={controls}
+      aria-label={label}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
 /**
- * Sticky RTL header: brand + search on top, modern nav rail on wide screens.
+ * Sticky RTL header: brand + search on top, nav rail on wide screens.
+ * Lucide icons only. Auth + install app on the trailing side.
  */
-export function SiteHeader({ session }: SiteHeaderProps) {
+export function SiteHeader({ session, theme }: SiteHeaderProps) {
   const pathname = usePathname() ?? "/";
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -126,7 +188,9 @@ export function SiteHeader({ session }: SiteHeaderProps) {
     };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
-    if (menuOpen) document.body.style.overflow = "hidden";
+    if (menuOpen || mobileSearchOpen) {
+      document.body.style.overflow = "hidden";
+    }
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
@@ -144,57 +208,37 @@ export function SiteHeader({ session }: SiteHeaderProps) {
           </div>
 
           <div className="hidden shrink-0 items-center gap-2 lg:flex">
-            <HeaderAuthControls session={session} />
+            <HeaderAuthControls session={session} theme={theme} />
             <InstallAppButton compact />
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5 lg:hidden">
-            <button
-              type="button"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-foreground/20 text-foreground transition hover:border-action hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
-              aria-expanded={mobileSearchOpen}
-              aria-label={mobileSearchOpen ? "סגירת חיפוש" : "פתיחת חיפוש"}
+            <IconButton
+              label={mobileSearchOpen ? "סגירת חיפוש" : "פתיחת חיפוש"}
+              expanded={mobileSearchOpen}
               onClick={() => {
                 setMobileSearchOpen((v) => !v);
                 setMenuOpen(false);
               }}
             >
-              <span aria-hidden="true">🔍</span>
-            </button>
-            <HeaderAuthControls session={session} compact />
-            <button
-              type="button"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-foreground/20 text-foreground transition hover:border-action hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
-              aria-expanded={menuOpen}
-              aria-controls={panelId}
-              aria-label={menuOpen ? "סגירת תפריט" : "פתיחת תפריט"}
+              <Search className="h-4 w-4" aria-hidden="true" />
+            </IconButton>
+            <HeaderAuthControls session={session} theme={theme} compact />
+            <IconButton
+              label={menuOpen ? "סגירת תפריט" : "פתיחת תפריט"}
+              expanded={menuOpen}
+              controls={panelId}
               onClick={() => {
                 setMenuOpen((v) => !v);
                 setMobileSearchOpen(false);
               }}
             >
-              <span className="sr-only">{menuOpen ? "סגור" : "תפריט"}</span>
-              <span aria-hidden="true" className="flex flex-col gap-1.5">
-                <span
-                  className={cn(
-                    "block h-0.5 w-5 bg-current transition",
-                    menuOpen && "translate-y-2 rotate-45",
-                  )}
-                />
-                <span
-                  className={cn(
-                    "block h-0.5 w-5 bg-current transition",
-                    menuOpen && "opacity-0",
-                  )}
-                />
-                <span
-                  className={cn(
-                    "block h-0.5 w-5 bg-current transition",
-                    menuOpen && "-translate-y-2 -rotate-45",
-                  )}
-                />
-              </span>
-            </button>
+              {menuOpen ? (
+                <X className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Menu className="h-4 w-4" aria-hidden="true" />
+              )}
+            </IconButton>
           </div>
         </div>
 
@@ -214,7 +258,7 @@ export function SiteHeader({ session }: SiteHeaderProps) {
                       aria-label={link.label}
                       className={cn("nav-pill", active && "nav-pill-active")}
                     >
-                      <NavEmoji emoji={link.emoji} />
+                      <NavIcon href={link.href} />
                       {link.label}
                     </Link>
                   </li>
@@ -253,10 +297,10 @@ export function SiteHeader({ session }: SiteHeaderProps) {
                     href="/"
                     aria-current={pathname === "/" ? "page" : undefined}
                     aria-label="ראשי"
-                    className="nav-link flex min-h-12 items-center rounded-md px-2 text-base font-medium"
+                    className="nav-link flex min-h-12 items-center px-2 text-base font-medium"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <NavEmoji emoji="🏠" />
+                    <NavIcon href="/" />
                     ראשי
                   </Link>
                 </li>
@@ -268,10 +312,10 @@ export function SiteHeader({ session }: SiteHeaderProps) {
                         href={link.href}
                         aria-current={active ? "page" : undefined}
                         aria-label={link.label}
-                        className="nav-link flex min-h-12 items-center rounded-md px-2 text-base"
+                        className="nav-link flex min-h-12 items-center px-2 text-base"
                         onClick={() => setMenuOpen(false)}
                       >
-                        <NavEmoji emoji={link.emoji} />
+                        <NavIcon href={link.href} />
                         {link.label}
                       </Link>
                     </li>
@@ -293,10 +337,10 @@ export function SiteHeader({ session }: SiteHeaderProps) {
                         href={link.href}
                         aria-current={active ? "page" : undefined}
                         aria-label={link.label}
-                        className="nav-link flex min-h-11 items-center rounded-md px-2 text-sm text-foreground/85"
+                        className="nav-link flex min-h-11 items-center px-2 text-sm text-foreground/85"
                         onClick={() => setMenuOpen(false)}
                       >
-                        <NavEmoji emoji={link.emoji} />
+                        <NavIcon href={link.href} />
                         {link.label}
                       </Link>
                     </li>
@@ -307,6 +351,7 @@ export function SiteHeader({ session }: SiteHeaderProps) {
 
             <HeaderAuthControls
               session={session}
+              theme={theme}
               layout="stack"
               onNavigate={() => setMenuOpen(false)}
             />

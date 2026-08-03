@@ -1,12 +1,13 @@
 "use client";
 
+import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { getContextualWhatsAppHref } from "@/lib/whatsapp-context";
 
 /**
- * Discrete floating WhatsApp CTA with path-aware message text.
- * Hidden on contact (form already present) and on very small chrome pages.
+ * Floating WhatsApp CTA (end side). Keeps clear of a11y toolbar (start)
+ * and mobile bottom CTA bar via safe-area offset.
  */
 export function WhatsAppFloat() {
   const pathname = usePathname() || "/";
@@ -26,10 +27,11 @@ export function WhatsAppFloat() {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-[4.75rem] end-4 z-40 hidden min-h-11 items-center border border-foreground/20 bg-background px-3 py-2 text-sm text-foreground shadow-float hover:border-action hover:text-action md:inline-flex"
-      aria-label="וואטסאפ לפי העמוד הנוכחי"
+      className="fixed end-3 z-[90] inline-flex min-h-12 items-center gap-2 border border-[#25D366]/40 bg-[#25D366] px-3.5 py-2.5 text-sm font-medium text-white shadow-float transition hover:bg-[#1ebe57] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-background bottom-[calc(5.5rem+env(safe-area-inset-bottom))] sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))] sm:end-4"
+      aria-label="שלח הודעה בוואטסאפ"
     >
-      וואטסאפ
+      <MessageCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
+      <span className="hidden sm:inline">וואטסאפ</span>
     </a>
   );
 }

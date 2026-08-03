@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   useEffect,
@@ -10,6 +9,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+import { X } from "lucide-react";
 
 import {
   suggestItemHref,
@@ -136,6 +136,14 @@ export function HeaderSearch({
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Escape") {
+      if (query) {
+        e.preventDefault();
+        setQuery("");
+        setItems([]);
+        setActiveIndex(-1);
+        inputRef.current?.focus();
+        return;
+      }
       setOpen(false);
       setFocused(false);
       inputRef.current?.blur();
@@ -149,6 +157,13 @@ export function HeaderSearch({
       e.preventDefault();
       setActiveIndex((i) => (i <= 0 ? items.length - 1 : i - 1));
     }
+  }
+
+  function clearQuery() {
+    setQuery("");
+    setItems([]);
+    setActiveIndex(-1);
+    inputRef.current?.focus();
   }
 
   const hideOnSearchPage = pathname === "/search" && !expanded;
@@ -190,6 +205,12 @@ export function HeaderSearch({
             setFocused(true);
             setOpen(true);
           }}
+          onBlur={() => {
+            window.setTimeout(() => {
+              setOpen(false);
+              setFocused(false);
+            }, 150);
+          }}
           onKeyDown={onKeyDown}
           placeholder="חיפוש באתר"
           autoComplete="off"
@@ -202,12 +223,25 @@ export function HeaderSearch({
             activeIndex >= 0 ? `${listId}-option-${activeIndex}` : undefined
           }
           className={cn(
-            "min-h-10 w-full rounded-md border border-foreground/20 bg-background/80 pe-3 ps-9 text-sm text-foreground",
+            "min-h-10 w-full rounded-md border border-foreground/20 bg-background/80 ps-9 text-sm text-foreground",
+            query ? "pe-10" : "pe-3",
             "placeholder:text-muted",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
             expanded && "min-h-11",
           )}
         />
+        {query ? (
+          <button
+            type="button"
+            aria-label="ניקוי חיפוש"
+            title="ניקוי"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={clearQuery}
+            className="absolute inset-y-0 end-1 inline-flex min-w-9 items-center justify-center text-muted transition hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+          >
+            <X className="size-4" strokeWidth={1.75} aria-hidden />
+          </button>
+        ) : null}
       </form>
 
       {panelOpen ? (

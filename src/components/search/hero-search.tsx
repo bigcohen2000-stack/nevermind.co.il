@@ -375,6 +375,7 @@ export function HeroSearch({
             setOpen(true);
             setFocused(true);
           }}
+          onClear={clearQuery}
           onSubmit={onSubmit}
           onKeyDown={onKeyDown}
           onFocus={() => {

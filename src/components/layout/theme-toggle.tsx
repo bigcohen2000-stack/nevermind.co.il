@@ -1,5 +1,6 @@
 "use client";
 
+import { Moon, Sun } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 
 import { setSiteThemePreference } from "@/actions/theme";
@@ -83,9 +84,11 @@ export function ThemeToggle({
       aria-label={isDark ? "מעבר למצב בהיר" : "מעבר למצב כהה"}
       title={isDark ? "מצב בהיר" : "מצב כהה"}
     >
-      <span aria-hidden="true" className="text-base leading-none">
-        {isDark ? "☀" : "☾"}
-      </span>
+      {isDark ? (
+        <Sun className="h-4 w-4" aria-hidden="true" />
+      ) : (
+        <Moon className="h-4 w-4" aria-hidden="true" />
+      )}
     </button>
   );
 }

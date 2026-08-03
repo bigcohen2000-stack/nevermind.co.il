@@ -52,3 +52,6 @@ export function writeThemeCookie(theme: SiteTheme): void {
 export function clearThemeCookie(): void {
   document.cookie = `${THEME_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
 }
+
+/** Inline bootstrap to avoid light flash before hydration for connected users. */
+export const THEME_BOOTSTRAP_SCRIPT = `(function(){try{var m=document.cookie.match(/(?:^|; )${THEME_COOKIE}=([^;]*)/);var t=m&&decodeURIComponent(m[1]);if(t!=="dark")return;var h=document.documentElement;h.setAttribute("data-theme","dark");h.style.colorScheme="dark";var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content","#121212");}catch(e){}})();`;
