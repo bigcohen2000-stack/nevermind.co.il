@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ArticleBody } from "@/components/content/article-body";
+import { ArticleContinueReading } from "@/components/content/article-continue-reading";
 import { ArticleHeader } from "@/components/content/article-header";
+import { RelatedConceptsStrip } from "@/components/search/related-concepts-strip";
 import { RelatedExploration } from "@/components/search/related-exploration";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ShareExplorationButton } from "@/components/share/share-exploration-button";
@@ -91,8 +93,12 @@ export default async function ArticlePage({
       <section className="bg-background text-foreground">
         <div className="mx-auto w-full max-w-3xl px-6 py-16 lg:py-24">
           <article className="max-w-prose">
-            <ArticleBody content={Content} />
+            <ArticleContinueReading slug={meta.slug}>
+              <ArticleBody content={Content} />
+            </ArticleContinueReading>
           </article>
+
+          <RelatedConceptsStrip concepts={relatedConcepts} />
 
           {meta.isPremium && (
             <aside className="card mt-16 p-8">

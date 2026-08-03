@@ -17,6 +17,7 @@ import {
 
 import { submitLogicFilterLead } from "@/actions/logic-filter-lead";
 import { buildSmsHref, buildWhatsAppHref } from "@/lib/whatsapp";
+import { cn } from "@/lib/utils";
 
 type BucketId = "facts" | "story" | "pool";
 
@@ -30,10 +31,10 @@ type ThoughtDeconstructorProps = {
   source?: string;
 };
 
-const BOOKING_CTA =
-  "עכשיו כשפירקנו את זה, בוא נחקור את זה לעומק. קבע שיחה.";
-
 const fieldClass =
+  "mt-2 w-full rounded-none border border-foreground/20 bg-background px-4 py-3 text-foreground outline-none transition placeholder:text-muted focus:border-action";
+
+const fieldClassOnDark =
   "mt-2 w-full rounded-none border border-white/15 bg-black px-4 py-3 text-[#FAFAF8] outline-none transition placeholder:text-[#9CA3AF] focus:border-[#D42B2B]";
 
 function splitThought(text: string): string[] {
@@ -52,8 +53,7 @@ function makeChips(text: string): Chip[] {
 }
 
 /**
- * Two-step Thought Deconstructor: write a thought, sort into
- * Objective Facts vs My Story, then book a deep-dive call via Resend.
+ * Two-step Thought Deconstructor: write, sort fact vs story, then request a call.
  */
 export function ThoughtDeconstructor({
   source = "thought-deconstructor",
@@ -110,7 +110,7 @@ export function ThoughtDeconstructor({
   function onContinueFromThought() {
     const trimmed = thought.trim();
     if (trimmed.length < 10) {
-      setError("כתוב קצת יותר על המחשבה או הבעיה (לפחות כמה משפטים).");
+      setError("כתבו עוד כמה מילים על מה שקרה או מה שמעסיק.");
       return;
     }
     setError("");
@@ -130,7 +130,7 @@ export function ThoughtDeconstructor({
 
   function onBookClick() {
     if (!bucketsReady) {
-      setError("מלא את שני הדליים לפני קביעת שיחה.");
+      setError("מלאו עובדה וסיפור לפני השליחה.");
       return;
     }
     setError("");
@@ -148,11 +148,11 @@ export function ThoughtDeconstructor({
       return;
     }
     if (email.trim() && !email.trim().includes("@")) {
-      setError("אימייל לא תקין (אפשר להשאיר ריק).");
+      setError("אימייל לא תקין. אפשר להשאיר ריק.");
       return;
     }
     if (!bucketsReady) {
-      setError("מלא את שני הדליים לפני השליחה.");
+      setError("מלאו עובדה וסיפור לפני השליחה.");
       return;
     }
 
@@ -185,23 +185,20 @@ export function ThoughtDeconstructor({
       "המצב:",
       thought.trim().slice(0, 500),
       "",
-      "אשמח לתאם שיחת עומק.",
+      "אשמח לתאם שיחה.",
     ].join("\n");
 
     return (
       <div
-        className="border border-white/10 bg-[#0A0A0B] p-8 text-[#FAFAF8] sm:p-10"
+        className="border border-foreground/15 bg-paper p-6 text-foreground sm:p-8"
         role="status"
       >
-        <p className="text-xs font-medium tracking-wide text-[#D42B2B]">
-          נשלח
-        </p>
+        <p className="text-xs font-medium tracking-wide text-action">נשלח</p>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight">
           הפירוק התקבל.
         </h2>
-        <p className="mt-4 max-w-prose leading-relaxed text-[#9CA3AF]">
-          העובדות והסיפור כבר בידיים. הדרך המהירה לתיאום: וואטסאפ או SMS (גם
-          לטלפון כשר).
+        <p className="mt-4 max-w-prose text-sm leading-relaxed text-foreground/75">
+          אפשר להמשיך בוואטסאפ או ב-SMS לתיאום. גם לטלפון כשר.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <a
@@ -221,330 +218,359 @@ export function ThoughtDeconstructor({
   }
 
   return (
-    <div className="border border-white/10 bg-[#0A0A0B] p-5 text-[#FAFAF8] sm:p-8">
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-[#9CA3AF]" aria-live="polite">
+    <div className="border border-foreground/15 bg-paper text-foreground">
+      <div className="flex items-center justify-between gap-4 border-b border-foreground/10 px-4 py-3 sm:px-6">
+        <p className="text-sm text-muted" aria-live="polite">
           שלב {step} מתוך 2
         </p>
         <ol className="flex gap-2" aria-hidden="true">
           {[1, 2].map((n) => (
             <li
               key={n}
-              className={`h-1.5 w-8 rounded-full transition-colors ${
-                n <= step ? "bg-[#D42B2B]" : "bg-white/15"
-              }`}
+              className={cn(
+                "h-1.5 w-10 rounded-full transition-colors",
+                n <= step ? "bg-action" : "bg-foreground/15",
+              )}
             />
           ))}
         </ol>
       </div>
 
-      <AnimatePresence mode="wait">
-        {step === 1 ? (
-          <motion.div
-            key="step-1"
-            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
-            className="mt-8"
-          >
-            <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              מה המחשבה או הבעיה עכשיו?
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-[#9CA3AF]">
-              כתוב בחופשיות. בלי לסדר. בשלב הבא נפריד עובדה מסיפור.
-            </p>
-            <label htmlFor="thought-input" className="sr-only">
-              המחשבה או הבעיה
-            </label>
-            <textarea
-              id="thought-input"
-              rows={8}
-              value={thought}
-              onChange={(e) => setThought(e.target.value)}
-              placeholder="כתוב כאן את מה שמעסיק אותך..."
-              className={`${fieldClass} mt-5 min-h-[12rem] resize-y`}
-            />
-            {error ? (
-              <p className="mt-4 text-sm text-[#D42B2B]" role="alert">
-                {error}
-              </p>
-            ) : null}
-            <button
-              type="button"
-              onClick={onContinueFromThought}
-              className="btn btn-primary mt-6"
+      <div className="p-4 sm:p-6">
+        <AnimatePresence mode="wait">
+          {step === 1 ? (
+            <motion.div
+              key="step-1"
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
             >
-              המשך לפירוק
-            </button>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="step-2"
-            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
-            className="mt-8"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                  פרק את המחשבה
-                </h2>
-                <p className="mt-2 max-w-prose text-sm leading-relaxed text-[#9CA3AF]">
-                  גרור קטעים לדליים, או לחץ עליהם, או הקלד ידנית בכל צד. ימין:
-                  עובדות. שמאל: הסיפור שלך.
+              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                מה מעסיק עכשיו?
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                כתבו חופשי. לא צריך לסדר. בשלב הבא מפרידים עובדה מסיפור.
+              </p>
+              <label htmlFor="thought-input" className="sr-only">
+                המחשבה או המצב
+              </label>
+              <textarea
+                id="thought-input"
+                rows={7}
+                value={thought}
+                onChange={(e) => setThought(e.target.value)}
+                placeholder="מה קרה, ומה אתם מספרים לעצמכם על זה..."
+                className={`${fieldClass} mt-5 min-h-[11rem] resize-y`}
+              />
+              {error ? (
+                <p className="mt-4 text-sm text-action" role="alert">
+                  {error}
                 </p>
-              </div>
+              ) : null}
               <button
                 type="button"
-                onClick={() => {
-                  setStep(1);
-                  setShowBooking(false);
-                  setError("");
-                }}
-                className="text-sm text-[#9CA3AF] underline-offset-4 hover:text-[#FAFAF8] hover:underline"
+                onClick={onContinueFromThought}
+                className="btn btn-primary mt-6 w-full sm:w-auto"
               >
-                חזרה לטקסט
+                להפרדה לעובדה וסיפור
               </button>
-            </div>
-
-            {thought.trim() ? (
-              <aside className="mt-5 border border-white/10 bg-black/60 p-4 text-sm leading-relaxed text-[#9CA3AF]">
-                <p className="text-xs font-medium tracking-wide text-[#D42B2B]">
-                  הטקסט המקורי
-                </p>
-                <p className="mt-2 whitespace-pre-wrap text-[#FAFAF8]/85">
-                  {thought.trim()}
-                </p>
-              </aside>
-            ) : null}
-
-            {poolChips.length > 0 ? (
-              <div className="mt-6">
-                <p className="text-xs font-medium tracking-wide text-[#9CA3AF]">
-                  קטעים לפירוק (גרור או לחץ)
-                </p>
-                <ul className="mt-3 flex flex-wrap gap-2">
-                  {poolChips.map((chip) => (
-                    <li key={chip.id}>
-                      <ChipCard
-                        chip={chip}
-                        onDragStart={setDraggingId}
-                        onDragEnd={() => setDraggingId(null)}
-                        actions={
-                          <>
-                            <button
-                              type="button"
-                              className="text-[10px] text-[#D42B2B]"
-                              onClick={() => moveChip(chip.id, "facts")}
-                            >
-                              לעובדות
-                            </button>
-                            <button
-                              type="button"
-                              className="text-[10px] text-[#9CA3AF]"
-                              onClick={() => moveChip(chip.id, "story")}
-                            >
-                              לסיפור
-                            </button>
-                          </>
-                        }
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            {/* RTL: first column = right = facts, second = left = story */}
-            <div className="mt-8 grid gap-4 md:grid-cols-2" dir="rtl">
-              <Bucket
-                title="עובדות אובייקטיביות"
-                hint="מה קרה, מתי, מי. בלי פרשנות."
-                accent="facts"
-                ariaLabel="אזור שחרור לעובדות אובייקטיביות"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => onDropBucket("facts", e)}
-              >
-                <ul className="min-h-[4rem] space-y-2">
-                  <AnimatePresence initial={false}>
-                    {factsChips.map((chip) => (
-                      <motion.li
-                        key={chip.id}
-                        layout={!reduceMotion}
-                        initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
-                      >
-                        <ChipCard
-                          chip={chip}
-                          onDragStart={setDraggingId}
-                          onDragEnd={() => setDraggingId(null)}
-                          actions={
-                            <button
-                              type="button"
-                              className="text-[10px] text-[#9CA3AF]"
-                              onClick={() => moveChip(chip.id, "pool")}
-                            >
-                              החזר
-                            </button>
-                          }
-                        />
-                      </motion.li>
-                    ))}
-                  </AnimatePresence>
-                </ul>
-                <label htmlFor="facts-manual" className="sr-only">
-                  הקלדה ידנית לעובדות
-                </label>
-                <textarea
-                  id="facts-manual"
-                  rows={4}
-                  value={factsManual}
-                  onChange={(e) => setFactsManual(e.target.value)}
-                  placeholder="או הקלד כאן עובדות..."
-                  className={`${fieldClass} mt-3 min-h-[6rem] resize-y text-sm`}
-                />
-              </Bucket>
-
-              <Bucket
-                title="הסיפור שלי: פרשנות"
-                hint="מה אתה חושב שזה אומר. רגש, מסקנה, האשמה."
-                accent="story"
-                ariaLabel="אזור שחרור לסיפור ולפרשנות"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => onDropBucket("story", e)}
-              >
-                <ul className="min-h-[4rem] space-y-2">
-                  <AnimatePresence initial={false}>
-                    {storyChips.map((chip) => (
-                      <motion.li
-                        key={chip.id}
-                        layout={!reduceMotion}
-                        initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
-                      >
-                        <ChipCard
-                          chip={chip}
-                          onDragStart={setDraggingId}
-                          onDragEnd={() => setDraggingId(null)}
-                          actions={
-                            <button
-                              type="button"
-                              className="text-[10px] text-[#9CA3AF]"
-                              onClick={() => moveChip(chip.id, "pool")}
-                            >
-                              החזר
-                            </button>
-                          }
-                        />
-                      </motion.li>
-                    ))}
-                  </AnimatePresence>
-                </ul>
-                <label htmlFor="story-manual" className="sr-only">
-                  הקלדה ידנית לסיפור
-                </label>
-                <textarea
-                  id="story-manual"
-                  rows={4}
-                  value={storyManual}
-                  onChange={(e) => setStoryManual(e.target.value)}
-                  placeholder="או הקלד כאן פרשנות..."
-                  className={`${fieldClass} mt-3 min-h-[6rem] resize-y text-sm`}
-                />
-              </Bucket>
-            </div>
-
-            {error ? (
-              <p className="mt-6 text-sm text-[#D42B2B]" role="alert">
-                {error}
-              </p>
-            ) : null}
-
-            <AnimatePresence>
-              {bucketsReady ? (
-                <motion.div
-                  initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={reduceMotion ? undefined : { opacity: 0 }}
-                  className="mt-8 border border-[#D42B2B]/40 bg-black/40 p-5"
+            </motion.div>
+          ) : (
+            <motion.div
+              key="step-2"
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                    עובדה מול סיפור
+                  </h2>
+                  <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+                    לחצו על קטע כדי לשייך. אפשר גם לכתוב ידנית בכל עמודה.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep(1);
+                    setShowBooking(false);
+                    setError("");
+                  }}
+                  className="min-h-11 text-sm text-muted underline-offset-4 hover:text-foreground hover:underline"
                 >
-                  {!showBooking ? (
-                    <button
-                      type="button"
-                      onClick={onBookClick}
-                      className="btn btn-primary w-full text-center sm:w-auto"
-                    >
-                      {BOOKING_CTA}
-                    </button>
-                  ) : (
-                    <form onSubmit={onSubmitBooking} className="space-y-4" noValidate>
-                      <p className="text-sm leading-relaxed text-[#9CA3AF]">
-                        השאר פרטים. הפירוק (עובדות + סיפור) יישלח למאמן לפני
-                        השיחה.
-                      </p>
-                      <div>
-                        <label htmlFor="td-name" className="block text-sm text-[#9CA3AF]">
-                          שם
-                        </label>
-                        <input
-                          id="td-name"
-                          type="text"
-                          autoComplete="name"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className={fieldClass}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="td-phone" className="block text-sm text-[#9CA3AF]">
-                          טלפון
-                        </label>
-                        <input
-                          id="td-phone"
-                          type="tel"
-                          autoComplete="tel"
-                          inputMode="tel"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className={fieldClass}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="td-email" className="block text-sm text-[#9CA3AF]">
-                          אימייל (אופציונלי)
-                        </label>
-                        <input
-                          id="td-email"
-                          type="email"
-                          autoComplete="email"
-                          inputMode="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className={fieldClass}
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={pending}
-                        className="btn btn-primary disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {pending ? "שולח..." : "שלח וקבע שיחה"}
-                      </button>
-                    </form>
-                  )}
-                </motion.div>
+                  חזרה לטקסט
+                </button>
+              </div>
+
+              {thought.trim() ? (
+                <aside className="mt-5 border border-foreground/12 bg-background p-4 text-sm leading-relaxed">
+                  <p className="text-xs font-medium tracking-wide text-muted">
+                    הטקסט
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap text-foreground/85">
+                    {thought.trim()}
+                  </p>
+                </aside>
               ) : null}
-            </AnimatePresence>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+              {poolChips.length > 0 ? (
+                <div className="mt-6">
+                  <p className="text-xs font-medium tracking-wide text-muted">
+                    קטעים לשיוך
+                  </p>
+                  <ul className="mt-3 flex flex-col gap-2">
+                    {poolChips.map((chip) => (
+                      <li key={chip.id}>
+                        <ChipCard
+                          chip={chip}
+                          onDragStart={setDraggingId}
+                          onDragEnd={() => setDraggingId(null)}
+                          actions={
+                            <>
+                              <button
+                                type="button"
+                                className="btn btn-secondary min-h-11 px-3 py-2 text-xs"
+                                onClick={() => moveChip(chip.id, "facts")}
+                              >
+                                עובדה
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-secondary min-h-11 px-3 py-2 text-xs"
+                                onClick={() => moveChip(chip.id, "story")}
+                              >
+                                סיפור
+                              </button>
+                            </>
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              <div className="mt-8 grid gap-4 md:grid-cols-2" dir="rtl">
+                <Bucket
+                  title="עובדות"
+                  hint="מה קרה. מתי. מי. בלי פרשנות."
+                  accent="facts"
+                  ariaLabel="עובדות"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => onDropBucket("facts", e)}
+                >
+                  <ul className="min-h-[3rem] space-y-2">
+                    <AnimatePresence initial={false}>
+                      {factsChips.map((chip) => (
+                        <motion.li
+                          key={chip.id}
+                          layout={!reduceMotion}
+                          initial={
+                            reduceMotion ? false : { opacity: 0, scale: 0.98 }
+                          }
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={
+                            reduceMotion
+                              ? undefined
+                              : { opacity: 0, scale: 0.98 }
+                          }
+                        >
+                          <ChipCard
+                            chip={chip}
+                            onDragStart={setDraggingId}
+                            onDragEnd={() => setDraggingId(null)}
+                            actions={
+                              <button
+                                type="button"
+                                className="min-h-11 px-2 text-xs text-muted underline-offset-4 hover:underline"
+                                onClick={() => moveChip(chip.id, "pool")}
+                              >
+                                החזר
+                              </button>
+                            }
+                          />
+                        </motion.li>
+                      ))}
+                    </AnimatePresence>
+                  </ul>
+                  <label htmlFor="facts-manual" className="sr-only">
+                    הקלדה לעובדות
+                  </label>
+                  <textarea
+                    id="facts-manual"
+                    rows={3}
+                    value={factsManual}
+                    onChange={(e) => setFactsManual(e.target.value)}
+                    placeholder="או כתבו כאן עובדות..."
+                    className={`${fieldClassOnDark} mt-3 min-h-[5.5rem] resize-y text-sm`}
+                  />
+                </Bucket>
+
+                <Bucket
+                  title="סיפור"
+                  hint="פרשנות, מסקנה, האשמה, מה שזה 'אומר'."
+                  accent="story"
+                  ariaLabel="סיפור"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => onDropBucket("story", e)}
+                >
+                  <ul className="min-h-[3rem] space-y-2">
+                    <AnimatePresence initial={false}>
+                      {storyChips.map((chip) => (
+                        <motion.li
+                          key={chip.id}
+                          layout={!reduceMotion}
+                          initial={
+                            reduceMotion ? false : { opacity: 0, scale: 0.98 }
+                          }
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={
+                            reduceMotion
+                              ? undefined
+                              : { opacity: 0, scale: 0.98 }
+                          }
+                        >
+                          <ChipCard
+                            chip={chip}
+                            onDragStart={setDraggingId}
+                            onDragEnd={() => setDraggingId(null)}
+                            actions={
+                              <button
+                                type="button"
+                                className="min-h-11 px-2 text-xs text-muted underline-offset-4 hover:underline"
+                                onClick={() => moveChip(chip.id, "pool")}
+                              >
+                                החזר
+                              </button>
+                            }
+                          />
+                        </motion.li>
+                      ))}
+                    </AnimatePresence>
+                  </ul>
+                  <label htmlFor="story-manual" className="sr-only">
+                    הקלדה לסיפור
+                  </label>
+                  <textarea
+                    id="story-manual"
+                    rows={3}
+                    value={storyManual}
+                    onChange={(e) => setStoryManual(e.target.value)}
+                    placeholder="או כתבו כאן סיפור..."
+                    className={`${fieldClassOnDark} mt-3 min-h-[5.5rem] resize-y text-sm`}
+                  />
+                </Bucket>
+              </div>
+
+              {error ? (
+                <p className="mt-6 text-sm text-action" role="alert">
+                  {error}
+                </p>
+              ) : null}
+
+              {!bucketsReady ? (
+                <p className="mt-6 text-sm text-muted">
+                  צריך מילוי בשני הצדדים כדי להמשיך.
+                </p>
+              ) : null}
+
+              <AnimatePresence>
+                {bucketsReady ? (
+                  <motion.div
+                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduceMotion ? undefined : { opacity: 0 }}
+                    className="mt-8 border border-foreground/15 bg-background p-4 sm:p-5"
+                  >
+                    {!showBooking ? (
+                      <button
+                        type="button"
+                        onClick={onBookClick}
+                        className="btn btn-primary w-full sm:w-auto"
+                      >
+                        שליחת הפירוק ותיאום שיחה
+                      </button>
+                    ) : (
+                      <form
+                        onSubmit={onSubmitBooking}
+                        className="space-y-4"
+                        noValidate
+                      >
+                        <p className="text-sm leading-relaxed text-muted">
+                          שם וטלפון. הפירוק נשלח עם הבקשה. אין סליקה באתר.
+                        </p>
+                        <div>
+                          <label
+                            htmlFor="td-name"
+                            className="block text-sm text-muted"
+                          >
+                            שם
+                          </label>
+                          <input
+                            id="td-name"
+                            type="text"
+                            autoComplete="name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className={fieldClass}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="td-phone"
+                            className="block text-sm text-muted"
+                          >
+                            טלפון
+                          </label>
+                          <input
+                            id="td-phone"
+                            type="tel"
+                            autoComplete="tel"
+                            inputMode="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className={fieldClass}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="td-email"
+                            className="block text-sm text-muted"
+                          >
+                            אימייל (לא חובה)
+                          </label>
+                          <input
+                            id="td-email"
+                            type="email"
+                            autoComplete="email"
+                            inputMode="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className={fieldClass}
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={pending}
+                          className="btn btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                        >
+                          {pending ? "שולח..." : "שליחה"}
+                        </button>
+                      </form>
+                    )}
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
@@ -572,11 +598,12 @@ function Bucket({
       aria-label={ariaLabel}
       onDragOver={onDragOver}
       onDrop={onDrop}
-      className={`border p-4 transition ${
+      className={cn(
+        "border p-4 transition",
         accent === "facts"
-          ? "border-[#D42B2B]/50 bg-black/50"
-          : "border-white/15 bg-black/30"
-      }`}
+          ? "border-action/40 bg-[#0A0A0B] text-[#FAFAF8]"
+          : "border-white/15 bg-[#111] text-[#FAFAF8]",
+      )}
     >
       <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
       <p className="mt-1 text-xs leading-relaxed text-[#9CA3AF]">{hint}</p>
@@ -605,11 +632,11 @@ function ChipCard({
         onDragStart(chip.id);
       }}
       onDragEnd={onDragEnd}
-      className="cursor-grab border border-white/15 bg-[#111] px-3 py-2 active:cursor-grabbing"
+      className="border border-foreground/15 bg-background px-3 py-3 text-foreground"
     >
-      <p className="text-sm leading-relaxed text-[#FAFAF8]">{chip.text}</p>
+      <p className="text-sm leading-relaxed">{chip.text}</p>
       {actions ? (
-        <div className="mt-2 flex flex-wrap gap-3">{actions}</div>
+        <div className="mt-3 flex flex-wrap gap-2">{actions}</div>
       ) : null}
     </div>
   );

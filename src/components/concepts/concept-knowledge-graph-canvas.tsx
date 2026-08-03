@@ -111,15 +111,13 @@ export function ConceptKnowledgeGraphCanvas({
       ctx.arc(x, y, radius * (hovered ? 1.35 : 1), 0, 2 * Math.PI, false);
 
       if (active) {
-        ctx.shadowColor = "rgba(212, 43, 43, 0.85)";
-        ctx.shadowBlur = hovered ? 18 : 10;
-        ctx.fillStyle = hovered ? "#FF4D4D" : "#D42B2B";
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = hovered ? "#E84545" : "#D42B2B";
       } else {
         ctx.shadowBlur = 0;
-        ctx.fillStyle = "rgba(156, 163, 175, 0.25)";
+        ctx.fillStyle = "rgba(156, 163, 175, 0.28)";
       }
       ctx.fill();
-      ctx.shadowBlur = 0;
 
       if (hovered) {
         const fontSize = 12 / Math.max(globalScale * 0.4, 0.55);
@@ -173,7 +171,7 @@ export function ConceptKnowledgeGraphCanvas({
   return (
     <div
       ref={containerRef}
-      className="relative h-[min(70vh,560px)] w-full overflow-hidden border border-white/10 bg-black"
+      className="relative h-[min(70vh,560px)] w-full overflow-hidden border border-foreground/15 bg-[#121212]"
       role="img"
       aria-label="מפת מושגים אינטראקטיבית. העבירו עכבר על נקודה לראות קשרים. לחצו לחיפוש."
     >
@@ -181,7 +179,7 @@ export function ConceptKnowledgeGraphCanvas({
         graphData={graphData}
         width={size.width}
         height={size.height}
-        backgroundColor="#000000"
+        backgroundColor="#121212"
         nodeRelSize={4}
         cooldownTicks={80}
         warmupTicks={40}

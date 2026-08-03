@@ -49,6 +49,8 @@
   --shadow-soft: var(--shadow-soft);
   --shadow-float: var(--shadow-float);
 
+  --animate-nm-updates-marquee: nm-updates-marquee 42s linear infinite;
+
   --radius-btn: 0;
   --radius-card: 0;
   --radius-frame: 0;
@@ -435,6 +437,27 @@ p {
   .row-link:hover {
     text-decoration: none;
   }
+}
+
+/* Header updates marquee (desktop). Touch devices scroll manually. */
+@keyframes nm-updates-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nm-updates-marquee {
+    animation: none !important;
+  }
+}
+
+.nm-updates-marquee:hover,
+.nm-updates-marquee:focus-within {
+  animation-play-state: paused;
 }
 
 /* The fact-branch line draws itself in on load. Reduced-motion users simply

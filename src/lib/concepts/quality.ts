@@ -27,7 +27,6 @@ export const CURATED_CONCEPTS = [
   "רצון חופשי",
   "האשמה",
   "תודעה",
-  "אליעד כהן",
   ...INVESTIGATION_TAGS,
 ] as const;
 

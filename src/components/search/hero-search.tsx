@@ -298,6 +298,19 @@ export function HeroSearch({
     [items, router],
   );
 
+  const fillSearch = useCallback(
+    (term: string) => {
+      const trimmedTerm = term.trim();
+      if (!trimmedTerm) return;
+      setQuery(trimmedTerm);
+      setFocused(true);
+      setOpen(true);
+      inputRef.current?.focus();
+      goToSearch(trimmedTerm);
+    },
+    [goToSearch],
+  );
+
   const clearQuery = useCallback(() => {
     setQuery("");
     setItems([]);
@@ -440,7 +453,7 @@ export function HeroSearch({
                     <div>
                       <p className="px-1 text-xs text-muted">מושגים נפוצים</p>
                       <ul className="mt-1">
-                        {popularConcepts.slice(0, 6).map((c) => (
+                        {popularConcepts.slice(0, 8).map((c) => (
                           <li key={c.id} role="presentation">
                             <button
                               type="button"
@@ -448,7 +461,7 @@ export function HeroSearch({
                               aria-selected={false}
                               className="flex w-full px-3 py-2 text-start text-sm hover:bg-paper focus-visible:bg-paper focus-visible:outline-none"
                               onMouseDown={(e) => e.preventDefault()}
-                              onClick={() => goToSearch(c.name)}
+                              onClick={() => fillSearch(c.name)}
                             >
                               {c.name}
                             </button>
@@ -531,23 +544,37 @@ export function HeroSearch({
 
       {popularConcepts.length > 0 ? (
         <div
-          className="mt-5 flex flex-wrap justify-center gap-2"
+          className={cn(
+            "mt-5 -mx-1",
+            "overflow-x-auto overscroll-x-contain [scrollbar-width:thin]",
+            "sm:mx-0 sm:overflow-visible",
+          )}
           aria-label={chipsAriaLabel}
         >
-          {popularConcepts.map((c) => (
-            <Link
-              key={c.id}
-              href={`/search?q=${encodeURIComponent(c.name)}`}
-              className={cn(
-                "inline-flex min-h-11 items-center border px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
-                isDark
-                  ? "border-white/40 text-white hover:border-white hover:bg-white/10"
-                  : "border-foreground/15 text-foreground/80 hover:border-action hover:text-action",
-              )}
-            >
-              {c.name}
-            </Link>
-          ))}
+          <div
+            className={cn(
+              "flex w-max max-w-none gap-2 px-1 pb-1",
+              "sm:w-full sm:max-w-2xl sm:flex-wrap sm:justify-center sm:px-0 sm:pb-0",
+              "mx-auto",
+            )}
+          >
+            {popularConcepts.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => fillSearch(c.name)}
+                className={cn(
+                  "inline-flex shrink-0 items-center border px-3 py-2 text-sm transition",
+                  "min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                  isDark
+                    ? "border-white/40 text-white hover:border-white hover:bg-white/10"
+                    : "border-foreground/15 text-foreground/80 hover:border-action hover:text-action",
+                )}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
 

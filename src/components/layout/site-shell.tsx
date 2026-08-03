@@ -1,14 +1,17 @@
 import type { ReactNode } from "react";
 
 import { getHeaderSession } from "@/lib/auth/header-session";
+import { getLiveUpdateItems } from "@/lib/site/live-updates";
 import { DailyResetPrompt } from "@/components/push/daily-reset-prompt";
 import { PresenceBeacon } from "@/components/layout/presence-beacon";
 import { DotBackground } from "@/components/ui/dot-background";
 import { FocusModeProvider } from "@/components/videos/focus-mode-context";
 import { FocusModeChrome } from "./focus-mode-chrome";
 import { KeyboardShortcutsHud } from "./keyboard-shortcuts-hud";
+import { LiveUpdatesBar } from "./live-updates-bar";
 import { MobileCtaBar } from "./mobile-cta-bar";
 import { OfflineStatusBar } from "./offline-status-bar";
+import { SiteBetaBanner } from "./site-beta-banner";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
 import { SiteShellFrame } from "./site-shell-frame";
@@ -23,7 +26,10 @@ import { SiteStatusBanner } from "./site-status-banner";
  */
 
 export async function SiteShell({ children }: { children: ReactNode }) {
-  const session = await getHeaderSession();
+  const [session, liveUpdates] = await Promise.all([
+    getHeaderSession(),
+    getLiveUpdateItems().catch(() => []),
+  ]);
 
   return (
     <FocusModeProvider>
@@ -40,6 +46,9 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         <div className="sticky top-0 z-50">
           <OfflineStatusBar />
           <FocusModeChrome>
+            <SiteBetaBanner />
+          </FocusModeChrome>
+          <FocusModeChrome>
             <SiteStatusBanner session={session} />
           </FocusModeChrome>
           <FocusModeChrome>
@@ -53,6 +62,9 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         >
           {children}
         </div>
+        <FocusModeChrome>
+          <LiveUpdatesBar items={liveUpdates} />
+        </FocusModeChrome>
         <FocusModeChrome>
           <SiteFooter />
         </FocusModeChrome>

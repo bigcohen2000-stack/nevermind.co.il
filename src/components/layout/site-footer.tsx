@@ -2,9 +2,10 @@ import Link from "next/link";
 
 import { InstallAppButton } from "@/components/layout/install-app-button";
 import { SiteLogo } from "@/components/layout/site-logo";
-import { getApplePodcastUrl, getSpotifyShowUrl } from "@/lib/podcast/links";
+import { SocialOutboundLinks } from "@/components/layout/social-outbound-links";
+import { getApplePodcastUrl } from "@/lib/podcast/links";
 import { FOOTER_NAV, LEGAL_NAV } from "@/lib/site-nav";
-import { buildWhatsAppHrefPlain, YOUTUBE_CHANNEL_URL } from "@/lib/whatsapp";
+import { buildWhatsAppHrefPlain } from "@/lib/whatsapp";
 
 /**
  * SiteFooter — dark RTL footer with crawlable sitemap groups and install CTA.
@@ -30,7 +31,6 @@ const accountLinks = FOOTER_NAV.filter((l) =>
 
 export function SiteFooter() {
   const whatsappHref = buildWhatsAppHrefPlain();
-  const spotifyUrl = getSpotifyShowUrl();
   const appleUrl = getApplePodcastUrl();
 
   return (
@@ -45,7 +45,8 @@ export function SiteFooter() {
             <div className="mt-6">
               <InstallAppButton />
             </div>
-            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+            <SocialOutboundLinks className="mt-8" />
+            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-1 text-sm">
               <a
                 href={whatsappHref}
                 target="_blank"
@@ -53,22 +54,6 @@ export function SiteFooter() {
                 className="inline-flex min-h-11 items-center text-foreground/80 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
               >
                 וואטסאפ
-              </a>
-              <a
-                href={YOUTUBE_CHANNEL_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center text-foreground/80 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
-              >
-                יוטיוב
-              </a>
-              <a
-                href={spotifyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center text-foreground/80 no-underline transition-colors duration-200 hover:text-foreground hover:no-underline"
-              >
-                ספוטיפיי
               </a>
               {appleUrl ? (
                 <a

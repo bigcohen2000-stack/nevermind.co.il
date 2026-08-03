@@ -5,7 +5,11 @@ import { getPremiumStatus } from "@/actions/premium";
 import { InvestigationFactsStrip } from "@/components/members/investigation-facts-strip";
 import { PricingTracks } from "@/components/paths/pricing-tracks";
 import { WhatsAppTrackCta } from "@/components/paths/whatsapp-track-cta";
-import { buildIntroCallWhatsAppText } from "@/lib/content/offers";
+import { ProductFaq } from "@/components/seo/product-faq";
+import {
+  buildIntroCallWhatsAppText,
+  PATHS_FAQ,
+} from "@/lib/content/offers";
 import { shareImageMetadata } from "@/lib/og/share-image";
 
 export const metadata: Metadata = {
@@ -57,6 +61,13 @@ export default async function PathsPage() {
           </div>
         </div>
       </section>
+
+      <ProductFaq
+        items={PATHS_FAQ}
+        title="שאלות על מסלולים ומחירים"
+        headingId="paths-faq-title"
+        tone="paper"
+      />
     </main>
   );
 }

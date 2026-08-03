@@ -7,6 +7,7 @@ import { ExploreLinks } from "@/components/search/explore-links";
 import { HeroSearchSection } from "@/components/search/hero-search-section";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
 import { HeartQuestionsStrip } from "@/components/community/heart-questions-strip";
+import { HomePathsGrid } from "@/components/home/home-paths-grid";
 import { HomeLiveStrip } from "@/components/live/home-live-strip";
 import { InvestigationFactsStrip } from "@/components/members/investigation-facts-strip";
 import { SiteBanner } from "@/components/site/site-banner";
@@ -14,16 +15,22 @@ import { ContinueWatchingSection } from "@/components/videos/continue-watching-s
 import { getLatestContinueWatching } from "@/actions/video-progress";
 import { CATEGORY_LABELS, getAllArticles } from "@/lib/content/articles";
 import { CORE_INVESTIGATION_TOPICS } from "@/lib/videos/core-library";
-import { PATH_OFFERS, PROCESS_STEPS } from "@/lib/content/offers";
+import { PROCESS_STEPS, SHOP_BOOK } from "@/lib/content/offers";
 import { getLivePublicStatus } from "@/lib/live/status";
 import { getSpotifyShowUrl } from "@/lib/podcast/links";
 import { shareImageMetadata } from "@/lib/og/share-image";
-import { buildWhatsAppHref, YOUTUBE_CHANNEL_URL } from "@/lib/whatsapp";
+import { getSocialSameAsUrls } from "@/lib/social";
+import { buildWhatsAppHref } from "@/lib/whatsapp";
 
 const HOME_OG_TITLE = "להפריד עובדה מסיפור.";
 
 /** Flagship lecture preview on the home video band. */
 const HOME_LECTURE_PREVIEW = CORE_INVESTIGATION_TOPICS[0];
+
+/** Method band: fact vs story video. */
+const HOME_METHOD_VIDEO =
+  CORE_INVESTIGATION_TOPICS.find((t) => t.id === "reality") ??
+  CORE_INVESTIGATION_TOPICS[0];
 
 export const metadata: Metadata = {
   title: {
@@ -48,7 +55,7 @@ const HOME_PLACEHOLDERS = [
 function HomeSearchFallback() {
   return (
     <div
-      className="mx-auto h-[10.5rem] w-full max-w-2xl"
+      className="mx-auto h-[12rem] w-full max-w-2xl sm:h-[14rem]"
       aria-hidden="true"
     >
       <div className="h-14 w-full rounded-full border border-white/30 bg-black" />
@@ -84,7 +91,7 @@ export default async function Home() {
         alternateName: ["NeverMinde", "NeverMind"],
         url: "https://nevermind.co.il",
         logo: "https://nevermind.co.il/icons/icon-512.png",
-        sameAs: [YOUTUBE_CHANNEL_URL, getSpotifyShowUrl()].filter(Boolean),
+        sameAs: [...getSocialSameAsUrls(), spotifyUrl].filter(Boolean),
       },
       {
         "@type": "WebSite",
@@ -131,13 +138,13 @@ export default async function Home() {
             שקרה, ומה שמספרים על מה שקרה.
           </p>
 
-          <div className="mx-auto mt-8 min-h-[10.5rem] w-full max-w-2xl sm:mt-10">
+          <div className="mx-auto mt-8 min-h-[12rem] w-full max-w-2xl sm:mt-10 sm:min-h-[14rem]">
             <Suspense fallback={<HomeSearchFallback />}>
               <HeroSearchSection
                 variant="dark"
                 placeholders={HOME_PLACEHOLDERS}
                 syncUrl
-                chipSource="trending"
+                chipSource="concepts"
               />
             </Suspense>
           </div>
@@ -206,51 +213,27 @@ export default async function Home() {
       {/* 3 — PATHS --------------------------------------------------------- */}
       <section aria-labelledby="paths-home-title" className="band-paper">
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:py-28">
-          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-            <div>
-              <Eyebrow>מסלולים</Eyebrow>
-              <h2
-                id="paths-home-title"
-                className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
-              >
-                איך העבודה מתבצעת.
-              </h2>
-              <p className="mt-4 max-w-prose leading-relaxed">
-                ארבעה מסלולים ומחירון גישה למאגר. פירוט מלא בעמוד המסלולים.
-                תיאום בטלפון.
-              </p>
-            </div>
-            <Link href="/paths" className="link-arrow self-start sm:self-auto">
-              לכל המסלולים ←
-            </Link>
+          <div className="max-w-2xl">
+            <Eyebrow>מסלולים</Eyebrow>
+            <h2
+              id="paths-home-title"
+              className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+            >
+              איך העבודה מתבצעת.
+            </h2>
+            <p className="mt-4 max-w-prose leading-relaxed text-foreground/80">
+              ארבעה מסלולים ומחירון גישה למאגר. בחרו מסלול ושלחו בקשה. תיאום
+              בטלפון. אין סליקה באתר.
+            </p>
           </div>
 
           <div className="mt-8 max-w-xl">
             <SiteBanner slot="home_join" density="compact" />
           </div>
 
-          <ul className="mt-10 grid gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6">
-            {PATH_OFFERS.map((path) => (
-              <li key={path.id} className="card flex h-full flex-col p-5 sm:p-7">
-                <h3 className="text-xl font-semibold tracking-tight">
-                  {path.title}
-                </h3>
-                <p className="mt-3 flex-1 leading-relaxed text-foreground/80">
-                  {path.body}
-                </p>
-                <ul className="mt-4 flex flex-wrap gap-2" aria-label="תגיות">
-                  {path.tags.map((tag) => (
-                    <li
-                      key={tag}
-                      className="border border-foreground/15 px-2 py-0.5 text-xs text-muted"
-                    >
-                      {tag}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-10 sm:mt-14">
+            <HomePathsGrid />
+          </div>
         </div>
       </section>
 
@@ -369,28 +352,37 @@ export default async function Home() {
                 אותו מבנה, בקול.
               </h2>
               <p className="mt-4 max-w-prose leading-relaxed text-foreground/80">
-                סרטונים לפי מושג או כותרת. אפשר להתחיל מחיפוש, מעמוד הווידאו,
-                מערוץ היוטיוב, או מהפודקאסט בספוטיפיי.
+                ספרייה לפי מושג. אפשר להתחיל מההרצאה למטה, מעמוד הווידאו, או
+                מנושאי החקירה.
+              </p>
+              <p className="mt-5 max-w-prose text-sm leading-relaxed text-foreground/65">
+                {HOME_LECTURE_PREVIEW.label}: {HOME_LECTURE_PREVIEW.probe}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link href="/videos" className="btn btn-primary">
-                  לעמוד הווידאו
-                </Link>
-                <a
-                  href={YOUTUBE_CHANNEL_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-on-dark"
+                <Link
+                  href={`/watch/${HOME_LECTURE_PREVIEW.youtubeId}`}
+                  className="btn btn-primary"
                 >
-                  לצפייה בערוץ יוטיוב
-                </a>
+                  לצפייה בהרצאה
+                </Link>
+                <Link href="/videos" className="btn btn-on-dark">
+                  לספריית הווידאו
+                </Link>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                <Link href="/videos/topics" className="link-arrow text-foreground/80">
+                  לנושאי חקירה ←
+                </Link>
+                <Link href="/concepts" className="link-arrow text-foreground/80">
+                  למושגים ←
+                </Link>
                 <a
                   href={spotifyUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-on-dark"
+                  className="link-arrow text-foreground/80"
                 >
-                  האזנה בספוטיפיי
+                  לפודקאסט ←
                 </a>
               </div>
             </div>
@@ -420,7 +412,7 @@ export default async function Home() {
                     </span>
                   </span>
                 </div>
-                <span className="card relative z-20 mt-[-2rem] ms-4 block w-max max-w-[calc(100%-2rem)] px-4 py-2 text-sm text-foreground shadow-float lg:absolute lg:-bottom-5 lg:-start-5 lg:ms-0 lg:mt-0">
+                <span className="relative z-20 mt-4 block text-sm font-medium text-foreground/85 lg:absolute lg:-bottom-5 lg:-start-5 lg:mt-0 lg:border lg:border-foreground/15 lg:bg-[#1A1A1A] lg:px-4 lg:py-2 lg:text-[#FAFAF8]">
                   {HOME_LECTURE_PREVIEW.label}
                 </span>
               </Link>
@@ -432,14 +424,10 @@ export default async function Home() {
       {/* 7 — FACT VS STORY ------------------------------------------------- */}
       <section
         aria-labelledby="factstory-title"
-        className="relative overflow-hidden bg-background text-foreground"
+        className="band-paper border-y border-foreground/10"
       >
-        <Watermark className="top-10 end-[-1rem] text-[5rem] text-foreground/[0.04] sm:text-[7rem] lg:text-[9rem]">
-          עובדה
-        </Watermark>
-
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-20 lg:py-28">
-          <div className="lg:max-w-2xl">
+        <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-28">
+          <div className="max-w-2xl">
             <Eyebrow>השיטה</Eyebrow>
             <h2
               id="factstory-title"
@@ -447,62 +435,142 @@ export default async function Home() {
             >
               עובדה מול סיפור.
             </h2>
-            <p className="mt-4 max-w-prose leading-relaxed">
+            <p className="mt-4 max-w-prose leading-relaxed text-foreground/80">
               יש הבדל בין מה שקרה לבין מה שמספרים על מה שקרה. ההפרדה הזו היא
               נקודת ההתחלה של כל חקירה.
             </p>
           </div>
 
-          <div className="mt-14 grid gap-6 lg:grid-cols-2">
-            <div className="card-dark flex min-h-[16rem] flex-col justify-between p-10 text-foreground">
-              <p className="text-sm font-medium tracking-wide text-foreground/60">
+          <div className="mt-14 grid gap-10 lg:grid-cols-2 lg:gap-16">
+            <div className="border-s-2 border-action ps-6">
+              <p className="text-sm font-medium tracking-wide text-action">
                 עובדה
               </p>
-              <div>
-                <p className="text-2xl font-semibold leading-snug lg:text-3xl">
-                  בן הזוג הרים את קולו.
-                </p>
-                <p className="mt-4 leading-relaxed text-foreground/70">
-                  דבר שניתן לאמת. אינו תלוי בפרשנות.
-                </p>
-              </div>
+              <p className="mt-4 text-2xl font-semibold leading-snug tracking-tight lg:text-3xl">
+                בן הזוג הרים את קולו.
+              </p>
+              <p className="mt-4 max-w-prose leading-relaxed text-foreground/75">
+                דבר שניתן לאמת. אינו תלוי בפרשנות.
+              </p>
             </div>
 
-            <div className="card flex min-h-[16rem] flex-col justify-between p-10">
-              <p className="text-sm font-medium tracking-wide text-muted">סיפור</p>
-              <div>
-                <p className="text-2xl font-semibold leading-snug text-muted line-through decoration-muted lg:text-3xl">
-                  הוא לא מכבד אותי.
-                </p>
-                <p className="mt-4 leading-relaxed text-foreground/70">
-                  פירוש, השערה לגבי כוונה. לא מה שקרה.
-                </p>
-              </div>
+            <div className="border-s-2 border-foreground/20 ps-6">
+              <p className="text-sm font-medium tracking-wide text-muted">
+                סיפור
+              </p>
+              <p className="mt-4 text-2xl font-semibold leading-snug tracking-tight lg:text-3xl">
+                הוא לא מכבד אותי.
+              </p>
+              <p className="mt-4 max-w-prose leading-relaxed text-foreground/75">
+                פירוש, השערה לגבי כוונה. לא מה שקרה.
+              </p>
             </div>
+          </div>
+
+          <p className="mt-12 max-w-prose text-sm leading-relaxed text-foreground/70">
+            מחשבה מקבלת מעמד של עובדה, ואז מגיבים אליה כאילו היא מה שקרה. החקירה
+            מחזירה את ההפרדה.
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3">
+            <Link href="/articles/fact-vs-story" className="link-arrow">
+              למאמר: מחשבה אינה עובדה ←
+            </Link>
+            <Link
+              href={`/watch/${HOME_METHOD_VIDEO.youtubeId}`}
+              className="link-arrow"
+            >
+              לסרטון: {HOME_METHOD_VIDEO.label} ←
+            </Link>
+            <Link href="/concepts" className="link-arrow">
+              למדריך המושגים ←
+            </Link>
+            <Link
+              href={`/search?q=${encodeURIComponent("מציאות")}`}
+              className="link-arrow"
+            >
+              לחיפוש מציאות ←
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* 8 — BOOKS / CONTENT TEASER ---------------------------------------- */}
-      <section aria-labelledby="books-teaser-title" className="band-paper">
+      {/* 8 — BOOKS / LOVE TEASER ---------------------------------------- */}
+      <section
+        aria-labelledby="books-teaser-title"
+        className="bg-background text-foreground"
+      >
         <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-28">
-          <div className="grid items-end gap-10 lg:grid-cols-12">
+          <div className="grid items-start gap-10 lg:grid-cols-12 lg:items-end">
             <div className="lg:col-span-7">
-              <Eyebrow>תכנים וספרים</Eyebrow>
+              <Eyebrow>ספר</Eyebrow>
               <h2
                 id="books-teaser-title"
                 className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
               >
-                אין חנות. יש מה שפתוח.
+                {SHOP_BOOK.title}.
               </h2>
-              <p className="mt-4 max-w-prose leading-relaxed">
-                ספר אחד בכתיבה. מאמרים, וידאו ומושגים שכבר באתר.
+              <p className="mt-2 text-sm text-muted">{SHOP_BOOK.statusLabel}</p>
+              <p className="mt-4 max-w-prose leading-relaxed text-foreground/80">
+                {SHOP_BOOK.body}
               </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <a
+                  href={buildWhatsAppHref(SHOP_BOOK.whatsappText)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                >
+                  {SHOP_BOOK.ctaLabel}
+                </a>
+                <Link href="/books" className="btn btn-secondary">
+                  לעמוד הספר
+                </Link>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                <Link href="/paths" className="link-arrow">
+                  למסלולי פגישה ←
+                </Link>
+                <Link
+                  href={`/search?q=${encodeURIComponent("אהבה")}`}
+                  className="link-arrow"
+                >
+                  לסרטונים על אהבה ←
+                </Link>
+                <Link href="/mechanisms#relationships" className="link-arrow">
+                  למנגנון יחסים ←
+                </Link>
+              </div>
             </div>
-            <div className="lg:col-span-5 lg:text-end">
-              <Link href="/books" className="link-arrow">
-                לעמוד התכנים ←
-              </Link>
+            <div className="lg:col-span-5">
+              <div className="border border-foreground/15 bg-foreground/[0.02] p-6 sm:p-8">
+                <p className="text-sm font-medium tracking-wide text-muted">
+                  איך ממשיכים
+                </p>
+                <ul className="mt-5 space-y-4 text-sm leading-relaxed text-foreground/80">
+                  <li>
+                    <Link href="/books" className="font-medium text-foreground hover:text-action">
+                      עמוד הספר
+                    </Link>
+                    {" · "}
+                    הזמנה ומשלוח, בלי סליקה באתר.
+                  </li>
+                  <li>
+                    <Link href="/articles" className="font-medium text-foreground hover:text-action">
+                      מאמרים
+                    </Link>
+                    {" · "}
+                    אותה חקירה בכתב, מנגנון אחר מנגנון.
+                  </li>
+                  <li>
+                    <Link href="/contact" className="font-medium text-foreground hover:text-action">
+                      יצירת קשר
+                    </Link>
+                    {" · "}
+                    שאלה קצרה לפני שמזמינים או מתאמים.
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
