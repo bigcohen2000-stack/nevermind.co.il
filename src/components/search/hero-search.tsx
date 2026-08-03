@@ -25,6 +25,7 @@ import {
   suggestItemLabel,
   type SuggestItem,
 } from "@/lib/search/types";
+import { searchUrlWithQuery } from "@/lib/search/search-params";
 import {
   BREAKDOWN_LEVELS,
   BREAKDOWN_LEVEL_LABELS,
@@ -158,9 +159,13 @@ export function HeroSearch({
       setActiveIndex(-1);
       if (syncUrl && q.length === 0) {
         const base = pathname === "/" ? "/" : pathname;
+        const next =
+          pathname === "/search"
+            ? searchUrlWithQuery(pathname, window.location.search, "")
+            : base;
         const current = `${window.location.pathname}${window.location.search}`;
-        if (current !== base) {
-          window.history.replaceState(null, "", base);
+        if (current !== next) {
+          window.history.replaceState(null, "", next);
         }
       }
       return;
@@ -169,7 +174,10 @@ export function HeroSearch({
     const handle = window.setTimeout(async () => {
       if (syncUrl) {
         const base = pathname === "/" ? "/" : pathname;
-        const next = `${base}?q=${encodeURIComponent(q)}`;
+        const next =
+          pathname === "/search"
+            ? searchUrlWithQuery(pathname, window.location.search, q)
+            : `${base}?q=${encodeURIComponent(q)}`;
         const current = `${window.location.pathname}${window.location.search}`;
         if (current !== next) {
           window.history.replaceState(null, "", next);

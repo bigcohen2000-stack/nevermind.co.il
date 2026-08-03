@@ -37,6 +37,7 @@ const TYPE_TABS: Array<{ id: SearchResultType; label: string }> = [
   { id: "videos", label: "סרטונים" },
   { id: "articles", label: "מאמרים" },
   { id: "concepts", label: "מושגים" },
+  { id: "mechanisms", label: "מנגנונים" },
 ];
 
 const SUGGEST_CONCEPTS = CURATED_CONCEPTS.slice(0, 10);
@@ -70,35 +71,33 @@ export function SearchBrowseNav({
         })}
       </nav>
 
-      {query ? (
-        <nav aria-label="סוג תוצאות" className="flex flex-wrap gap-2">
-          {TYPE_TABS.map((tab) => {
-            const active = tab.id === type;
-            return (
-              <Link
-                key={tab.id}
-                href={searchHref({
-                  q: query,
-                  type: tab.id,
-                  filter:
-                    tab.id === "videos" || tab.id === "all" ? filter : "all",
-                  page: 1,
-                  hash: "search-results",
-                })}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "inline-flex min-h-10 items-center border px-3 text-sm no-underline transition hover:no-underline",
-                  active
-                    ? "border-action bg-action text-background"
-                    : "border-foreground/15 text-foreground/80 hover:border-foreground/35",
-                )}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
-        </nav>
-      ) : null}
+      <nav aria-label="סוג תוצאות" className="flex flex-wrap gap-2">
+        {TYPE_TABS.map((tab) => {
+          const active = tab.id === type;
+          return (
+            <Link
+              key={tab.id}
+              href={searchHref({
+                q: query,
+                type: tab.id,
+                filter:
+                  tab.id === "videos" || tab.id === "all" ? filter : "all",
+                page: 1,
+                hash: "search-results",
+              })}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "inline-flex min-h-10 items-center border px-3 text-sm no-underline transition hover:no-underline",
+                active
+                  ? "border-action bg-action text-background"
+                  : "border-foreground/15 text-foreground/80 hover:border-foreground/35",
+              )}
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
+      </nav>
 
       <div>
         <p className="flex items-center gap-2 text-xs font-medium tracking-[0.14em] text-action uppercase">
@@ -109,7 +108,11 @@ export function SearchBrowseNav({
           {MECHANISM_DEFINITIONS.map((m) => (
             <li key={m.id}>
               <Link
-                href={searchHref({ q: m.label, page: 1 })}
+                href={searchHref({
+                  q: m.label,
+                  type: "mechanisms",
+                  page: 1,
+                })}
                 className={cn(
                   "inline-flex min-h-10 items-center border px-3 text-sm no-underline transition hover:border-action hover:text-action hover:no-underline",
                   query === m.label

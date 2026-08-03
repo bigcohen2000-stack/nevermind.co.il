@@ -34,6 +34,7 @@ type PageProps = {
     page?: string;
     filter?: string;
     type?: string;
+    tab?: string;
   }>;
 };
 
@@ -302,7 +303,9 @@ export default async function SearchPage({ searchParams }: PageProps) {
   );
 }
 
-function typeLabel(type: "videos" | "articles" | "concepts" | "all"): string {
+function typeLabel(
+  type: "videos" | "articles" | "concepts" | "mechanisms" | "all",
+): string {
   switch (type) {
     case "videos":
       return "סרטונים";
@@ -310,6 +313,8 @@ function typeLabel(type: "videos" | "articles" | "concepts" | "all"): string {
       return "מאמרים";
     case "concepts":
       return "מושגים";
+    case "mechanisms":
+      return "מנגנונים";
     default:
       return "הכול";
   }

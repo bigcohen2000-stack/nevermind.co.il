@@ -11,8 +11,16 @@ export const SEARCH_FETCH_CAP = 96;
 
 export type SearchVideoFilter = "all" | "open" | "club";
 
-/** Which result groups to emphasize / show. */
-export type SearchResultType = "all" | "videos" | "articles" | "concepts";
+/**
+ * Which result groups to show.
+ * `tab` is the shareable URL key. `type` is accepted as a legacy alias.
+ */
+export type SearchResultType =
+  | "all"
+  | "videos"
+  | "articles"
+  | "concepts"
+  | "mechanisms";
 
 export type SearchPageParams = {
   q: string;
@@ -21,27 +29,40 @@ export type SearchPageParams = {
   type: SearchResultType;
 };
 
+const RESULT_TYPES: readonly SearchResultType[] = [
+  "all",
+  "videos",
+  "articles",
+  "concepts",
+  "mechanisms",
+] as const;
+
+export function isSearchResultType(value: unknown): value is SearchResultType {
+  return (
+    typeof value === "string" &&
+    (RESULT_TYPES as readonly string[]).includes(value)
+  );
+}
+
 /**
  * Parse and clamp `/search` search params.
  * Invalid or empty `page` falls back to 1 (no throw).
+ * `tab` wins over legacy `type` when both are present.
  */
 export function parseSearchPageParams(raw: {
   q?: string;
   page?: string;
   filter?: string;
   type?: string;
+  tab?: string;
 }): SearchPageParams {
   const filter =
     raw.filter === "open" || raw.filter === "club" || raw.filter === "all"
       ? raw.filter
       : "all";
-  const type =
-    raw.type === "videos" ||
-    raw.type === "articles" ||
-    raw.type === "concepts" ||
-    raw.type === "all"
-      ? raw.type
-      : "all";
+
+  const tabRaw = (raw.tab ?? raw.type)?.trim() ?? "";
+  const type = isSearchResultType(tabRaw) ? tabRaw : "all";
 
   return {
     q: raw.q?.trim() ?? "",
@@ -52,8 +73,9 @@ export function parseSearchPageParams(raw: {
 }
 
 /**
- * Build a `/search` href preserving q / filter / type / page.
+ * Build a `/search` href preserving q / filter / tab / page.
  * Defaults are omitted for clean canonical URLs.
+ * Writes `tab` (not `type`) for shareable views.
  */
 export function searchHref(opts: {
   q?: string;
@@ -69,12 +91,37 @@ export function searchHref(opts: {
   const filter = opts.filter ?? "all";
   if (filter !== "all") params.set("filter", filter);
   const type = opts.type ?? "all";
-  if (type !== "all") params.set("type", type);
+  if (type !== "all") params.set("tab", type);
   const page = opts.page ?? 1;
   if (page > 1) params.set("page", String(page));
   const qs = params.toString();
   const base = qs ? `/search?${qs}` : "/search";
   return opts.hash ? `${base}#${opts.hash}` : base;
+}
+
+/**
+ * Merge a live query into the current search URL while keeping tab/filter/page.
+ */
+export function searchUrlWithQuery(
+  pathname: string,
+  currentSearch: string,
+  q: string,
+): string {
+  const params = new URLSearchParams(currentSearch);
+  const trimmed = q.trim();
+  if (trimmed) params.set("q", trimmed);
+  else params.delete("q");
+
+  // Normalize legacy `type` → `tab`.
+  const legacyType = params.get("type");
+  if (legacyType && !params.get("tab")) {
+    params.set("tab", legacyType);
+  }
+  params.delete("type");
+
+  const qs = params.toString();
+  const base = pathname || "/search";
+  return qs ? `${base}?${qs}` : base;
 }
 
 export { clampPage, parsePageParam };

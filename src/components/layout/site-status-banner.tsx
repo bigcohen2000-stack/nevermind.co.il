@@ -12,6 +12,7 @@ import {
   formatHeaderClubLabel,
   type HeaderSession,
 } from "@/lib/auth/header-session-shared";
+import { TimeOfDayGreeting } from "@/components/layout/time-of-day-greeting";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -93,6 +94,10 @@ export function SiteStatusBanner({
               />
               מועדון פתוח
             </span>
+            <TimeOfDayGreeting
+              name={session.displayName}
+              className="me-2 text-[#FAFAF8]"
+            />
             <span className="text-[#FAFAF8]/85">
               המאגר זמין במכשיר הזה
               {clubLabel ? ` · ${clubLabel}` : ""}
@@ -160,6 +165,10 @@ export function SiteStatusBanner({
               />
               מחובר לאתר
             </span>
+            <TimeOfDayGreeting
+              name={session.displayName}
+              className="me-2 text-foreground"
+            />
             {authLabel ? (
               <span className="text-foreground/85">חשבון {authLabel}</span>
             ) : null}

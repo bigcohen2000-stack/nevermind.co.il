@@ -51,6 +51,10 @@ export async function SiteShell({ children }: { children: ReactNode }) {
     entitled: access.entitled || access.hasVideoAccess,
   });
   const isClub = accessTier === "club";
+  const sessionForUi = {
+    ...session,
+    displayName: access.displayName || session.displayName,
+  };
 
   return (
     <FocusModeProvider>
@@ -71,11 +75,11 @@ export async function SiteShell({ children }: { children: ReactNode }) {
             <LiveUpdatesBar items={liveUpdates} />
           </FocusModeChrome>
           <FocusModeChrome>
-            <SiteStatusBanner session={session} accessTier={accessTier} />
+            <SiteStatusBanner session={sessionForUi} accessTier={accessTier} />
           </FocusModeChrome>
           <FocusModeChrome>
             <SiteHeader
-              session={session}
+              session={sessionForUi}
               theme={theme}
               accessTier={accessTier}
             />
@@ -110,7 +114,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         <FocusModeChrome>
           <DailyResetPrompt />
         </FocusModeChrome>
-        <PresenceBeacon session={session} />
+        <PresenceBeacon session={sessionForUi} />
         <AccessibilityToolbar />
         <FocusModeChrome>
           <WhatsAppFloat />

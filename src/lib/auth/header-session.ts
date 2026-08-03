@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { readClubSession } from "@/lib/club/session";
+import { displayNameFromEmail } from "@/lib/greeting/time-greeting";
 import type { HeaderSession } from "@/lib/auth/header-session-shared";
 
 export type { HeaderSession } from "@/lib/auth/header-session-shared";
@@ -28,12 +29,19 @@ export async function getHeaderSession(): Promise<HeaderSession> {
   }
 
   let clubPhone: string | null = null;
+  let clubName: string | null = null;
   try {
     const club = await readClubSession();
     clubPhone = club?.phone ?? null;
+    clubName = club?.name?.trim() || null;
   } catch {
     // Club cookie unavailable.
   }
 
-  return { authUserId, authEmail, clubPhone };
+  const displayName =
+    clubName ||
+    displayNameFromEmail(authEmail) ||
+    null;
+
+  return { authUserId, authEmail, clubPhone, displayName };
 }

@@ -11,6 +11,7 @@ import { LearningJourney } from "@/components/videos/learning-journey";
 import { VideoCard } from "@/components/videos/video-card";
 import { CATEGORY_LABELS } from "@/lib/content/articles";
 import { getBlindSpotRecommendation } from "@/lib/search/blind-spot";
+import { coreMechanismForConcept } from "@/lib/profile/core-mechanisms";
 import {
   SEARCH_PAGE_SIZE,
   clampPage,
@@ -70,12 +71,30 @@ export async function SearchResults({
 
   const { videos, concepts, articles } = results;
   const trimmedQuery = query.trim();
-  const showArticles = type === "all" || type === "articles";
-  const showConcepts = type === "all" || type === "concepts";
+  const showArticles =
+    type === "all" || type === "articles" || type === "mechanisms";
+  const showConcepts =
+    type === "all" || type === "concepts" || type === "mechanisms";
   const showVideos = type === "all" || type === "videos";
 
-  const visibleArticles = showArticles ? articles : [];
-  const visibleConcepts = showConcepts ? concepts : [];
+  const visibleArticles =
+    type === "mechanisms"
+      ? articles.filter(
+          (a) =>
+            a.category === "relationships" ||
+            a.category === "existence" ||
+            a.category === "identity",
+        )
+      : showArticles
+        ? articles
+        : [];
+
+  const visibleConcepts =
+    type === "mechanisms"
+      ? concepts.filter((c) => coreMechanismForConcept(c.name) != null)
+      : showConcepts
+        ? concepts
+        : [];
 
   const totalCount = videos.length + concepts.length + articles.length;
   const visibleTotal =

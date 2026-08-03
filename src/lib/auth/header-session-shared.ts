@@ -6,6 +6,8 @@ export type HeaderSession = {
   authUserId: string | null;
   authEmail: string | null;
   clubPhone: string | null;
+  /** Friendly short name for greetings (email local or club name). */
+  displayName: string | null;
 };
 
 export function maskEmail(email: string): string {
