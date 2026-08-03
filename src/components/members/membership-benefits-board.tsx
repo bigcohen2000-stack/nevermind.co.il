@@ -45,6 +45,8 @@ type MembershipBenefitsBoardProps = {
   isMember?: boolean;
   /** Show post-login offer cards above the compare table. */
   showOffers?: boolean;
+  /** When false, omit inline price frames (e.g. /members uses MembersPricing). */
+  showPricing?: boolean;
   /** Surface: paths page vs members page copy tweaks. */
   surface?: "paths" | "members";
   className?: string;
@@ -98,6 +100,7 @@ function CellMark({ on }: { on: boolean }) {
 export function MembershipBenefitsBoard({
   isMember = false,
   showOffers,
+  showPricing = true,
   surface = "paths",
   className,
 }: MembershipBenefitsBoardProps) {
@@ -108,7 +111,9 @@ export function MembershipBenefitsBoard({
 
   const lead =
     surface === "members"
-      ? "טבלה ברורה: חינם מול מועדון. מתחתיה מסגרות מחיר גלויות. אין סליקה באתר. הגישה אחרי שיחת התאמה."
+      ? showPricing
+        ? "טבלה ברורה: חינם מול מועדון. מתחתיה מסגרות מחיר גלויות. אין סליקה באתר. הגישה אחרי שיחת התאמה."
+        : "טבלה ברורה: חינם מול מועדון. מחירים מופיעים בסעיף נפרד למטה. אין סליקה באתר. הגישה אחרי שיחת התאמה."
       : "רואים קודם מה כלול. אחר כך בוחרים מסגרת מחיר. אין סליקה באתר. הגישה נפתחת ידנית אחרי התאמה.";
 
   const offersVisible = showOffers ?? isMember;
@@ -226,149 +231,151 @@ export function MembershipBenefitsBoard({
           </table>
         </div>
 
-        <div id="membership-prices" className="mt-12 scroll-mt-28">
-          <p className="flex items-center gap-2 text-xs font-medium tracking-[0.14em] text-action uppercase">
-            <Library className="size-3.5" aria-hidden />
-            מחירים
-          </p>
-          <h3 className="mt-3 text-xl font-semibold tracking-tight sm:text-2xl">
-            מסגרות מחיר למאגר
-          </h3>
-          <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
-            {isMember
-              ? "אתם כבר בפנים. אפשר לחדש או לשדרג מסגרת. כל מסגרת כוללת מאגר מלא ופיד פודקאסט פרטי."
-              : "כל מסגרת כוללת מאגר מלא ופיד פודקאסט פרטי. ממלאים פרטים ושולחים בקשה. הגישה ניתנת ידנית אחרי התאמה."}
-          </p>
+        {showPricing ? (
+          <div id="membership-prices" className="mt-12 scroll-mt-28">
+            <p className="flex items-center gap-2 text-xs font-medium tracking-[0.14em] text-action uppercase">
+              <Library className="size-3.5" aria-hidden />
+              מחירים
+            </p>
+            <h3 className="mt-3 text-xl font-semibold tracking-tight sm:text-2xl">
+              מסגרות מחיר למאגר
+            </h3>
+            <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
+              {isMember
+                ? "אתם כבר בפנים. אפשר לחדש או לשדרג מסגרת. כל מסגרת כוללת מאגר מלא ופיד פודקאסט פרטי."
+                : "כל מסגרת כוללת מאגר מלא ופיד פודקאסט פרטי. ממלאים פרטים ושולחים בקשה. הגישה ניתנת ידנית אחרי התאמה."}
+            </p>
 
-          <ul className="mt-8 space-y-3 md:hidden">
-            {ARCHIVE_PRICING_ROWS.map((row) => {
-              const highlighted = row.id === DEFAULT_ARCHIVE_PRICING_ID;
-              return (
-                <li
-                  key={row.id}
-                  className={cn(
-                    "border bg-background p-5",
-                    highlighted ? "border-action" : "border-foreground/25",
-                  )}
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <h4 className="text-lg font-semibold tracking-tight">
-                      {row.frame}
-                      {highlighted ? (
-                        <span className="ms-2 text-xs font-medium text-action">
-                          מסלול יעד
-                        </span>
-                      ) : null}
-                    </h4>
-                    <p className="shrink-0 text-base font-semibold tabular-nums">
-                      {row.price}
-                    </p>
-                  </div>
-                  <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
-                    <Timer className="size-3.5 shrink-0" aria-hidden />
-                    תוקף: {row.validity}
-                  </p>
-                  <p className="mt-3 text-sm leading-relaxed text-foreground/80">
-                    {row.analysis}
-                  </p>
-                  <div className="mt-5">
-                    {isMember ? (
-                      <Link
-                        href="/videos?filter=club"
-                        className="btn btn-secondary min-h-11 px-4 py-2 text-sm"
-                      >
-                        למאגר
-                      </Link>
-                    ) : (
-                      <PathInquiryCta
-                        label={`בקשת ${row.frame}`}
-                        track={`הרשאת גישה למאגר הסרטונים, מסגרת ${row.frame}`}
-                        priceBeforeVat={row.price}
-                        detail={`תוקף: ${row.validity}. אין סליקה אוטומטית באתר.`}
-                        requiresFitCall
-                        showSms={false}
-                        source={`benefits-${row.id}`}
-                      />
+            <ul className="mt-8 space-y-3 md:hidden">
+              {ARCHIVE_PRICING_ROWS.map((row) => {
+                const highlighted = row.id === DEFAULT_ARCHIVE_PRICING_ID;
+                return (
+                  <li
+                    key={row.id}
+                    className={cn(
+                      "border bg-background p-5",
+                      highlighted ? "border-action" : "border-foreground/25",
                     )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-
-          <div className="mt-8 hidden overflow-x-auto overscroll-x-contain border border-foreground/20 md:block">
-            <table className="w-full min-w-[44rem] border-collapse text-start text-sm">
-              <thead>
-                <tr className="border-b border-foreground/20 bg-paper text-muted">
-                  <th className="px-4 py-3 font-medium">מסגרת</th>
-                  <th className="px-4 py-3 font-medium">תוקף</th>
-                  <th className="px-4 py-3 font-medium">
-                    עלות (לפני מע&quot;מ)
-                  </th>
-                  <th className="px-4 py-3 font-medium">ניתוח</th>
-                  <th className="px-4 py-3 font-medium">פעולה</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ARCHIVE_PRICING_ROWS.map((row) => {
-                  const highlighted = row.id === DEFAULT_ARCHIVE_PRICING_ID;
-                  return (
-                    <tr
-                      key={row.id}
-                      className={cn(
-                        "border-b border-foreground/10 align-top",
-                        highlighted && "bg-action/5",
-                      )}
-                    >
-                      <td className="px-4 py-4 font-medium">
+                  >
+                    <div className="flex items-baseline justify-between gap-3">
+                      <h4 className="text-lg font-semibold tracking-tight">
                         {row.frame}
                         {highlighted ? (
-                          <span className="ms-2 text-xs text-action">
+                          <span className="ms-2 text-xs font-medium text-action">
                             מסלול יעד
                           </span>
                         ) : null}
-                      </td>
-                      <td className="px-4 py-4 text-foreground/80">
-                        {row.validity}
-                      </td>
-                      <td className="px-4 py-4 tabular-nums text-foreground/90">
+                      </h4>
+                      <p className="shrink-0 text-base font-semibold tabular-nums">
                         {row.price}
-                      </td>
-                      <td className="px-4 py-4 text-muted">{row.analysis}</td>
-                      <td className="px-4 py-4">
-                        {isMember ? (
-                          <Link
-                            href="/videos?filter=club"
-                            className="btn btn-secondary min-h-10 px-3 py-2 text-xs"
-                          >
-                            למאגר
-                          </Link>
-                        ) : (
-                          <PathInquiryCta
-                            label={`בקשת ${row.frame}`}
-                            track={`הרשאת גישה למאגר הסרטונים, מסגרת ${row.frame}`}
-                            priceBeforeVat={row.price}
-                            detail={`תוקף: ${row.validity}. אין סליקה אוטומטית באתר.`}
-                            requiresFitCall
-                            showSms={false}
-                            source={`benefits-${row.id}`}
-                          />
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </p>
+                    </div>
+                    <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
+                      <Timer className="size-3.5 shrink-0" aria-hidden />
+                      תוקף: {row.validity}
+                    </p>
+                    <p className="mt-3 text-sm leading-relaxed text-foreground/80">
+                      {row.analysis}
+                    </p>
+                    <div className="mt-5">
+                      {isMember ? (
+                        <Link
+                          href="/videos?filter=club"
+                          className="btn btn-secondary min-h-11 px-4 py-2 text-sm"
+                        >
+                          למאגר
+                        </Link>
+                      ) : (
+                        <PathInquiryCta
+                          label={`בקשת ${row.frame}`}
+                          track={`הרשאת גישה למאגר הסרטונים, מסגרת ${row.frame}`}
+                          priceBeforeVat={row.price}
+                          detail={`תוקף: ${row.validity}. אין סליקה אוטומטית באתר.`}
+                          requiresFitCall
+                          showSms={false}
+                          source={`benefits-${row.id}`}
+                        />
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
 
-          <ul className="mt-6 max-w-3xl space-y-1.5 text-xs leading-relaxed text-muted">
-            <li>* {VAT_FOOTER_NOTE}</li>
-            <li>* {REFUND_POLICY_NOTE}</li>
-            <li>* {NO_AUTO_CHECKOUT_NOTE}</li>
-            <li>* {RESPONSE_SLA_NOTE}</li>
-          </ul>
-        </div>
+            <div className="mt-8 hidden overflow-x-auto overscroll-x-contain border border-foreground/20 md:block">
+              <table className="w-full min-w-[44rem] border-collapse text-start text-sm">
+                <thead>
+                  <tr className="border-b border-foreground/20 bg-paper text-muted">
+                    <th className="px-4 py-3 font-medium">מסגרת</th>
+                    <th className="px-4 py-3 font-medium">תוקף</th>
+                    <th className="px-4 py-3 font-medium">
+                      עלות (לפני מע&quot;מ)
+                    </th>
+                    <th className="px-4 py-3 font-medium">ניתוח</th>
+                    <th className="px-4 py-3 font-medium">פעולה</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ARCHIVE_PRICING_ROWS.map((row) => {
+                    const highlighted = row.id === DEFAULT_ARCHIVE_PRICING_ID;
+                    return (
+                      <tr
+                        key={row.id}
+                        className={cn(
+                          "border-b border-foreground/10 align-top",
+                          highlighted && "bg-action/5",
+                        )}
+                      >
+                        <td className="px-4 py-4 font-medium">
+                          {row.frame}
+                          {highlighted ? (
+                            <span className="ms-2 text-xs text-action">
+                              מסלול יעד
+                            </span>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-4 text-foreground/80">
+                          {row.validity}
+                        </td>
+                        <td className="px-4 py-4 tabular-nums text-foreground/90">
+                          {row.price}
+                        </td>
+                        <td className="px-4 py-4 text-muted">{row.analysis}</td>
+                        <td className="px-4 py-4">
+                          {isMember ? (
+                            <Link
+                              href="/videos?filter=club"
+                              className="btn btn-secondary min-h-10 px-3 py-2 text-xs"
+                            >
+                              למאגר
+                            </Link>
+                          ) : (
+                            <PathInquiryCta
+                              label={`בקשת ${row.frame}`}
+                              track={`הרשאת גישה למאגר הסרטונים, מסגרת ${row.frame}`}
+                              priceBeforeVat={row.price}
+                              detail={`תוקף: ${row.validity}. אין סליקה אוטומטית באתר.`}
+                              requiresFitCall
+                              showSms={false}
+                              source={`benefits-${row.id}`}
+                            />
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <ul className="mt-6 max-w-3xl space-y-1.5 text-xs leading-relaxed text-muted">
+              <li>* {VAT_FOOTER_NOTE}</li>
+              <li>* {REFUND_POLICY_NOTE}</li>
+              <li>* {NO_AUTO_CHECKOUT_NOTE}</li>
+              <li>* {RESPONSE_SLA_NOTE}</li>
+            </ul>
+          </div>
+        ) : null}
       </div>
     </section>
   );

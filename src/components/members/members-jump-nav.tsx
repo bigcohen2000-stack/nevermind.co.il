@@ -22,6 +22,7 @@ export type MembersJumpItem = {
 
 const DEFAULT_JUMPS: MembersJumpItem[] = [
   { href: "#login", label: "כניסה", icon: KeyRound },
+  { href: "#members-stats-title", label: "עומק", icon: Compass },
   { href: "#membership-benefits", label: "מה כלול", icon: Library },
   { href: "#membership-prices", label: "מחירים", icon: Wallet },
   { href: "#members-syllabus", label: "נושאים", icon: Compass },

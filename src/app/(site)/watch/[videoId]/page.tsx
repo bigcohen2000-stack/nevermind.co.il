@@ -14,20 +14,34 @@ import { SiteBanner } from "@/components/site/site-banner";
 import { Eyebrow } from "@/components/ui/editorial";
 import { BookingCta } from "@/components/videos/booking-cta";
 import { CaptionTagCloud } from "@/components/videos/caption-tag-cloud";
-import { ClubWatchIdentity } from "@/components/videos/club-watch-identity";
 import { ContinueExplorationTeaser } from "@/components/videos/continue-exploration-teaser";
 import { FeaturedInvestigators } from "@/components/videos/featured-investigators";
-import { GatedLock } from "@/components/videos/gated-lock";
 import { InvestigationMetrics } from "@/components/videos/investigation-metrics";
 import { ObjectiveTruthToggle } from "@/components/videos/objective-truth-toggle";
+import { PremiumWatchStatus } from "@/components/videos/premium-watch-status";
 import { RabbitHoleWatchBridge } from "@/components/premium/rabbit-hole-watch-bridge";
+import { PublicWatchNextSteps } from "@/components/videos/public-watch-next-steps";
 import { TeaserWatchGate } from "@/components/videos/teaser-watch-gate";
 import { TranscriptHeatmap } from "@/components/videos/transcript-heatmap";
+import { WatchAccessChooser } from "@/components/videos/watch-access-chooser";
+import { WatchBookingNudge } from "@/components/videos/watch-booking-nudge";
 import { WatchContentTabs } from "@/components/videos/watch-content-tabs";
 import { WatchFocusLayout } from "@/components/videos/watch-focus-layout";
+import {
+  WatchExploreLinks,
+  WatchGuideStrip,
+  WatchLockedFaq,
+} from "@/components/videos/watch-guide-strip";
+import { WatchPrevNext } from "@/components/videos/watch-prev-next";
 import { WatchQuickActions } from "@/components/videos/watch-quick-actions";
 import { LogicalContinuationLink } from "@/components/videos/logical-continuation-link";
 import { WatchSeekProvider } from "@/components/videos/watch-seek-context";
+import {
+  WATCH_LOCKED_FAQ,
+  WATCH_LOCKED_HIGHLIGHTS,
+  WATCH_MEMBER_HIGHLIGHTS,
+  WATCH_PUBLIC_HIGHLIGHTS,
+} from "@/lib/content/watch-page";
 import { extractCuratedConcepts } from "@/lib/concepts/quality";
 import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
 import { getRelatedArticlesForTerms } from "@/lib/search/related-content";
@@ -40,6 +54,7 @@ import {
 } from "@/lib/videos/heatmap";
 import { getLogicalContinuation } from "@/lib/videos/logical-continuation";
 import {
+  getAdjacentVideos,
   getRelatedVideos,
   getVideoConcepts,
   getVideoForWatch,
@@ -168,31 +183,33 @@ function LockedWatchPage({
               gateBanner={gateBanner}
             />
           ) : (
-            <GatedLock
-              title={title}
-              thumbSrc={thumbSrc}
-              videoId={videoId}
-              returnPath={returnPath}
-              isAuthenticated={isAuthenticated}
-              hasTeaser={false}
-              gateBanner={gateBanner}
-            />
+            <div className="relative aspect-video overflow-hidden border border-foreground/15 bg-paper">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={thumbSrc}
+                alt=""
+                className="h-full w-full object-cover opacity-80"
+              />
+              {gateBanner}
+            </div>
           )}
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2 sm:gap-3">
-          <Link href="/members#login" className="btn btn-primary">
-            כניסה למועדון
-          </Link>
-          <Link href="/members#membership-prices" className="btn btn-secondary">
-            מסגרות מחיר
-          </Link>
-          <Link href="/videos?filter=open" className="btn btn-secondary">
-            סרטונים פתוחים
-          </Link>
-          <Link href="/contact" className="btn btn-secondary">
-            צור קשר
-          </Link>
+        <div className="mt-8 max-w-3xl space-y-8">
+          <WatchGuideStrip
+            highlights={WATCH_LOCKED_HIGHLIGHTS}
+            title="מה אפשר כאן בלי כניסה"
+            lead="הכותרת גלויה. הצפייה המלאה אחרי מועדון או בקשת סרטון בודד."
+          />
+          <WatchAccessChooser
+            title={title}
+            videoId={videoId}
+            returnPath={returnPath}
+            isAuthenticated={isAuthenticated}
+            hasTeaser={Boolean(teaserYoutubeId)}
+          />
+          <WatchLockedFaq items={WATCH_LOCKED_FAQ} />
+          <WatchExploreLinks />
         </div>
       </div>
     </main>
@@ -319,7 +336,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
         : [];
   const heatmapBuckets = buildTranscriptHeatmap(timedSegments, heatConcepts);
 
-  const [related, continuation] = await Promise.all([
+  const [related, continuation, adjacent] = await Promise.all([
     getRelatedVideos(
       video.id,
       conceptIds,
@@ -334,6 +351,10 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
           ? conceptNames.filter(Boolean)
           : extractCuratedConcepts(video.title, video.description ?? "", [], 6),
     }).catch(() => null),
+    getAdjacentVideos(video.id, { entitled }).catch(() => ({
+      prev: null,
+      next: null,
+    })),
   ]);
 
   const relatedArticles = getRelatedArticlesForTerms(
@@ -435,12 +456,26 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
           }
           belowPlayer={
             <div className="space-y-5 sm:space-y-6">
-              {access.clubSession ? (
-                <ClubWatchIdentity
+              {entitled ? (
+                <PremiumWatchStatus
                   displayName={access.displayName}
                   maskedPhone={maskClubPhone(access.phone)}
                 />
               ) : null}
+
+              <WatchGuideStrip
+                highlights={
+                  entitled ? WATCH_MEMBER_HIGHLIGHTS : WATCH_PUBLIC_HIGHLIGHTS
+                }
+                title={entitled ? "מה פתוח לחברים" : "מה יש כאן"}
+                lead={
+                  entitled
+                    ? "המאגר במכשיר הזה. אפשר להמשיך למושגים, לרמות, ולתיאום."
+                    : "סרטון פתוח. מאגר המועדון נפתח בנפרד אחרי אישור."
+                }
+              />
+
+              <WatchPrevNext prev={adjacent.prev} next={adjacent.next} />
 
               {concepts.length > 0 ? (
                 <section aria-labelledby="concepts-title">
@@ -528,6 +563,20 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
                 }
                 talk={<BookingCta topic={primaryTopic} context={video.title} />}
               />
+
+              {!entitled ? (
+                <PublicWatchNextSteps
+                  isAuthenticated={authed}
+                  transcript={authed ? transcript : null}
+                  transcriptAvailable={Boolean(transcript?.trim())}
+                  videoTitle={video.title}
+                  signInNextPath={watchHref}
+                  clubLabel={video.club_teaser_label}
+                  clubHref={video.club_teaser_href}
+                />
+              ) : null}
+
+              <WatchExploreLinks />
             </div>
           }
           sidebar={
@@ -570,6 +619,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
           }
         />
       </WatchSeekProvider>
+      {!entitled ? <WatchBookingNudge /> : null}
     </>
   );
 }

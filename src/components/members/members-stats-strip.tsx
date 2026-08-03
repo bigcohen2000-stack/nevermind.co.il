@@ -211,7 +211,7 @@ export function MembersStatsStrip({ preview }: MembersStatsStripProps) {
   return (
     <section
       aria-labelledby="members-stats-title"
-      className="border-y border-foreground/10 bg-paper text-foreground"
+      className="scroll-mt-24 border-y border-foreground/10 bg-paper text-foreground"
     >
       <div className="mx-auto w-full max-w-6xl px-6 py-14 sm:py-16 lg:py-20">
         <p className="text-xs font-medium tracking-wide text-action">

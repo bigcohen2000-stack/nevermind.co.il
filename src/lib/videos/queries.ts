@@ -783,6 +783,49 @@ export type RelatedVideo = Video & {
   sharedConcept: string | null;
 };
 
+/** Previous / next public-browse neighbors by publish time (same filter family). */
+export async function getAdjacentVideos(
+  videoId: string,
+  opts?: { entitled?: boolean },
+): Promise<{
+  prev: Pick<
+    Video,
+    "id" | "youtube_id" | "title" | "is_gated" | "is_unlisted"
+  > | null;
+  next: Pick<
+    Video,
+    "id" | "youtube_id" | "title" | "is_gated" | "is_unlisted"
+  > | null;
+}> {
+  const empty = { prev: null, next: null };
+  try {
+    const listed = await listBrowseVideos({
+      limit: 80,
+      filter: opts?.entitled ? "all" : "open",
+      sort: "newest",
+    });
+    const idx = listed.findIndex((v) => v.id === videoId);
+    if (idx < 0) return empty;
+    const pick = (v: Video | undefined) =>
+      v
+        ? {
+            id: v.id,
+            youtube_id: v.youtube_id,
+            title: v.title,
+            is_gated: v.is_gated,
+            is_unlisted: v.is_unlisted,
+          }
+        : null;
+    // newest-first list: "prev" = older = higher index, "next" = newer = lower index
+    return {
+      prev: pick(listed[idx + 1]),
+      next: pick(listed[idx - 1]),
+    };
+  } catch {
+    return empty;
+  }
+}
+
 export async function getRelatedVideos(
   videoId: string,
   conceptIds: string[],

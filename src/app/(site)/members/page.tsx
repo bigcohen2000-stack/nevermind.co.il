@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { SiteBanner } from "@/components/site/site-banner";
+import { AccessLayersCompare } from "@/components/members/access-layers-compare";
 import { ClubJoinDisclaimer } from "@/components/members/club-join-disclaimer";
 import { ClubLoginForm } from "@/components/members/club-login-form";
 import { ClubWhatsNewSection } from "@/components/members/club-whats-new";
@@ -17,6 +18,8 @@ import { MemberOffersStrip } from "@/components/members/member-offers-strip";
 import { MembersAccessSteps } from "@/components/members/members-access-steps";
 import { MembersCredibilityFaq } from "@/components/members/members-credibility-faq";
 import { MembersJumpNav } from "@/components/members/members-jump-nav";
+import { MembersPricing } from "@/components/members/members-pricing";
+import { MembersStatsStrip } from "@/components/members/members-stats-strip";
 import { MembershipBenefitsBoard } from "@/components/members/membership-benefits-board";
 import { MembersSyllabusSection } from "@/components/members/members-syllabus-section";
 import { PrivatePodcastBanner } from "@/components/members/private-podcast-banner";
@@ -186,6 +189,33 @@ export default async function MembersPage() {
         moreLabel="מה כלול במועדון"
       />
 
+      <MembersStatsStrip preview={preview} />
+
+      {!isMember ? (
+        <section
+          aria-labelledby="access-layers-title"
+          className="bg-background text-foreground"
+        >
+          <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+            <p className="text-xs font-medium tracking-wide text-action">
+              שכבות גישה
+            </p>
+            <h2
+              id="access-layers-title"
+              className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl"
+            >
+              חינם מול מועדון.
+            </h2>
+            <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
+              מה פתוח לכולם, ומה נפתח אחרי שיחת התאמה. בלי סליקה באתר.
+            </p>
+            <div className="mt-8">
+              <AccessLayersCompare />
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {isMember ? (
         <section
           id="member-hub"
@@ -263,7 +293,10 @@ export default async function MembersPage() {
         surface="members"
         isMember={isMember}
         showOffers={false}
+        showPricing={false}
       />
+
+      <MembersPricing />
 
       <MembersSyllabusSection />
 
