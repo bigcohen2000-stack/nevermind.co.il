@@ -27,6 +27,7 @@ type VideosPageProps = {
     concept?: string;
     breakdown?: string;
     level?: string;
+    duration?: string;
     page?: string;
   }>;
 };
@@ -48,6 +49,7 @@ export async function generateMetadata({
   if (params.sort !== "newest") canonicalQs.set("sort", params.sort);
   if (params.concept) canonicalQs.set("concept", params.concept);
   if (params.breakdown) canonicalQs.set("breakdown", params.breakdown);
+  if (params.duration !== "all") canonicalQs.set("duration", params.duration);
   if (params.page > 1) canonicalQs.set("page", String(params.page));
   const qs = canonicalQs.toString();
 
@@ -87,9 +89,8 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
   const access = await resolveVideoEntitlement().catch(() => ({
     entitled: false,
   }));
-  const { filter, sort, concept, breakdown, page } = parseVideosBrowseParams(
-    await searchParams,
-  );
+  const { filter, sort, concept, breakdown, duration, page } =
+    parseVideosBrowseParams(await searchParams);
 
   const breadcrumbLd = buildBreadcrumbList([
     { name: "בית", path: "/" },
@@ -167,6 +168,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
               sort={sort}
               concept={concept}
               breakdown={breakdown}
+              duration={duration}
               page={page}
             />
           </Suspense>

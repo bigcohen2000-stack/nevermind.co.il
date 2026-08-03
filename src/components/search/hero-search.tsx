@@ -20,10 +20,17 @@ import { useSearchHotkey } from "@/hooks/use-search-hotkey";
 import { pushRecentSearch, readRecentSearches } from "@/lib/recent-searches";
 import { storeSearchAnalyticsId } from "@/lib/search/analytics-session";
 import {
+  suggestItemBadge,
   suggestItemHref,
   suggestItemLabel,
   type SuggestItem,
 } from "@/lib/search/types";
+import {
+  BREAKDOWN_LEVELS,
+  BREAKDOWN_LEVEL_LABELS,
+  BREAKDOWN_LEVEL_NUMBERS,
+  type BreakdownLevel,
+} from "@/lib/videos/investigation";
 import { cn } from "@/lib/utils";
 
 export type { SuggestItem } from "@/lib/search/types";
@@ -110,6 +117,7 @@ export function HeroSearch({
   const [recent, setRecent] = useState<string[]>([]);
   const [focused, setFocused] = useState(false);
   const [hasFetchedEmpty, setHasFetchedEmpty] = useState(false);
+  const [breakdown, setBreakdown] = useState<BreakdownLevel | null>(null);
 
   const isDark = variant === "dark";
   useSearchHotkey(inputRef);
@@ -174,10 +182,11 @@ export function HeroSearch({
       setLoading(true);
       setHasFetchedEmpty(false);
       try {
-        const res = await fetch(
-          `/api/search/suggest?q=${encodeURIComponent(q)}`,
-          { signal: controller.signal },
-        );
+        const params = new URLSearchParams({ q });
+        if (breakdown) params.set("breakdown", breakdown);
+        const res = await fetch(`/api/search/suggest?${params.toString()}`, {
+          signal: controller.signal,
+        });
         const data = (await res.json()) as { items?: SuggestItem[] };
         const nextItems = data.items ?? [];
         setItems(nextItems);
@@ -198,7 +207,7 @@ export function HeroSearch({
     return () => {
       window.clearTimeout(handle);
     };
-  }, [query, pathname, syncUrl]);
+  }, [query, pathname, syncUrl, breakdown]);
 
   // Focus trap while the suggest / zero-state panel is open.
   useEffect(() => {
@@ -276,10 +285,6 @@ export function HeroSearch({
       setRecent(pushRecentSearch(label));
       setOpen(false);
       setFocused(false);
-      if (item.type === "article") {
-        router.push(suggestItemHref(item));
-        return;
-      }
 
       const videoSuggestCount =
         item.type === "video"
@@ -293,7 +298,7 @@ export function HeroSearch({
           /* analytics must not surface to the user */
         });
 
-      router.push(`/search?q=${encodeURIComponent(label)}`);
+      router.push(suggestItemHref(item));
     },
     [items, router],
   );
@@ -398,6 +403,22 @@ export function HeroSearch({
           }
         />
 
+        {trimmed.length >= 2 ? (
+          <p
+            className={cn(
+              "pointer-events-none absolute end-3 top-full z-[1] mt-1 text-[11px] tabular-nums",
+              isDark ? "text-white/55" : "text-muted",
+            )}
+            aria-live="polite"
+          >
+            {loading
+              ? "מחפש..."
+              : items.length === 1
+                ? "תוצאה אחת"
+                : `${items.length} תוצאות`}
+          </p>
+        ) : null}
+
         <div
           className={cn(
             "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
@@ -416,6 +437,52 @@ export function HeroSearch({
                 !panelOpen && "pointer-events-none",
               )}
             >
+              {(showSuggest || showEmpty || loading) && trimmed.length >= 2 ? (
+                <div
+                  className="sticky top-0 z-[1] border-b border-foreground/10 bg-background/95 px-3 py-2 backdrop-blur-sm"
+                  role="group"
+                  aria-label="סינון לפי רמת פירוק"
+                >
+                  <ul className="flex flex-wrap gap-1.5">
+                    <li>
+                      <button
+                        type="button"
+                        className={cn(
+                          "inline-flex min-h-8 items-center border px-2 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                          breakdown === null
+                            ? "border-action bg-action/10 text-action"
+                            : "border-foreground/20 text-foreground/80 hover:border-foreground/40",
+                        )}
+                        aria-pressed={breakdown === null}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setBreakdown(null)}
+                      >
+                        כל הרמות
+                      </button>
+                    </li>
+                    {BREAKDOWN_LEVELS.map((level) => (
+                      <li key={level}>
+                        <button
+                          type="button"
+                          className={cn(
+                            "inline-flex min-h-8 items-center border px-2 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                            breakdown === level
+                              ? "border-action bg-action text-background"
+                              : "border-foreground/20 text-foreground/80 hover:border-foreground/40",
+                          )}
+                          aria-pressed={breakdown === level}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => setBreakdown(level)}
+                        >
+                          {BREAKDOWN_LEVEL_NUMBERS[level]}.{" "}
+                          {BREAKDOWN_LEVEL_LABELS[level]}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
               {loading ? (
                 <div className="space-y-3 p-4" aria-hidden="true">
                   {[0, 1, 2].map((row) => (
@@ -502,14 +569,11 @@ export function HeroSearch({
               {!loading && showSuggest
                 ? items.map((item, index) => {
                     const label = suggestItemLabel(item);
-                    const meta =
-                      item.type === "video"
-                        ? item.isGated
-                          ? "סרטון · לחברים"
-                          : "סרטון"
-                        : item.type === "article"
-                          ? "מאמר"
-                          : "מושג";
+                    const badge = suggestItemBadge(item);
+                    const snippet =
+                      item.type === "video" && item.snippet
+                        ? item.snippet
+                        : null;
                     const key =
                       item.type === "article"
                         ? `article-${item.slug}`
@@ -530,10 +594,19 @@ export function HeroSearch({
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => goToSuggestItem(item)}
                       >
-                        <span className="min-w-0 leading-relaxed">
-                          {highlightMatch(label, query)}
+                        <span className="min-w-0">
+                          <span className="block leading-relaxed">
+                            {highlightMatch(label, query)}
+                          </span>
+                          {snippet ? (
+                            <span className="mt-1 block text-xs leading-snug text-muted">
+                              &ldquo;{highlightMatch(snippet, query)}&rdquo;
+                            </span>
+                          ) : null}
                         </span>
-                        <span className="shrink-0 text-xs text-muted">{meta}</span>
+                        <span className="shrink-0 border border-foreground/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
+                          {badge}
+                        </span>
                       </button>
                     );
                   })

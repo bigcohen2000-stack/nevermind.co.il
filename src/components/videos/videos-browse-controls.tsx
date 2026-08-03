@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 import { CURATED_CONCEPTS } from "@/lib/concepts/quality";
-import { videosBrowseHref } from "@/lib/videos/browse-params";
+import {
+  videosBrowseHref,
+  type VideoBrowseDuration,
+} from "@/lib/videos/browse-params";
 import {
   BREAKDOWN_LEVELS,
   BREAKDOWN_LEVEL_LABELS,
@@ -19,6 +22,7 @@ type VideosBrowseControlsProps = {
   sort: VideoBrowseSort;
   concept?: string;
   breakdown?: BreakdownLevel;
+  duration?: VideoBrowseDuration;
 };
 
 const FILTERS: { id: VideoBrowseFilter; label: string }[] = [
@@ -34,6 +38,12 @@ const SORTS: { id: VideoBrowseSort; label: string }[] = [
   { id: "longest", label: "הארוך קודם" },
 ];
 
+const DURATIONS: { id: VideoBrowseDuration; label: string }[] = [
+  { id: "all", label: "הכל" },
+  { id: "short", label: "קצר (עד 10 דק')" },
+  { id: "long", label: "עומק (20+ דק')" },
+];
+
 const PEEK_CONCEPTS = 4;
 
 /**
@@ -45,9 +55,11 @@ export function VideosBrowseControls({
   sort,
   concept,
   breakdown,
+  duration = "all",
 }: VideosBrowseControlsProps) {
   const activeConcept = concept?.trim() || undefined;
   const activeBreakdown = breakdown;
+  const activeDuration = duration;
   const peekBase = CURATED_CONCEPTS.slice(0, PEEK_CONCEPTS);
   const peek =
     activeConcept &&
@@ -56,6 +68,14 @@ export function VideosBrowseControls({
       ? ([...peekBase.slice(0, PEEK_CONCEPTS - 1), activeConcept] as string[])
       : ([...peekBase] as string[]);
   const rest = CURATED_CONCEPTS.filter((name) => !peek.includes(name));
+
+  const hrefBase = {
+    filter,
+    sort,
+    concept: activeConcept,
+    breakdown: activeBreakdown,
+    duration: activeDuration,
+  } as const;
 
   return (
     <div
@@ -73,10 +93,8 @@ export function VideosBrowseControls({
                 <li key={item.id}>
                   <Link
                     href={videosBrowseHref({
+                      ...hrefBase,
                       filter: item.id,
-                      sort,
-                      concept: activeConcept,
-                      breakdown: activeBreakdown,
                     })}
                     className={cn(
                       "inline-flex min-h-10 items-center border px-3 text-sm no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
@@ -102,10 +120,8 @@ export function VideosBrowseControls({
                 <li key={item.id}>
                   <Link
                     href={videosBrowseHref({
-                      filter,
+                      ...hrefBase,
                       sort: item.id,
-                      concept: activeConcept,
-                      breakdown: activeBreakdown,
                     })}
                     className={cn(
                       "inline-flex min-h-10 items-center border px-3 text-sm no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
@@ -125,14 +141,41 @@ export function VideosBrowseControls({
       </div>
 
       <div className="mt-5 border-t border-foreground/10 pt-4">
+        <p className="text-sm font-medium text-foreground">משך צפייה</p>
+        <ul className="mt-2 flex flex-wrap gap-2" aria-label="סינון לפי משך">
+          {DURATIONS.map((item) => {
+            const active = activeDuration === item.id;
+            return (
+              <li key={item.id}>
+                <Link
+                  href={videosBrowseHref({
+                    ...hrefBase,
+                    duration: item.id,
+                  })}
+                  className={cn(
+                    "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                    active
+                      ? "border-action bg-action text-background"
+                      : "border-foreground/20 text-foreground",
+                  )}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <div className="mt-5 border-t border-foreground/10 pt-4">
         <p className="text-sm font-medium text-foreground">רמת פירוק</p>
         <ul className="mt-2 flex flex-wrap gap-2">
           <li>
             <Link
               href={videosBrowseHref({
-                filter,
-                sort,
-                concept: activeConcept,
+                ...hrefBase,
+                breakdown: undefined,
               })}
               className={cn(
                 "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
@@ -151,9 +194,7 @@ export function VideosBrowseControls({
               <li key={level}>
                 <Link
                   href={videosBrowseHref({
-                    filter,
-                    sort,
-                    concept: activeConcept,
+                    ...hrefBase,
                     breakdown: level,
                   })}
                   className={cn(
@@ -164,7 +205,8 @@ export function VideosBrowseControls({
                   )}
                   aria-current={active ? "page" : undefined}
                 >
-                  {BREAKDOWN_LEVEL_NUMBERS[level]}. {BREAKDOWN_LEVEL_LABELS[level]}
+                  {BREAKDOWN_LEVEL_NUMBERS[level]}.{" "}
+                  {BREAKDOWN_LEVEL_LABELS[level]}
                 </Link>
               </li>
             );
@@ -186,9 +228,8 @@ export function VideosBrowseControls({
           <li>
             <Link
               href={videosBrowseHref({
-                filter,
-                sort,
-                breakdown: activeBreakdown,
+                ...hrefBase,
+                concept: undefined,
               })}
               className={cn(
                 "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
@@ -207,10 +248,8 @@ export function VideosBrowseControls({
               <li key={name}>
                 <Link
                   href={videosBrowseHref({
-                    filter,
-                    sort,
+                    ...hrefBase,
                     concept: name,
-                    breakdown: activeBreakdown,
                   })}
                   className={cn(
                     "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
@@ -233,7 +272,9 @@ export function VideosBrowseControls({
               <span className="group-open:hidden">
                 עוד מושגים ({rest.length})
               </span>
-              <span className="hidden group-open:inline">הסתרת מושגים נוספים</span>
+              <span className="hidden group-open:inline">
+                הסתרת מושגים נוספים
+              </span>
             </summary>
             <ul className="mt-2 flex flex-wrap gap-2">
               {rest.map((name) => {
@@ -242,10 +283,8 @@ export function VideosBrowseControls({
                   <li key={name}>
                     <Link
                       href={videosBrowseHref({
-                        filter,
-                        sort,
+                        ...hrefBase,
                         concept: name,
-                        breakdown: activeBreakdown,
                       })}
                       className={cn(
                         "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",

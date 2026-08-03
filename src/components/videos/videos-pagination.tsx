@@ -1,6 +1,9 @@
 import Link from "next/link";
 
-import { videosBrowseHref } from "@/lib/videos/browse-params";
+import {
+  videosBrowseHref,
+  type VideoBrowseDuration,
+} from "@/lib/videos/browse-params";
 import type { BreakdownLevel } from "@/lib/videos/investigation";
 import type {
   VideoBrowseFilter,
@@ -17,6 +20,7 @@ type VideosPaginationProps = {
   sort: VideoBrowseSort;
   concept?: string;
   breakdown?: BreakdownLevel;
+  duration?: VideoBrowseDuration;
 };
 
 /**
@@ -32,6 +36,7 @@ export function VideosPagination({
   sort,
   concept,
   breakdown,
+  duration = "all",
 }: VideosPaginationProps) {
   if (total <= pageSize || totalPages <= 1) return null;
 
@@ -45,6 +50,7 @@ export function VideosPagination({
           sort,
           concept,
           breakdown,
+          duration,
           page: page - 1,
           hash: "videos-results",
         })
@@ -56,6 +62,7 @@ export function VideosPagination({
           sort,
           concept,
           breakdown,
+          duration,
           page: page + 1,
           hash: "videos-results",
         })
