@@ -5,22 +5,25 @@ import { usePathname } from "next/navigation";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useState } from "react";
 
+import { useBetaBannerVisible } from "@/components/layout/site-beta-banner";
+
 const SCROLL_SHOW_AT = 120;
 
 /**
  * Mobile conversion bar: crawlable Link to /contact, shown after scroll.
- * Hidden on md+ and on the contact page itself.
+ * Hidden on md+, contact page, and while the beta report bar is open.
  */
 export function MobileCtaBar() {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
+  const betaOpen = useBetaBannerVisible();
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setVisible(latest > SCROLL_SHOW_AT);
   });
 
-  if (pathname === "/contact") {
+  if (pathname === "/contact" || betaOpen) {
     return null;
   }
 

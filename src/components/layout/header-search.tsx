@@ -12,6 +12,7 @@ import {
 import { X } from "lucide-react";
 
 import {
+  suggestItemBadge,
   suggestItemHref,
   suggestItemLabel,
   type SuggestItem,
@@ -116,11 +117,7 @@ export function HeaderSearch({
     const label = suggestItemLabel(item);
     pushRecentSearch(label);
     onNavigate?.();
-    if (item.type === "article") {
-      router.push(suggestItemHref(item));
-    } else {
-      router.push(`/search?q=${encodeURIComponent(label)}`);
-    }
+    router.push(suggestItemHref(item));
     setOpen(false);
     setFocused(false);
   }
@@ -266,15 +263,18 @@ export function HeaderSearch({
             <p className="p-3 text-muted">לא נמצאו תוצאות.</p>
           ) : null}
 
+          {!loading && showSuggest ? (
+            <p className="border-b border-foreground/10 px-3 py-1.5 text-[11px] tabular-nums text-muted">
+              {items.length === 1 ? "תוצאה אחת" : `${items.length} תוצאות`}
+            </p>
+          ) : null}
+
           {!loading && showSuggest
             ? items.map((item, index) => {
                 const label = suggestItemLabel(item);
-                const meta =
-                  item.type === "video"
-                    ? "סרטון"
-                    : item.type === "article"
-                      ? "מאמר"
-                      : "מושג";
+                const badge = suggestItemBadge(item);
+                const snippet =
+                  item.type === "video" && item.snippet ? item.snippet : null;
                 const key =
                   item.type === "article"
                     ? `article-${item.slug}`
@@ -293,8 +293,17 @@ export function HeaderSearch({
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => goToItem(item)}
                   >
-                    <span className="min-w-0 leading-snug">{label}</span>
-                    <span className="shrink-0 text-xs text-muted">{meta}</span>
+                    <span className="min-w-0">
+                      <span className="block leading-snug">{label}</span>
+                      {snippet ? (
+                        <span className="mt-0.5 block text-[11px] leading-snug text-muted">
+                          "{snippet}"
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="shrink-0 border border-foreground/15 px-1.5 py-0.5 text-[10px] text-muted">
+                      {badge}
+                    </span>
                   </button>
                 );
               })

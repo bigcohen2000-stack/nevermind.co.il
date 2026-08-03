@@ -50,8 +50,7 @@ function UpdateChip({ item }: { item: LiveUpdateItem }) {
 }
 
 /**
- * Footer-adjacent updates scroller: live schedule, new videos, articles.
- * Kept out of the sticky header so the top chrome stays short.
+ * Header updates scroller: live schedule, new videos, articles.
  * Marquee on wide screens. Manual horizontal scroll on touch.
  * Falls back to a single rotator when prefers-reduced-motion.
  */
@@ -95,7 +94,7 @@ export function LiveUpdatesBar({ items }: LiveUpdatesBarProps) {
       role="status"
       aria-live="polite"
       className={cn(
-        "border-t text-foreground",
+        "border-b text-foreground",
         online
           ? "border-foreground/10 bg-ink text-[#FAFAF8]"
           : "border-action/40 bg-[#1A1A1A] text-[#FAFAF8]",

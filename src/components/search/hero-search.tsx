@@ -406,7 +406,7 @@ export function HeroSearch({
         {trimmed.length >= 2 ? (
           <p
             className={cn(
-              "pointer-events-none absolute end-3 top-full z-[1] mt-1 text-[11px] tabular-nums",
+              "mt-2 text-center text-[11px] tabular-nums",
               isDark ? "text-white/55" : "text-muted",
             )}
             aria-live="polite"
@@ -600,11 +600,11 @@ export function HeroSearch({
                           </span>
                           {snippet ? (
                             <span className="mt-1 block text-xs leading-snug text-muted">
-                              &ldquo;{highlightMatch(snippet, query)}&rdquo;
+                              "{highlightMatch(snippet, query)}"
                             </span>
                           ) : null}
                         </span>
-                        <span className="shrink-0 border border-foreground/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
+                        <span className="shrink-0 border border-foreground/15 px-1.5 py-0.5 text-[10px] font-medium text-muted">
                           {badge}
                         </span>
                       </button>

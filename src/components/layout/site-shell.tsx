@@ -50,7 +50,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         <div className="sticky top-0 z-50">
           <OfflineStatusBar />
           <FocusModeChrome>
-            <SiteBetaBanner />
+            <LiveUpdatesBar items={liveUpdates} />
           </FocusModeChrome>
           <FocusModeChrome>
             <SiteStatusBanner session={session} />
@@ -67,10 +67,10 @@ export async function SiteShell({ children }: { children: ReactNode }) {
           {children}
         </div>
         <FocusModeChrome>
-          <LiveUpdatesBar items={liveUpdates} />
+          <SiteFooter />
         </FocusModeChrome>
         <FocusModeChrome>
-          <SiteFooter />
+          <SiteBetaBanner />
         </FocusModeChrome>
         <FocusModeChrome>
           <MobileCtaBar />
