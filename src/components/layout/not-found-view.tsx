@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { HeroSearchSection } from "@/components/search/hero-search-section";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
+import { buildWhatsAppHref } from "@/lib/whatsapp";
 
 const NOT_FOUND_PLACEHOLDERS = [
   "חפש סרטון או מושג",
@@ -10,14 +11,17 @@ const NOT_FOUND_PLACEHOLDERS = [
   "הזדהות",
   "מנגנון",
   "מה זה סבל",
+  "אשמה",
+  "חרטה",
 ];
 
 const HUB_LINKS = [
+  { label: "בית", href: "/" },
   { label: "וידאו", href: "/videos" },
   { label: "מאמרים", href: "/articles" },
   { label: "מושגים", href: "/concepts" },
   { label: "מנגנונים", href: "/mechanisms" },
-  { label: "בית", href: "/" },
+  { label: "יצירת קשר", href: "/contact" },
 ] as const;
 
 function SearchFallback() {
@@ -26,16 +30,20 @@ function SearchFallback() {
       className="mx-auto h-[10.5rem] w-full max-w-2xl"
       aria-hidden="true"
     >
-      <div className="h-14 w-full rounded-full border border-white/30 bg-black" />
+      <div className="h-14 w-full border border-white/30 bg-black" />
     </div>
   );
 }
 
 /**
- * Branded 404 body: search-first recovery, dry Hebrew copy, hub fallbacks.
+ * Branded 404 body: search-first recovery, hubs, account + contact CTAs.
  * Used by root / site not-found and the studio probe disguise.
  */
 export function NotFoundView() {
+  const whatsappHref = buildWhatsAppHref(
+    "שלום, הגעתי לעמוד שלא נמצא באתר. אפשר עזרה?",
+  );
+
   return (
     <main className="w-full text-start">
       <section aria-labelledby="not-found-title" className="band-dark">
@@ -52,7 +60,8 @@ export function NotFoundView() {
             אין עמוד בכתובת הזו.
           </h1>
           <p className="mx-auto mt-6 max-w-prose text-base leading-relaxed text-foreground/80 sm:mt-7 sm:text-lg">
-            אפשר לחפש סרטונים, מושגים, מנגנונים ומאמרים. תתחילו מהשדה למטה.
+            הכתובת לא מובילה לתוכן. אפשר לחפש סרטון או מושג, או לעבור לאזור
+            אחר באתר.
           </p>
 
           <div className="mx-auto mt-8 min-h-[10.5rem] w-full max-w-2xl sm:mt-10">
@@ -64,6 +73,21 @@ export function NotFoundView() {
               />
             </Suspense>
           </div>
+
+          <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:mt-10 sm:flex-row sm:justify-center">
+            <Link
+              href="/my-list"
+              className="btn btn-secondary inline-flex min-h-11 items-center justify-center px-5 text-sm"
+            >
+              התחברות לרשימה
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex min-h-11 items-center justify-center border border-foreground/25 px-5 text-sm font-medium text-foreground/90 transition hover:border-foreground/50 hover:text-foreground"
+            >
+              יצירת קשר
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -72,9 +96,12 @@ export function NotFoundView() {
         className="bg-background text-foreground"
       >
         <div className="mx-auto w-full max-w-3xl px-4 py-12 text-center sm:px-6 sm:py-16">
-          <p id="not-found-hubs" className="text-sm text-muted">
-            או לעבור ישירות:
-          </p>
+          <h2
+            id="not-found-hubs"
+            className="text-sm font-medium tracking-wide text-muted"
+          >
+            יעדים מהירים
+          </h2>
           <nav
             aria-label="יעדים חלופיים"
             className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-3"
@@ -89,6 +116,18 @@ export function NotFoundView() {
               </Link>
             ))}
           </nav>
+
+          <p className="mx-auto mt-10 max-w-md text-sm leading-relaxed text-muted">
+            אם חיפשתם משהו ספציפי ולא מצאתם, אפשר לשלוח הודעה קצרה.
+          </p>
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex min-h-11 items-center justify-center text-sm font-medium text-action underline-offset-2 hover:underline"
+          >
+            WhatsApp
+          </a>
         </div>
       </section>
     </main>

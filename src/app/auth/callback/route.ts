@@ -10,6 +10,26 @@ function safeNextPath(raw: string | null): string {
   return raw;
 }
 
+function parseCookieHeader(header: string | null): { name: string; value: string }[] {
+  if (!header) return [];
+  const out: { name: string; value: string }[] = [];
+  for (const part of header.split(";")) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) {
+      out.push({ name: trimmed, value: "" });
+      continue;
+    }
+    out.push({
+      name: trimmed.slice(0, eq),
+      // Keep everything after the first "=" (values may contain "=").
+      value: trimmed.slice(eq + 1),
+    });
+  }
+  return out;
+}
+
 function redirectWithError(requestUrl: URL, reason: string) {
   const target = new URL("/my-list", requestUrl.origin);
   target.searchParams.set("auth_error", reason);
@@ -45,17 +65,7 @@ export async function GET(request: Request) {
     {
       cookies: {
         getAll() {
-          return request.headers
-            .get("cookie")
-            ?.split(";")
-            .map((c) => {
-              const i = c.indexOf("=");
-              if (i === -1) return { name: c.trim(), value: "" };
-              return {
-                name: c.slice(0, i).trim(),
-                value: c.slice(i + 1).trim(),
-              };
-            }) ?? [];
+          return parseCookieHeader(request.headers.get("cookie"));
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {

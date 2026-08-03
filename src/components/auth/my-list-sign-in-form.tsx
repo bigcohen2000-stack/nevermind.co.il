@@ -103,30 +103,47 @@ export function MyListSignInForm({
   }
 
   function onGoogleSignIn() {
+    if (pending) return;
     setError("");
-    setMessage("");
+    setMessage("מעביר ל-Google...");
 
     startTransition(async () => {
-      const supabase = createClient();
-      const origin = authCallbackOrigin();
-      const { data, error: signError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
-          queryParams: {
-            prompt: "select_account",
+      try {
+        const supabase = createClient();
+        const origin = authCallbackOrigin();
+        const { data, error: signError } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+            skipBrowserRedirect: true,
+            queryParams: {
+              prompt: "select_account",
+            },
           },
-        },
-      });
+        });
 
-      if (signError) {
-        setError(signError.message);
-        return;
-      }
+        if (signError) {
+          setMessage("");
+          setError(signError.message);
+          return;
+        }
 
-      if (data?.url) {
-        setMessage("מעביר ל-Google...");
+        if (!data?.url) {
+          setMessage("");
+          setError(
+            "Google לא החזיר קישור התחברות. בדקו שהספק מופעל ב-Supabase.",
+          );
+          return;
+        }
+
         window.location.assign(data.url);
+      } catch (err) {
+        setMessage("");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "ההתחברות ל-Google נכשלה. נסו שוב.",
+        );
       }
     });
   }
@@ -244,6 +261,7 @@ export function MyListSignInForm({
           type="button"
           onClick={onGoogleSignIn}
           disabled={pending}
+          aria-busy={pending}
           className="btn btn-secondary inline-flex w-full items-center justify-center gap-2 text-sm"
         >
           <GoogleMark />
@@ -287,6 +305,7 @@ export function MyListSignInForm({
         type="button"
         onClick={onGoogleSignIn}
         disabled={pending}
+        aria-busy={pending}
         className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-zinc-600 bg-zinc-950 px-4 text-sm font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <GoogleMark />

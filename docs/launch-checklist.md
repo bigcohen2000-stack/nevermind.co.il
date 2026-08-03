@@ -81,10 +81,12 @@ Details: `docs/studio-cloudflare-access.md`
 ## Supabase (dashboard)
 
 - [ ] Apply migrations 25–30 if not applied
-- [ ] Auth URL config: `https://nevermind.co.il/**` (+ localhost)
-- [ ] Google OAuth for this project
+- [ ] Auth URL config: see `docs/auth-google.md` (Site URL + `https://nevermind.co.il/**`)
+- [ ] Google OAuth: provider on + Google Cloud redirect = `https://<ref>.supabase.co/auth/v1/callback`
 - [ ] Club password in Studio
 - [ ] Confirm gated/unlisted videos look right
+
+Smoke auth: Incognito → `/my-list` → Google → signed-in list (or visible `auth_error`).
 
 ## Validation matrix
 
