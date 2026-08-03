@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
 import {
@@ -22,7 +23,7 @@ type InstallAppButtonProps = {
   compact?: boolean;
 };
 
-type HelpKind = "ios" | "generic";
+type HelpKind = "ios" | "android-prompt" | "generic";
 
 function isIosDevice(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -44,10 +45,8 @@ function isStandaloneDisplay(): boolean {
 
 /**
  * "הורדת אפליקציה" for השם לא משנה.
- * Uses beforeinstallprompt when the browser offers it.
- * Otherwise opens factual install instructions (iOS Share or browser menu).
- * Hidden when already installed (standalone).
- * Manifest + existing /sw.js support installability without a full offline PWA stack.
+ * Always opens a branded, high-contrast dialog (with app icon).
+ * If beforeinstallprompt is available, the primary action triggers the native install.
  */
 export function InstallAppButton({
   className,
@@ -60,6 +59,7 @@ export function InstallAppButton({
   const [helpOpen, setHelpOpen] = useState(false);
   const [helpKind, setHelpKind] = useState<HelpKind>("generic");
   const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (isStandaloneDisplay()) {
@@ -73,10 +73,12 @@ export function InstallAppButton({
     const onBip = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BeforeInstallPromptEvent);
+      setHelpKind("android-prompt");
     };
     const onInstalled = () => {
       setInstalled(true);
       setDeferred(null);
+      setHelpOpen(false);
     };
 
     window.addEventListener("beforeinstallprompt", onBip);
@@ -88,20 +90,42 @@ export function InstallAppButton({
     };
   }, []);
 
-  const onInstallClick = useCallback(async () => {
-    if (deferred) {
-      await deferred.prompt();
-      const choice = await deferred.userChoice;
-      if (choice.outcome === "accepted") {
-        setInstalled(true);
-      }
-      setDeferred(null);
-      return;
+  const onInstallClick = useCallback(() => {
+    if (isIosDevice()) {
+      setHelpKind("ios");
+    } else if (deferred) {
+      setHelpKind("android-prompt");
+    } else {
+      setHelpKind("generic");
     }
     setHelpOpen(true);
   }, [deferred]);
 
+  const onNativeInstall = useCallback(async () => {
+    if (!deferred || busy) return;
+    setBusy(true);
+    try {
+      await deferred.prompt();
+      const choice = await deferred.userChoice;
+      if (choice.outcome === "accepted") {
+        setInstalled(true);
+        setHelpOpen(false);
+      }
+      setDeferred(null);
+      setHelpKind("generic");
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, deferred]);
+
   if (!ready || installed) return null;
+
+  const title =
+    helpKind === "ios"
+      ? "הוספה למסך הבית"
+      : helpKind === "android-prompt"
+        ? "התקנה למסך הבית"
+        : "איך מתקינים";
 
   return (
     <>
@@ -120,28 +144,66 @@ export function InstallAppButton({
       </button>
 
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
-        <DialogContent className="max-w-sm text-start" dir="rtl">
+        <DialogContent
+          className="max-w-sm border-[#FAFAF8]/20 bg-[#0A0A0B] text-[#FAFAF8] text-start"
+          dir="rtl"
+        >
           <DialogHeader>
-            <DialogTitle>
-              {helpKind === "ios" ? "הוספה למסך הבית" : "התקנת האפליקציה"}
-            </DialogTitle>
-            <DialogDescription className="text-foreground/70">
+            <div className="mb-3 flex items-center gap-3">
+              <span className="relative size-14 shrink-0 overflow-hidden border border-[#FAFAF8]/20 bg-black">
+                <Image
+                  src="/icons/icon-192.png"
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="size-full object-cover"
+                />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs tracking-[0.14em] text-[#9CA3AF] uppercase">
+                  אפליקציה
+                </p>
+                <p className="mt-1 text-base font-semibold tracking-tight text-[#FAFAF8]">
+                  השם לא משנה
+                </p>
+              </div>
+            </div>
+            <DialogTitle className="text-[#FAFAF8]">{title}</DialogTitle>
+            <DialogDescription className="text-[#9CA3AF]">
               {helpKind === "ios"
-                ? "ב-Safari: לחצו על שיתוף, ואז בחרו הוסף למסך הבית. כך נשארת גישה ל-השם לא משנה כמו אפליקציה."
-                : "בדפדפן תומך: פתחו את תפריט הדפדפן ובחרו התקן אפליקציה או הוסף למסך הבית."}
+                ? "ב-Safari מוסיפים את האתר למסך הבית. האייקון נשאר כמו אפליקציה, בלי חנות."
+                : helpKind === "android-prompt"
+                  ? "לחיצה אחת פותחת את חלון ההתקנה של הדפדפן. האייקון יופיע במסך הבית."
+                  : "בדפדפן תומך בוחרים התקן אפליקציה או הוסף למסך הבית. האייקון יופיע במסך הבית."}
             </DialogDescription>
           </DialogHeader>
-          {helpKind === "ios" ? (
-            <ol className="mt-2 list-decimal space-y-2 pe-5 text-sm leading-relaxed text-foreground/85">
+
+          {helpKind === "android-prompt" ? (
+            <div className="mt-4 space-y-3">
+              <button
+                type="button"
+                onClick={onNativeInstall}
+                disabled={busy}
+                className="btn btn-primary w-full disabled:opacity-60"
+              >
+                {busy ? "פותח התקנה..." : "התקן עכשיו"}
+              </button>
+              <p className="text-xs leading-relaxed text-[#9CA3AF]">
+                אם החלון של הדפדפן לא מופיע, סגרו ופתחו שוב את תפריט הדפדפן:
+                התקן אפליקציה.
+              </p>
+            </div>
+          ) : helpKind === "ios" ? (
+            <ol className="mt-4 list-decimal space-y-2 pe-5 text-sm leading-relaxed text-[#FAFAF8]/85">
               <li>לחצו על כפתור השיתוף בתחתית Safari.</li>
               <li>גללו ובחרו הוסף למסך הבית.</li>
               <li>אשרו את השם: השם לא משנה.</li>
             </ol>
           ) : (
-            <ol className="mt-2 list-decimal space-y-2 pe-5 text-sm leading-relaxed text-foreground/85">
-              <li>פתחו את תפריט הדפדפן (שלוש נקודות או שיתוף).</li>
+            <ol className="mt-4 list-decimal space-y-2 pe-5 text-sm leading-relaxed text-[#FAFAF8]/85">
+              <li>פתחו את תפריט הדפדפן (שלוש נקודות).</li>
               <li>בחרו התקן אפליקציה או הוסף למסך הבית.</li>
-              <li>אשרו. האייקון יופיע במסך הבית.</li>
+              <li>אשרו. האייקון של השם לא משנה יופיע במסך הבית.</li>
             </ol>
           )}
         </DialogContent>

@@ -13,14 +13,32 @@ const LINKS = [
   { href: "/studio/quotes", label: "הצעות", active: "quotes" as const },
   { href: "/studio/banners", label: "באנרים", active: "banners" as const },
   {
+    href: "/studio/comments",
+    label: "תגובות",
+    active: "comments" as const,
+  },
+  {
     href: "/studio/users",
     label: "משתמשים",
     active: "users" as const,
   },
+  {
+    href: "/studio/guide",
+    label: "מדריך",
+    active: "guide" as const,
+  },
 ] as const;
 
 type StudioNavProps = {
-  active: "ingestion" | "analytics" | "leads" | "quotes" | "banners" | "users";
+  active:
+    | "ingestion"
+    | "analytics"
+    | "leads"
+    | "quotes"
+    | "banners"
+    | "comments"
+    | "users"
+    | "guide";
   actions?: ReactNode;
 };
 

@@ -6,13 +6,18 @@ import { readFileSync, existsSync } from "node:fs";
 import Module from "node:module";
 
 // sync.ts imports "server-only"; stub it for CLI runs.
-const originalLoad = (Module as unknown as { _load: (...args: unknown[]) => unknown })
-  ._load;
-(Module as unknown as { _load: (...args: unknown[]) => unknown })._load =
-  function (request: string, parent: unknown, isMain: boolean) {
-    if (request === "server-only") return {};
-    return originalLoad.apply(this, [request, parent, isMain]);
-  };
+type ModuleLoad = (
+  request: string,
+  parent: NodeModule | undefined,
+  isMain: boolean,
+) => unknown;
+
+const moduleApi = Module as unknown as { _load: ModuleLoad };
+const originalLoad = moduleApi._load.bind(Module) as ModuleLoad;
+moduleApi._load = (request, parent, isMain) => {
+  if (request === "server-only") return {};
+  return originalLoad(request, parent, isMain);
+};
 
 function loadEnv(path: string) {
   if (!existsSync(path)) return;

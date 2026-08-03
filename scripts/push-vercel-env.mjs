@@ -60,10 +60,16 @@ const keys = [
   "NEXT_PUBLIC_WHATSAPP_NUMBER",
   "NEXT_PUBLIC_SITE_URL",
   "NEXT_PUBLIC_USE_MOCK_SEARCH",
+  "CLUB_GATE_SECRET",
+  "STUDIO_SECRET",
+  "STUDIO_GATE_SLUG",
+  "STUDIO_REQUIRE_CF_ACCESS",
+  "STUDIO_ALLOWED_EMAILS",
   // optional — only if present
   "RESEND_API_KEY",
   "BOOKING_ADMIN_EMAIL",
   "RESEND_FROM_EMAIL",
+  "RESEND_NOTIFY_EMAIL",
   "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
   "VAPID_PRIVATE_KEY",
   "VAPID_SUBJECT",
@@ -74,12 +80,15 @@ const sensitive = new Set([
   "SUPABASE_SERVICE_ROLE_KEY",
   "YOUTUBE_API_KEY",
   "CRON_SECRET",
+  "CLUB_GATE_SECRET",
+  "STUDIO_SECRET",
   "RESEND_API_KEY",
   "VAPID_PRIVATE_KEY",
   "OPENAI_API_KEY",
 ]);
 
-const targets = ["production", "preview", "development"];
+// Production first. Preview often fails on Windows CLI warnings for NEXT_PUBLIC_*.
+const targets = ["production", "development"];
 
 console.log(`Target Vercel project: ${link.projectName} (${link.projectId})`);
 

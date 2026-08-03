@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { cloudflareAccessOk } from "@/lib/studio/cf-access";
 import {
   getStudioGateSlug,
   getStudioUnlockSecret,
@@ -24,42 +25,8 @@ function withStudioHardening(res: NextResponse): NextResponse {
   res.headers.set("x-robots-tag", NOINDEX);
   res.headers.set("cache-control", "private, no-store, max-age=0");
   res.headers.set("referrer-policy", "no-referrer");
-  // Do not advertise this surface to browsers as a shared cacheable page.
   res.headers.set("cdn-cache-control", "no-store");
   return res;
-}
-
-/**
- * Optional Cloudflare Access JWT presence check.
- * When STUDIO_REQUIRE_CF_ACCESS=1, requests without CF Access identity headers
- * are treated as probes (look like 404). Configure Access on Cloudflare to
- * allow only Bigcohen2000@gmail.com (or your allowlist).
- */
-function cloudflareAccessOk(request: NextRequest): boolean {
-  const required = process.env.STUDIO_REQUIRE_CF_ACCESS === "1";
-  if (!required) return true;
-
-  // Cloudflare Access sets these after successful login (email OTP / IdP).
-  const jwt =
-    request.headers.get("cf-access-jwt-assertion") ||
-    request.headers.get("Cf-Access-Jwt-Assertion");
-  const email =
-    request.headers.get("cf-access-authenticated-user-email") ||
-    request.headers.get("Cf-Access-Authenticated-User-Email");
-
-  if (!jwt || !email) return false;
-
-  const allow = (process.env.STUDIO_ALLOWED_EMAILS || "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-
-  if (allow.length === 0) {
-    // CF Access is on, but no email allowlist in app: trust CF policy alone.
-    return true;
-  }
-
-  return allow.includes(email.trim().toLowerCase());
 }
 
 export async function middleware(request: NextRequest) {
@@ -74,7 +41,7 @@ export async function middleware(request: NextRequest) {
     pathname === "/studio" || pathname.startsWith("/studio/");
 
   if (isGatePath || isStudioPath) {
-    if (!cloudflareAccessOk(request)) {
+    if (!(await cloudflareAccessOk(request))) {
       return denyStudioProbe(request);
     }
   }

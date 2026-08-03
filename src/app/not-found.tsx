@@ -20,10 +20,10 @@ export const metadata: Metadata = {
 };
 
 /**
- * Generic 404 used when /studio is probed without a session.
- * Matches the public not-found UI (no studio hints).
+ * Global 404 for unmatched URLs (root layout only).
+ * Wraps SiteShell so the page still has site chrome.
  */
-export default async function NotFoundStudioPage() {
+export default async function NotFound() {
   return (
     <SiteShell>
       <NotFoundView />

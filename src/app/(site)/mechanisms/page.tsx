@@ -1,70 +1,56 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 import { JsonLd } from "@/components/seo/json-ld";
 import { ShareExplorationButton } from "@/components/share/share-exploration-button";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
+import {
+  CATEGORY_LABELS,
+  getAllArticles,
+  type ArticleMeta,
+} from "@/lib/content/articles";
+import {
+  MECHANISM_DEFINITIONS,
+  searchHref,
+  type MechanismDefinition,
+} from "@/lib/content/mechanisms";
 import { shareImageMetadata } from "@/lib/og/share-image";
 import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
+import {
+  CORE_INVESTIGATION_TOPICS,
+  type CoreInvestigationTopic,
+} from "@/lib/videos/core-library";
 
 export const metadata: Metadata = {
   title: "מנגנונים",
   description:
-    "האתר מאורגן לפי מנגנונים, לא לפי רגשות: יחסים, קיום, זהות.",
+    "האתר מאורגן לפי מנגנונים, לא לפי רגשות: יחסים, קיום, זהות. מאמרים, סרטונים וחיפוש לפי כל ציר.",
   ...shareImageMetadata("מנגנונים, לא רגשות."),
 };
 
-/* -------------------------------------------------------------------------- */
-
-interface Mechanism {
-  index: string;
-  label: string;
-  explanation: string;
-  questions: string[];
+function topicsFor(mechanism: MechanismDefinition): CoreInvestigationTopic[] {
+  const set = new Set(mechanism.topicIds);
+  return CORE_INVESTIGATION_TOPICS.filter((t) => set.has(t.id));
 }
 
-const mechanisms: Mechanism[] = [
-  {
-    index: "01",
-    label: "יחסים",
-    explanation:
-      "מנגנונים של קרבה: איך אנחנו מתחברים, נפרדים, מאשימים ומתפייסים. הרגש סוער, אבל מתחתיו פועלת תבנית צפויה.",
-    questions: [
-      "מי באמת אשם בקונפליקט?",
-      "למה אנחנו חוזרים לאותו ויכוח?",
-      "מה קורה ברגע שבו נפגעים?",
-    ],
-  },
-  {
-    index: "02",
-    label: "קיום",
-    explanation:
-      "מנגנונים של הישרדות: כסף, עבודה, לחץ והרגלים שמפעילים אותנו. מה שנראה כמו בחירה הוא לרוב אוטומט ישן.",
-    questions: [
-      "למה כל כך קשה להפסיק הרגל?",
-      "מה מניע את הלחץ סביב כסף?",
-      "מתי הישרדות הופכת לאוטומט?",
-    ],
-  },
-  {
-    index: "03",
-    label: "זהות",
-    explanation:
-      "מנגנונים של ה'אני': אגו, רצון חופשי ותפיסת המציאות. השכבה העמוקה ביותר, שבה נשאלת השאלה מי בכלל שואל.",
-    questions: [
-      "האם קיים רצון חופשי?",
-      "מי זה ה'אני' שחושב?",
-      "עד כמה המציאות שאנחנו חווים אמיתית?",
-    ],
-  },
-];
+function articlesFor(
+  mechanism: MechanismDefinition,
+  all: ArticleMeta[],
+): ArticleMeta[] {
+  return all.filter((a) => a.category === mechanism.category);
+}
 
-/** One full-width mechanism band — asymmetric, alternating tone. */
+/** One full-width mechanism band with live links into the archive. */
 function MechanismBand({
   mechanism,
+  articles,
+  topics,
   tone,
 }: {
-  mechanism: Mechanism;
+  mechanism: MechanismDefinition;
+  articles: ArticleMeta[];
+  topics: CoreInvestigationTopic[];
   tone: "dark" | "light";
 }) {
   const isDark = tone === "dark";
@@ -72,15 +58,21 @@ function MechanismBand({
   const section = isDark
     ? "band-dark"
     : "band-paper border-y border-foreground/10";
-  const watermark = isDark ? "text-foreground/[0.045]" : "text-foreground/[0.04]";
-  const indexColor = isDark ? "text-foreground/15" : "text-foreground/15";
-  const secondary = isDark ? "text-foreground/80" : "text-foreground/80";
+  const watermark = isDark
+    ? "text-foreground/[0.045]"
+    : "text-foreground/[0.04]";
+  const indexColor = "text-foreground/15";
+  const secondary = "text-foreground/80";
   const panel = isDark ? "card-dark" : "card";
   const panelLabel = isDark ? "text-foreground/60" : "text-muted";
   const divider = isDark ? "border-foreground/15" : "border-foreground/10";
+  const chip = isDark
+    ? "border-foreground/25 text-foreground/85 hover:border-action hover:text-action"
+    : "border-foreground/20 text-foreground/80 hover:border-action hover:text-action";
 
   return (
     <section
+      id={mechanism.id}
       aria-labelledby={`mech-${mechanism.index}`}
       className={section}
     >
@@ -107,26 +99,122 @@ function MechanismBand({
             <p className={`mt-5 max-w-prose leading-relaxed ${secondary}`}>
               {mechanism.explanation}
             </p>
+
+            <ul className="mt-6 flex flex-wrap gap-2" aria-label="מושגים לחקירה">
+              {mechanism.searchTerms.map((term) => (
+                <li key={term}>
+                  <Link
+                    href={searchHref(term)}
+                    className={`inline-flex border px-3 py-1.5 text-sm no-underline transition hover:no-underline ${chip}`}
+                  >
+                    {term}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Link
+                href={searchHref(mechanism.label)}
+                className={isDark ? "btn btn-on-dark" : "btn btn-secondary"}
+              >
+                חיפוש: {mechanism.label}
+              </Link>
+              <Link href="/videos" className="link-arrow self-center">
+                לכל הסרטונים ←
+              </Link>
+            </div>
           </div>
 
-          <div className="lg:col-span-7">
-            <div className={`${panel} p-8`}>
+          <div className="lg:col-span-7 space-y-6">
+            <div className={`${panel} p-6 sm:p-8`}>
               <p className={`text-sm font-medium tracking-wide ${panelLabel}`}>
-                שאלות לדוגמה
+                שאלות לחקירה
               </p>
-              <ul className="mt-5 space-y-4">
+              <ul className="mt-5 space-y-1">
                 {mechanism.questions.map((q) => (
-                  <li
-                    key={q}
-                    className={`border-t ${divider} pt-4 text-lg leading-snug first:border-t-0 first:pt-0`}
-                  >
-                    {q}
+                  <li key={q} className={`border-t ${divider} first:border-t-0`}>
+                    <Link
+                      href={searchHref(q)}
+                      className="block py-3 text-lg leading-snug text-foreground no-underline transition hover:text-action hover:no-underline"
+                    >
+                      {q}
+                    </Link>
                   </li>
                 ))}
               </ul>
-              <div className="mt-8">
+            </div>
+
+            {topics.length > 0 ? (
+              <div className={`${panel} p-6 sm:p-8`}>
+                <p className={`text-sm font-medium tracking-wide ${panelLabel}`}>
+                  סרטונים להתחלה
+                </p>
+                <ul className="mt-5 space-y-4">
+                  {topics.map((topic) => (
+                    <li key={topic.id}>
+                      <Link
+                        href={`/watch/${topic.youtubeId}`}
+                        className="group flex gap-4 no-underline hover:no-underline"
+                      >
+                        <span className="relative aspect-video w-28 shrink-0 overflow-hidden border border-foreground/15 bg-black sm:w-32">
+                          <Image
+                            src={`https://i.ytimg.com/vi/${topic.youtubeId}/hqdefault.jpg`}
+                            alt=""
+                            fill
+                            className="object-cover opacity-90 transition group-hover:opacity-100"
+                            sizes="128px"
+                          />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-semibold tracking-tight text-foreground transition group-hover:text-action">
+                            {topic.label}
+                          </span>
+                          <span
+                            className={`mt-1 block text-sm leading-relaxed ${secondary}`}
+                          >
+                            {topic.probe}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <div className={`${panel} p-6 sm:p-8`}>
+              <p className={`text-sm font-medium tracking-wide ${panelLabel}`}>
+                מאמרים ב{CATEGORY_LABELS[mechanism.category]}
+              </p>
+              {articles.length === 0 ? (
+                <p className={`mt-4 text-sm ${secondary}`}>
+                  עדיין אין מאמרים בציר הזה. אפשר להתחיל מחיפוש או מסרטון.
+                </p>
+              ) : (
+                <ul className="mt-5 space-y-3">
+                  {articles.map((article) => (
+                    <li key={article.slug}>
+                      <Link
+                        href={`/articles/${article.slug}`}
+                        className="block no-underline hover:no-underline"
+                      >
+                        <span className="font-semibold tracking-tight text-foreground transition hover:text-action">
+                          {article.title}
+                        </span>
+                        <span
+                          className={`mt-1 block text-sm leading-relaxed ${secondary}`}
+                        >
+                          {article.description}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="mt-6">
                 <Link href="/articles" className="link-arrow">
-                  קראו מאמרים ←
+                  כל המאמרים ←
                 </Link>
               </div>
             </div>
@@ -137,9 +225,8 @@ function MechanismBand({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-
 export default function MechanismsPage() {
+  const allArticles = getAllArticles();
   const breadcrumbLd = buildBreadcrumbList([
     { name: "בית", path: "/" },
     { name: "מנגנונים", path: "/mechanisms" },
@@ -148,7 +235,7 @@ export default function MechanismsPage() {
   return (
     <main className="w-full text-start">
       <JsonLd data={breadcrumbLd} />
-      {/* 1 — HERO (ink, asymmetric, index panel) --------------------------- */}
+
       <section aria-labelledby="mechanisms-hero-title" className="band-dark">
         <Watermark className="bottom-[-1.5rem] start-[-0.5rem] text-[6rem] text-foreground/[0.045] sm:text-[9rem] lg:text-[13rem]">
           מנגנונים
@@ -166,37 +253,40 @@ export default function MechanismsPage() {
               </h1>
               <p className="mt-7 max-w-prose text-lg leading-relaxed text-foreground/80">
                 כל התוכן מאורגן סביב שלושה מנגנונים. רגש הוא תוצאה. מנגנון הוא
-                המבנה שמייצר אותה שוב ושוב.
+                המבנה שמייצר אותה שוב ושוב. מכאן עוברים למאמר, לסרטון או
+                לחיפוש.
               </p>
             </div>
 
             <div className="lg:col-span-5">
-              <div className="card-dark p-8">
+              <nav aria-label="שלושת המנגנונים" className="card-dark p-8">
                 <p className="text-sm font-medium tracking-wide text-foreground/60">
-                  שלושת המנגנונים
+                  קפיצה למנגנון
                 </p>
                 <ul className="mt-5 space-y-4">
-                  {mechanisms.map((m) => (
+                  {MECHANISM_DEFINITIONS.map((m) => (
                     <li
-                      key={m.label}
+                      key={m.id}
                       className="flex items-baseline gap-4 border-t border-foreground/15 pt-4 first:border-t-0 first:pt-0"
                     >
                       <span className="text-sm text-foreground/40">
                         {m.index}
                       </span>
-                      <span className="text-xl font-semibold tracking-tight">
+                      <Link
+                        href={`#${m.id}`}
+                        className="text-xl font-semibold tracking-tight text-foreground no-underline transition hover:text-action hover:no-underline"
+                      >
                         {m.label}
-                      </span>
+                      </Link>
                     </li>
                   ))}
                 </ul>
-              </div>
+              </nav>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2 — CONCEPT (background, asymmetric) ------------------------------ */}
       <section
         aria-labelledby="concept-title"
         className="bg-background text-foreground"
@@ -215,25 +305,25 @@ export default function MechanismsPage() {
             <div className="lg:col-span-7">
               <p className="max-w-prose text-lg leading-relaxed">
                 כשמסתכלים על רגש, רואים סימפטום. כשמסתכלים על מנגנון, רואים את
-                המבנה שמייצר את הסימפטום שוב ושוב. זו אינה עבודה רגשית, אלא עבודה
-                לוגית: לזהות את התנאי שמפעיל את התבנית, ולבחור אחרת עוד לפני
-                שהרגש מופיע.
+                המבנה שמייצר את הסימפטום שוב ושוב. זו אינה עבודה רגשית, אלא
+                עבודה לוגית: לזהות את התנאי שמפעיל את התבנית, ולבחור אחרת עוד
+                לפני שהרגש מופיע.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 3 — THREE MECHANISM BANDS (alternating tone) --------------------- */}
-      {mechanisms.map((m, i) => (
+      {MECHANISM_DEFINITIONS.map((m, i) => (
         <MechanismBand
-          key={m.label}
+          key={m.id}
           mechanism={m}
+          articles={articlesFor(m, allArticles)}
+          topics={topicsFor(m)}
           tone={i % 2 === 0 ? "dark" : "light"}
         />
       ))}
 
-      {/* 4 — BOTTOM CTA (paper, designed block) --------------------------- */}
       <section
         aria-labelledby="mechanisms-cta-title"
         className="band-paper border-t border-foreground/10"
@@ -243,20 +333,25 @@ export default function MechanismsPage() {
           <div className="mt-8 grid items-end gap-10 lg:grid-cols-12">
             <h2
               id="mechanisms-cta-title"
-              className="text-3xl font-semibold leading-[1.1] tracking-tight lg:col-span-8 lg:text-4xl"
+              className="text-3xl font-semibold leading-[1.1] tracking-tight lg:col-span-7 lg:text-4xl"
             >
-              התחילו לקרוא לפי מנגנון.
+              בחרו ציר והמשיכו לחקירה.
             </h2>
-            <div className="lg:col-span-4 lg:flex lg:flex-col lg:items-end lg:gap-3 lg:text-end">
+            <div className="flex flex-col gap-3 lg:col-span-5 lg:items-end lg:text-end">
               <ShareExplorationButton
                 title="מנגנונים"
                 text="חקירה לפי מנגנונים ב-NeverMinde"
                 url="/mechanisms"
                 className="lg:items-end"
               />
-              <Link href="/concepts" className="btn btn-primary">
-                למדריך המושגים
-              </Link>
+              <div className="flex flex-wrap gap-3 lg:justify-end">
+                <Link href="/search" className="btn btn-primary">
+                  לחיפוש
+                </Link>
+                <Link href="/concepts" className="btn btn-secondary">
+                  למדריך המושגים
+                </Link>
+              </div>
               <Link
                 href="/articles"
                 className="text-sm text-foreground/70 no-underline hover:text-action hover:no-underline"

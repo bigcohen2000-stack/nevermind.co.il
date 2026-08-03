@@ -28,11 +28,20 @@
  *   STUDIO_ALLOWED_EMAILS=bigcohen2000@gmail.com
  *   STUDIO_SECRET=... (keep existing)
  *   STUDIO_GATE_SLUG=nm-ops
+ *   CF_ACCESS_TEAM_DOMAIN=yourteam.cloudflareaccess.com
+ *   CF_ACCESS_AUD=<Access application AUD tag>
+ *
+ * Middleware verifies the Access JWT signature against Cloudflare JWKS when
+ * TEAM_DOMAIN + AUD are set. Without them it only checks headers + email
+ * (safe only if *.vercel.app is locked with Vercel Authentication).
  *
  * Direct Vercel URL
- * - Protect or disable preview/production *.vercel.app public browsing for Studio
- *   (Vercel Deployment Protection, or do not share the vercel.app URL).
+ * - Keep Vercel Authentication (SSO) on *.vercel.app so nobody bypasses Cloudflare.
+ * - Custom domain nevermind.co.il stays public for visitors.
  * - Cloudflare Access only covers traffic that hits the Cloudflare hostname.
+ *
+ * WAF (optional but recommended)
+ * - Rate limit path /nm-ops* (e.g. 10 requests / minute / IP → Block or Managed Challenge).
  *
  * After setup
  * 1. Open https://nevermind.co.il/nm-ops

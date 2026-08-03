@@ -18,6 +18,11 @@ export interface PathOffer {
   ctaLabel: string;
   /** Prefill text for a direct WhatsApp / SMS CTA on this path. */
   whatsappText: string;
+  /** Inquiry form: exact track line. Defaults to title. */
+  inquiryTrack?: string;
+  inquiryPriceBeforeVat?: string;
+  inquiryDetail?: string;
+  inquiryRequiresFitCall?: boolean;
   /** Optional external link (e.g. YouTube for podcast). */
   externalHref?: string;
   externalLabel?: string;
@@ -124,6 +129,10 @@ export type TrackWhatsAppInput = {
   requiresFitCall?: boolean;
   /** Optional factual line (validity, duration, etc.). */
   detail?: string;
+  /** Filled from the paths inquiry form when present. */
+  name?: string;
+  phone?: string;
+  purpose?: string;
 };
 
 /**
@@ -145,8 +154,11 @@ export function buildTrackWhatsAppText(input: TrackWhatsAppInput | string): stri
   if (requiresFitCall) {
     parts.push("נדרשת שיחת התאמה לפני אישור.");
   }
-  parts.push("שם מלא: ___.");
-  parts.push("מטרת הפנייה (משפט אחד): ___.");
+  parts.push(`שם מלא: ${opts.name?.trim() || "___"}.`);
+  parts.push(`טלפון: ${opts.phone?.trim() || "___"}.`);
+  parts.push(
+    `מטרת הפנייה (משפט אחד): ${opts.purpose?.trim() || "___"}.`,
+  );
   return parts.join(" ");
 }
 
@@ -206,6 +218,10 @@ export const PATH_OFFERS: PathOffer[] = [
     body: "שיחה אחת של 60 דקות לפירוק סיטואציה ספציפית. נדרשת שיחת התאמה לפני תיאום.",
     tags: ["חד פעמי", "60 דקות", '750 ש"ח + מע"מ'],
     ctaLabel: "בקשת ייעוץ נקודתי",
+    inquiryTrack: "ייעוץ נקודתי (שעה)",
+    inquiryPriceBeforeVat: '750 ש"ח',
+    inquiryDetail: "משך: 60 דקות.",
+    inquiryRequiresFitCall: true,
     whatsappText: buildTrackWhatsAppText({
       track: "ייעוץ נקודתי (שעה)",
       priceBeforeVat: '750 ש"ח',
@@ -219,6 +235,10 @@ export const PATH_OFFERS: PathOffer[] = [
     body: "שיחה אחת של 90 דקות לחקירה של כמה מנגנונים בלי לחץ זמן. נדרשת שיחת התאמה לפני תיאום.",
     tags: ["חד פעמי", "90 דקות", '980 ש"ח + מע"מ'],
     ctaLabel: "בקשת פגישה מורחבת",
+    inquiryTrack: "פגישה מורחבת (שעה וחצי)",
+    inquiryPriceBeforeVat: '980 ש"ח',
+    inquiryDetail: "משך: 90 דקות.",
+    inquiryRequiresFitCall: true,
     whatsappText: buildTrackWhatsAppText({
       track: "פגישה מורחבת (שעה וחצי)",
       priceBeforeVat: '980 ש"ח',
@@ -232,6 +252,8 @@ export const PATH_OFFERS: PathOffer[] = [
     body: "האזנה חופשית. כל פרק מפרק מנגנון אחד. אפשר גם לבקש עדכונים בוואטסאפ.",
     tags: ["חינם", "האזנה", "שבועי"],
     ctaLabel: "לצפייה בערוץ יוטיוב",
+    inquiryTrack: "עדכונים על פודקאסט מרפסת",
+    inquiryRequiresFitCall: false,
     whatsappText: buildTrackWhatsAppText({
       track: "עדכונים על פודקאסט מרפסת",
       requiresFitCall: false,
@@ -245,6 +267,10 @@ export const PATH_OFFERS: PathOffer[] = [
     body: "הרשאה ידנית לצפייה במאגר. בחרו מסגרת מחיר בטבלה למטה, או בקשו גישה כללית לבדיקת התאמה.",
     tags: ["הרשאה אישית", "ללא סליקה ישירה"],
     ctaLabel: "בקשת גישה למאגר",
+    inquiryTrack: "הרשאת גישה למאגר הסרטונים",
+    inquiryDetail:
+      "מסגרת המחיר תיקבע בשיחת התאמה. אין סליקה אוטומטית באתר.",
+    inquiryRequiresFitCall: true,
     whatsappText: buildTrackWhatsAppText({
       track: "הרשאת גישה למאגר הסרטונים",
       detail: "מסגרת המחיר תיקבע בשיחת התאמה. אין סליקה אוטומטית באתר.",

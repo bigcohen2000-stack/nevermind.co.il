@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { InfoTip } from "@/components/ui/info-tip";
 import {
   CLUB_ACCESS_BENEFITS,
   FREE_ACCESS_BENEFITS,
@@ -15,7 +16,12 @@ export function AccessLayersCompare() {
         aria-labelledby="free-access-title"
         className="border border-[#121212]/20 bg-background p-5 sm:p-6"
       >
-        <p className="text-xs font-medium tracking-wide text-muted">חינם</p>
+        <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted">
+          <span>חינם</span>
+          <InfoTip label="הסבר על שכבת חינם">
+            בלי תשלום, בלי allowlist, בלי כניסת מועדון.
+          </InfoTip>
+        </p>
         <h3
           id="free-access-title"
           className="mt-2 text-xl font-semibold tracking-tight"
@@ -28,9 +34,12 @@ export function AccessLayersCompare() {
         <ul className="mt-6 space-y-5">
           {FREE_ACCESS_BENEFITS.map((item) => (
             <li key={item.title}>
-              <p className="text-sm font-medium text-foreground">
-                <span className="text-muted">חינם · </span>
-                {item.title}
+              <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                <span>
+                  <span className="text-muted">חינם · </span>
+                  {item.title}
+                </span>
+                <InfoTip label={`הסבר: ${item.title}`}>{item.tip}</InfoTip>
               </p>
               <p className="mt-1 text-sm leading-relaxed text-foreground/80">
                 {item.body}
@@ -45,6 +54,9 @@ export function AccessLayersCompare() {
           <Link href="/api/podcast.xml" className="btn btn-secondary">
             פיד RSS ציבורי
           </Link>
+          <Link href="/articles" className="btn btn-secondary">
+            מאמרים
+          </Link>
         </div>
       </section>
 
@@ -52,7 +64,12 @@ export function AccessLayersCompare() {
         aria-labelledby="club-access-title"
         className="border border-action bg-background p-5 sm:p-6"
       >
-        <p className="text-xs font-medium tracking-wide text-action">מועדון</p>
+        <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-action">
+          <span>מועדון</span>
+          <InfoTip label="הסבר על שכבת מועדון">
+            נפתח אחרי שיחת התאמה. בלי סליקה באתר.
+          </InfoTip>
+        </p>
         <h3
           id="club-access-title"
           className="mt-2 text-xl font-semibold tracking-tight"
@@ -65,9 +82,12 @@ export function AccessLayersCompare() {
         <ul className="mt-6 space-y-5">
           {CLUB_ACCESS_BENEFITS.map((item) => (
             <li key={item.title}>
-              <p className="text-sm font-medium text-foreground">
-                <span className="text-action">מועדון · </span>
-                {item.title}
+              <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                <span>
+                  <span className="text-action">מועדון · </span>
+                  {item.title}
+                </span>
+                <InfoTip label={`הסבר: ${item.title}`}>{item.tip}</InfoTip>
               </p>
               <p className="mt-1 text-sm leading-relaxed text-foreground/80">
                 {item.body}
@@ -75,10 +95,13 @@ export function AccessLayersCompare() {
             </li>
           ))}
         </ul>
-        <div className="mt-8">
+        <div className="mt-8 flex flex-wrap gap-3">
           <a href="#login" className="btn btn-primary">
             כניסה או בקשת גישה
           </a>
+          <Link href="/paths" className="btn btn-secondary">
+            מסלולים ומחירים
+          </Link>
         </div>
       </section>
     </div>

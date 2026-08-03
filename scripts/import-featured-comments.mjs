@@ -35,31 +35,47 @@ function parseCsv(text) {
     .map((l) => l.trim())
     .filter((l) => l && !l.startsWith("#"));
   if (lines.length < 2) return [];
-  const header = lines[0].split(",").map((h) => h.trim());
+
+  function splitCsvLine(line) {
+    const cols = [];
+    let cur = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i += 1) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          cur += '"';
+          i += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+        continue;
+      }
+      if (ch === "," && !inQuotes) {
+        cols.push(cur.trim());
+        cur = "";
+        continue;
+      }
+      cur += ch;
+    }
+    cols.push(cur.trim());
+    return cols;
+  }
+
+  const header = splitCsvLine(lines[0]).map((h) => h.trim());
   const rows = [];
   for (const line of lines.slice(1)) {
-    // Simple CSV: no embedded commas in fields for v1 (body should avoid commas or use later upgrade).
-    const cols = line.split(",");
-    if (cols.length < header.length) {
-      // Allow body to contain commas: join middle.
-      const fixed = [
-        cols[0],
-        cols[1],
-        cols.slice(2, cols.length - 3).join(","),
-        cols[cols.length - 3],
-        cols[cols.length - 2],
-        cols[cols.length - 1],
-      ];
-      const obj = {};
-      header.forEach((h, i) => {
-        obj[h] = (fixed[i] ?? "").trim();
-      });
-      rows.push(obj);
-      continue;
-    }
+    const cols = splitCsvLine(line);
     const obj = {};
     header.forEach((h, i) => {
-      obj[h] = (cols[i] ?? "").trim();
+      let v = cols[i] ?? "";
+      if (
+        (v.startsWith('"') && v.endsWith('"')) ||
+        (v.startsWith("'") && v.endsWith("'"))
+      ) {
+        v = v.slice(1, -1);
+      }
+      obj[h] = v.trim();
     });
     rows.push(obj);
   }

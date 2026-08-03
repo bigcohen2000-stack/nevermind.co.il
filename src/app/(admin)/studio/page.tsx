@@ -162,7 +162,14 @@ export default async function StudioPage() {
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
             ייבוא סרטונים, מועדון, טעימות ושידור חי. העמוד לא מפורסם באתר
-            הציבורי. כניסה רק דרך הסימנייה הפרטית.
+            הציבורי. כניסה רק דרך הסימנייה הפרטית.{" "}
+            <a
+              href="/studio/guide"
+              className="text-zinc-200 underline-offset-2 hover:underline"
+            >
+              מדריך: מה כל אזור עושה
+            </a>
+            .
           </p>
         </div>
         <nav
