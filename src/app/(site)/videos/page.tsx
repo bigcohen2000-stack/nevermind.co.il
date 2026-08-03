@@ -303,7 +303,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
 
               <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm">
                 <Link
-                  href="/paths#membership-prices"
+                  href="/members#membership-prices"
                   className="inline-flex min-h-11 items-center text-[#FAFAF8]/70 no-underline transition-colors hover:text-[#FAFAF8] hover:no-underline"
                 >
                   מסגרות מחיר

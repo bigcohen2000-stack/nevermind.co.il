@@ -24,6 +24,7 @@ export const PRIMARY_NAV: NavLink[] = [
 /** Secondary hubs: "עוד" menu, footer, mobile drawer. */
 export const SECONDARY_NAV: NavLink[] = [
   { label: "חיפוש", href: "/search", emoji: "🔍" },
+  { label: "שידור חי", href: "/live", emoji: "📡" },
   { label: "מנגנונים", href: "/mechanisms", emoji: "⚙️" },
   { label: "תכנים", href: "/books", emoji: "📚" },
   { label: "תיאום", href: "/booking", emoji: "📅" },

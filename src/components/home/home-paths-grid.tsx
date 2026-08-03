@@ -114,7 +114,7 @@ export function HomePathsGrid() {
                       source={`home-${path.id}`}
                       className="sm:w-auto [&_button]:w-full sm:[&_button]:w-auto"
                     />
-                    <Link href="/paths#membership-prices" className="btn btn-secondary text-sm">
+                    <Link href="/members#membership-prices" className="btn btn-secondary text-sm">
                       למחירון מאגר
                     </Link>
                   </>

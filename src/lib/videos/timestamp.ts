@@ -37,3 +37,20 @@ export function formatTimestampParam(totalSeconds: number): string {
   }
   return String(seconds);
 }
+
+/** Display label for UI chips: `2:05` (m:ss or h:mm:ss). */
+export function formatTimestampLabel(
+  totalSeconds: number | null | undefined,
+): string | null {
+  if (totalSeconds == null || !Number.isFinite(totalSeconds) || totalSeconds < 0) {
+    return null;
+  }
+  const s = Math.floor(totalSeconds);
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = s % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}

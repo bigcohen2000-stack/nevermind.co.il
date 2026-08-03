@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { logoutClub } from "@/actions/club-login";
+import { clearSiteThemePreference } from "@/actions/theme";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import {
   formatHeaderAuthLabel,
@@ -82,6 +83,7 @@ export function HeaderAuthControls({
 
   function signOutAccount() {
     startTransition(async () => {
+      await clearSiteThemePreference().catch(() => undefined);
       const supabase = createClient();
       await supabase.auth.signOut();
       close();
@@ -92,6 +94,7 @@ export function HeaderAuthControls({
 
   function signOutClub() {
     startTransition(async () => {
+      await clearSiteThemePreference().catch(() => undefined);
       await logoutClub();
       close();
       router.refresh();

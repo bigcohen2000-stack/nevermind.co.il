@@ -216,7 +216,7 @@ export default async function ContactPage({ searchParams }: PageProps) {
               <p className="text-sm font-semibold tracking-tight">קישורים שימושיים</p>
               <ul className="mt-4 space-y-2 text-sm">
                 <li>
-                  <Link href="/paths#membership-prices" className="link-arrow">
+                  <Link href="/members#membership-prices" className="link-arrow">
                     מסגרות מחיר למאגר
                   </Link>
                 </li>

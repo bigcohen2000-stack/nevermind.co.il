@@ -496,6 +496,35 @@ export const PATHS_FAQ: FaqItem[] = [
   },
 ];
 
+/** FAQ for /live (stream, archive, votes). */
+export const LIVE_FAQ: FaqItem[] = [
+  {
+    question: "מי יכול לצפות בשידור החי?",
+    answer:
+      "רשומים באתר אחרי אישור גיל. הקישור נפתח רק כשהשידור פעיל.",
+  },
+  {
+    question: "מה כולל ארכיון הלייבים?",
+    answer:
+      "תצוגה מקדימה לכולם. צפייה מלאה בלייבים קודמים שמורים למועדון.",
+  },
+  {
+    question: "למה צריך לייקים?",
+    answer:
+      "רשומים מצביעים על סרטונים. הסרטון המוביל עשוי לעלות בלייב חינם לרשומים.",
+  },
+  {
+    question: "איך מזמינים סרטון ללייב?",
+    answer:
+      "מתוך עמוד השידור החי או בוואטסאפ. חשבון חינם מספיק לבקשה.",
+  },
+  {
+    question: "אפשר כיסא באולפן?",
+    answer:
+      "כן. אפשר לבקש כיסא במודיעין דרך וואטסאפ. הפרטים בעמוד השידור החי.",
+  },
+];
+
 export function getPathById(id: string): PathOffer | undefined {
   return PATH_OFFERS.find((p) => p.id === id);
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import { logoutClub } from "@/actions/club-login";
+import { clearSiteThemePreference } from "@/actions/theme";
 import {
   formatHeaderAuthLabel,
   formatHeaderClubLabel,
@@ -53,6 +54,7 @@ export function SiteStatusBanner({ session }: SiteStatusBannerProps) {
 
   function signOutAccount() {
     startTransition(async () => {
+      await clearSiteThemePreference().catch(() => undefined);
       const supabase = createClient();
       await supabase.auth.signOut();
       router.refresh();
@@ -62,6 +64,7 @@ export function SiteStatusBanner({ session }: SiteStatusBannerProps) {
 
   function signOutClub() {
     startTransition(async () => {
+      await clearSiteThemePreference().catch(() => undefined);
       await logoutClub();
       router.refresh();
       router.push("/");

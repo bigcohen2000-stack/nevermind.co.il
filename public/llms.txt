@@ -22,6 +22,8 @@
 - /live : live podcast stream gate
 - /booking : structured pre-meeting intake
 - /contact : contact and WhatsApp
+- /privacy : privacy policy (Hebrew)
+- /accessibility : accessibility statement
 
 ## Core concepts (examples)
 

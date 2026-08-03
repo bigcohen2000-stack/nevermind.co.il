@@ -157,7 +157,7 @@ export function WatchExploreLinks({
       <Link href="/members" className="link-arrow">
         למועדון
       </Link>
-      <Link href="/paths#membership-prices" className="link-arrow">
+      <Link href="/members#membership-prices" className="link-arrow">
         למסגרות מחיר
       </Link>
     </p>

@@ -91,10 +91,25 @@ export function LiveExplorePanel({
           aria-label="ניווט שידור חי"
           className="mt-5 flex flex-wrap gap-2"
         >
-          <Link href="/live" className="btn btn-primary text-sm">
-            <Radio className="size-3.5" aria-hidden="true" strokeWidth={1.75} />
-            לצפייה בלייב
-          </Link>
+          {isPage ? (
+            <a href="#live-now" className="btn btn-primary text-sm">
+              <Radio
+                className="size-3.5"
+                aria-hidden="true"
+                strokeWidth={1.75}
+              />
+              לשידור או ללוח
+            </a>
+          ) : (
+            <Link href="/live" className="btn btn-primary text-sm">
+              <Radio
+                className="size-3.5"
+                aria-hidden="true"
+                strokeWidth={1.75}
+              />
+              לצפייה בלייב
+            </Link>
+          )}
           <a
             href={modiinHref}
             target="_blank"
@@ -235,14 +250,31 @@ export function LiveExplorePanel({
               <Mic className="size-3.5" aria-hidden="true" strokeWidth={1.75} />
               {LIVE_OPEN_MIC.ctaLabel}
             </a>
-            <Link href="/live" className="btn btn-secondary inline-flex w-full text-sm">
-              <UserRound
-                className="size-3.5"
-                aria-hidden="true"
-                strokeWidth={1.75}
-              />
-              להרשמה לשידור
-            </Link>
+            {isPage ? (
+              <a
+                href="#live-auth"
+                className="btn btn-secondary inline-flex w-full text-sm"
+              >
+                <UserRound
+                  className="size-3.5"
+                  aria-hidden="true"
+                  strokeWidth={1.75}
+                />
+                להרשמה לשידור
+              </a>
+            ) : (
+              <Link
+                href="/live"
+                className="btn btn-secondary inline-flex w-full text-sm"
+              >
+                <UserRound
+                  className="size-3.5"
+                  aria-hidden="true"
+                  strokeWidth={1.75}
+                />
+                להרשמה לשידור
+              </Link>
+            )}
           </div>
         </section>
       </div>

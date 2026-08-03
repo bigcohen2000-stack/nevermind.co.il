@@ -80,7 +80,8 @@ export function SearchBrowseNav({
                 href={searchHref({
                   q: query,
                   type: tab.id,
-                  filter,
+                  filter:
+                    tab.id === "videos" || tab.id === "all" ? filter : "all",
                   page: 1,
                   hash: "search-results",
                 })}

@@ -19,7 +19,7 @@ export const SITE_POST_LOGIN_OFFERS = [
     id: "paths",
     title: "מסגרות ומחירים",
     body: "טבלת פלוסים ומסגרות מחיר גלויות. בלי סליקה באתר.",
-    href: "/paths#membership-prices",
+    href: "/members#membership-prices",
     cta: "למסלולים",
   },
   {

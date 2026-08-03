@@ -46,7 +46,11 @@ import {
 } from "@/lib/videos/queries";
 import { getLockedTeaserYoutubeId } from "@/lib/videos/teaser";
 import { buildOpaqueThumbPath } from "@/lib/videos/thumb-token";
-import { parseTimestampParam } from "@/lib/videos/timestamp";
+import {
+  formatTimestampLabel,
+  formatTimestampParam,
+  parseTimestampParam,
+} from "@/lib/videos/timestamp";
 import {
   getWatchHref,
   isUuidParam,
@@ -179,7 +183,7 @@ function LockedWatchPage({
           <Link href="/members#login" className="btn btn-primary">
             כניסה למועדון
           </Link>
-          <Link href="/paths#membership-prices" className="btn btn-secondary">
+          <Link href="/members#membership-prices" className="btn btn-secondary">
             מסגרות מחיר
           </Link>
           <Link href="/videos?filter=open" className="btn btn-secondary">
@@ -430,23 +434,24 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
                     מושגים. לחיצה קופצת לזמן.
                   </h2>
                   <ul className="mt-3 flex flex-wrap gap-2">
-                    {concepts.map((c) => (
-                      <li key={c.concept_id}>
-                        <Link
-                          href={
-                            c.start_timestamp != null
-                              ? `${watchHref}?t=${c.start_timestamp}`
-                              : `/search?q=${encodeURIComponent(c.name)}`
-                          }
-                          className="inline-flex min-h-10 items-center border border-foreground/15 bg-background px-3 py-1.5 text-sm transition hover:border-action hover:text-action"
-                        >
-                          {c.name}
-                          {c.start_timestamp != null
-                            ? ` (${c.start_timestamp}ש')`
-                            : ""}
-                        </Link>
-                      </li>
-                    ))}
+                    {concepts.map((c) => {
+                      const stampLabel = formatTimestampLabel(c.start_timestamp);
+                      const seekHref =
+                        c.start_timestamp != null
+                          ? `${watchHref}?t=${formatTimestampParam(c.start_timestamp)}`
+                          : `/search?q=${encodeURIComponent(c.name)}`;
+                      return (
+                        <li key={c.concept_id}>
+                          <Link
+                            href={seekHref}
+                            className="inline-flex min-h-10 items-center border border-foreground/15 bg-background px-3 py-1.5 text-sm transition hover:border-action hover:text-action"
+                          >
+                            {c.name}
+                            {stampLabel ? ` (${stampLabel})` : ""}
+                          </Link>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </section>
               ) : null}
