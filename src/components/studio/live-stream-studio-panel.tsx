@@ -1,9 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { endLiveStream, startLiveStream } from "@/actions/live-stream";
+import { StudioCopyButton } from "@/components/studio/studio-copy-button";
+import { LIVE_PAGE_URL } from "@/lib/live/schedule";
+import {
+  liveNowAnnounce,
+  liveUpcomingAnnounce,
+} from "@/lib/studio/whatsapp-templates";
 
 export type LiveStudioStatus = {
   isLive: boolean;
@@ -35,6 +41,23 @@ export function LiveStreamStudioPanel({ status }: LiveStreamStudioPanelProps) {
       })
     : null;
 
+  const groupText = useMemo(
+    () => liveNowAnnounce({ topic: topic || status.topic, individual: false }),
+    [topic, status.topic],
+  );
+  const individualText = useMemo(
+    () => liveNowAnnounce({ topic: topic || status.topic, individual: true }),
+    [topic, status.topic],
+  );
+  const reminderText = useMemo(
+    () =>
+      liveUpcomingAnnounce({
+        whenLabel: "לפי לוח השידורים באתר",
+        topic: topic || status.topic,
+      }),
+    [topic, status.topic],
+  );
+
   return (
     <section
       className="scroll-mt-6 space-y-5 border border-red-900/40 bg-red-950/15 p-5 sm:p-6"
@@ -47,11 +70,11 @@ export function LiveStreamStudioPanel({ status }: LiveStreamStudioPanelProps) {
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
             הדביקו קישור YouTube Live לא רשום. כשהשידור פעיל, הקישור נחשף
-            ב־/live רק אחרי הרשמה חינם ואישור גיל 18+.
+            ב-/live רק אחרי הרשמה חינם ואישור גיל 18+.
           </p>
         </div>
         <span
-          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+          className={`inline-flex items-center px-3 py-1 text-xs font-medium ${
             status.isLive
               ? "bg-red-500/20 text-red-300"
               : "bg-zinc-700/60 text-zinc-300"
@@ -80,7 +103,7 @@ export function LiveStreamStudioPanel({ status }: LiveStreamStudioPanelProps) {
             onChange={(e) => setYoutubeUrl(e.target.value)}
             dir="ltr"
             placeholder="https://www.youtube.com/watch?v=..."
-            className="mt-1 w-full rounded-md border border-zinc-600 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100"
+            className="mt-1 w-full border border-zinc-600 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100"
           />
         </div>
         <div>
@@ -94,7 +117,7 @@ export function LiveStreamStudioPanel({ status }: LiveStreamStudioPanelProps) {
             onChange={(e) => setTopic(e.target.value)}
             maxLength={300}
             placeholder="נושא מהתגובות השבוע"
-            className="mt-1 w-full rounded-md border border-zinc-600 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100"
+            className="mt-1 w-full border border-zinc-600 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100"
           />
         </div>
 
@@ -102,7 +125,7 @@ export function LiveStreamStudioPanel({ status }: LiveStreamStudioPanelProps) {
           <button
             type="button"
             disabled={pending}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 hover:bg-red-500"
+            className="bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 hover:bg-red-500"
             onClick={() => {
               setError(null);
               setMessage(null);
@@ -115,7 +138,7 @@ export function LiveStreamStudioPanel({ status }: LiveStreamStudioPanelProps) {
                   setError(result.error);
                   return;
                 }
-                setMessage(result.message ?? "בשידור.");
+                setMessage(result.message ?? "בשידור. העתק הודעה לקבוצה למטה.");
                 router.refresh();
               });
             }}
@@ -125,7 +148,7 @@ export function LiveStreamStudioPanel({ status }: LiveStreamStudioPanelProps) {
           <button
             type="button"
             disabled={pending || !status.isLive}
-            className="rounded-lg border border-zinc-600 px-4 py-2 text-sm text-zinc-200 hover:border-zinc-400 disabled:opacity-40"
+            className="border border-zinc-600 px-4 py-2 text-sm text-zinc-200 hover:border-zinc-400 disabled:opacity-40"
             onClick={() => {
               setError(null);
               setMessage(null);
@@ -143,6 +166,40 @@ export function LiveStreamStudioPanel({ status }: LiveStreamStudioPanelProps) {
             סיים שידור
           </button>
         </div>
+      </div>
+
+      <div className="space-y-3 border border-zinc-800 bg-zinc-950/50 p-4">
+        <p className="text-xs text-zinc-400">
+          קישור ציבורי:{" "}
+          <span className="text-zinc-200" dir="ltr">
+            {LIVE_PAGE_URL}
+          </span>
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <StudioCopyButton
+            text={LIVE_PAGE_URL}
+            label="העתק /live"
+            onCopied={() => setMessage("קישור /live הועתק.")}
+          />
+          <StudioCopyButton
+            text={groupText}
+            label="העתק לקבוצה"
+            onCopied={() => setMessage("הודעת קבוצה הועתקה.")}
+          />
+          <StudioCopyButton
+            text={individualText}
+            label="העתק לבודד"
+            onCopied={() => setMessage("הודעה לבודד הועתקה.")}
+          />
+          <StudioCopyButton
+            text={reminderText}
+            label="תזכורת מראש"
+            onCopied={() => setMessage("תזכורת הועתקה.")}
+          />
+        </div>
+        <pre className="max-h-40 overflow-auto whitespace-pre-wrap font-sans text-xs text-zinc-500">
+          {status.isLive ? groupText : reminderText}
+        </pre>
       </div>
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}

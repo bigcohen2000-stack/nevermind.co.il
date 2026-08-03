@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { ArticleBody } from "@/components/content/article-body";
 import { ArticleContinueReading } from "@/components/content/article-continue-reading";
+import { ArticleGlossary } from "@/components/content/article-glossary";
 import { ArticleHeader } from "@/components/content/article-header";
 import { RelatedConceptsStrip } from "@/components/search/related-concepts-strip";
 import { RelatedExploration } from "@/components/search/related-exploration";
@@ -94,7 +95,9 @@ export default async function ArticlePage({
         <div className="mx-auto w-full max-w-3xl px-6 py-16 lg:py-24">
           <article className="max-w-prose">
             <ArticleContinueReading slug={meta.slug}>
-              <ArticleBody content={Content} />
+              <ArticleGlossary>
+                <ArticleBody content={Content} />
+              </ArticleGlossary>
             </ArticleContinueReading>
           </article>
 

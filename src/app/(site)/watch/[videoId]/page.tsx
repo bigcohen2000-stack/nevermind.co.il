@@ -26,7 +26,7 @@ import { TranscriptHeatmap } from "@/components/videos/transcript-heatmap";
 import { WatchContentTabs } from "@/components/videos/watch-content-tabs";
 import { WatchFocusLayout } from "@/components/videos/watch-focus-layout";
 import { WatchQuickActions } from "@/components/videos/watch-quick-actions";
-import { WatchRelatedRail } from "@/components/videos/watch-related-rail";
+import { LogicalContinuationLink } from "@/components/videos/logical-continuation-link";
 import { WatchSeekProvider } from "@/components/videos/watch-seek-context";
 import { extractCuratedConcepts } from "@/lib/concepts/quality";
 import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
@@ -38,6 +38,7 @@ import {
   buildTranscriptHeatmap,
   segmentsFromFlatTranscript,
 } from "@/lib/videos/heatmap";
+import { getLogicalContinuation } from "@/lib/videos/logical-continuation";
 import {
   getRelatedVideos,
   getVideoConcepts,
@@ -318,13 +319,22 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
         : [];
   const heatmapBuckets = buildTranscriptHeatmap(timedSegments, heatConcepts);
 
-  const related = await getRelatedVideos(
-    video.id,
-    conceptIds,
-    video.playlist_id,
-    3,
-    { entitled },
-  ).catch(() => []);
+  const [related, continuation] = await Promise.all([
+    getRelatedVideos(
+      video.id,
+      conceptIds,
+      video.playlist_id,
+      3,
+      { entitled },
+    ).catch(() => []),
+    getLogicalContinuation({
+      videoId: video.id,
+      conceptNames:
+        conceptNames.filter(Boolean).length > 0
+          ? conceptNames.filter(Boolean)
+          : extractCuratedConcepts(video.title, video.description ?? "", [], 6),
+    }).catch(() => null),
+  ]);
 
   const relatedArticles = getRelatedArticlesForTerms(
     [
@@ -338,18 +348,26 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
     extractCuratedConcepts(video.title, video.description ?? "")[0] ||
     video.title;
 
-  const nextCandidate =
+  const relatedFallback =
     related.find((v) => v.sharedConcept && v.youtube_id?.trim()) ??
     related.find((v) => v.youtube_id?.trim()) ??
     null;
-  const nextUp = nextCandidate
-    ? {
-        youtubeId: nextCandidate.youtube_id,
-        title: nextCandidate.title,
-        thumbnailUrl: nextCandidate.thumbnail_url,
-        sharedConcept: nextCandidate.sharedConcept,
-      }
-    : null;
+  const nextUp =
+    continuation?.youtubeId
+      ? {
+          youtubeId: continuation.youtubeId,
+          title: continuation.videoTitle ?? continuation.nextTopic,
+          thumbnailUrl: continuation.thumbnailUrl,
+          sharedConcept: continuation.nextTopic,
+        }
+      : relatedFallback
+        ? {
+            youtubeId: relatedFallback.youtube_id,
+            title: relatedFallback.title,
+            thumbnailUrl: relatedFallback.thumbnail_url,
+            sharedConcept: relatedFallback.sharedConcept,
+          }
+        : null;
 
   const primaryTopic = concepts.find((c) => c.name)?.name || video.title;
   const captionTags = buildCaptionTagCloud(transcript, conceptNames);
@@ -456,6 +474,13 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
                 </section>
               ) : null}
 
+              {continuation ? (
+                <LogicalContinuationLink
+                  continuation={continuation}
+                  className="lg:hidden"
+                />
+              ) : null}
+
               <WatchContentTabs
                 insight={
                   <div className="space-y-4 [&>section]:mt-0">
@@ -506,10 +531,42 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
             </div>
           }
           sidebar={
-            <WatchRelatedRail
-              videos={related}
-              blurb="מאותו נושא. ממשיכים בלי לחפש."
-            />
+            continuation ? (
+              <LogicalContinuationLink continuation={continuation} />
+            ) : related.length > 0 ? (
+              <div>
+                <p className="text-xs font-medium tracking-wide text-action">
+                  המשך
+                </p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-xl">
+                  סרטונים להמשך
+                </h2>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                  מאותו נושא. ממשיכים בלי לחפש.
+                </p>
+                <ul className="mt-4 space-y-2.5 sm:mt-5 sm:space-y-3">
+                  {related.slice(0, 1).map((v) => (
+                    <li key={v.id}>
+                      <Link
+                        href={
+                          v.youtube_id
+                            ? `/watch/${v.youtube_id}`
+                            : `/watch/${v.id}`
+                        }
+                        className="block border border-foreground/10 p-3 text-sm no-underline transition hover:border-action hover:no-underline"
+                      >
+                        {v.title}
+                        {v.sharedConcept ? (
+                          <span className="mt-1 block text-xs text-muted">
+                            דרך: {v.sharedConcept}
+                          </span>
+                        ) : null}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null
           }
         />
       </WatchSeekProvider>

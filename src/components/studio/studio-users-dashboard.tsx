@@ -1,6 +1,3 @@
-import Link from "next/link";
-
-import { StudioNav } from "@/components/studio/studio-nav";
 import { ProfileAccessExpiryEditor } from "@/components/studio/profile-access-expiry-editor";
 import { RecordMeetingForm } from "@/components/studio/record-meeting-form";
 import { VideoAccessToggle } from "@/components/studio/video-access-toggle";
@@ -28,7 +25,7 @@ function formatRelative(iso: string): string {
     Math.round((Date.now() - new Date(iso).getTime()) / 1000),
   );
   if (diffSec < 60) return "עכשיו";
-  if (diffSec < 3600) return `לפני ${Math.floor(diffSec / 60)} דק׳`;
+  if (diffSec < 3600) return `לפני ${Math.floor(diffSec / 60)} דק'`;
   return formatDateTime(iso);
 }
 
@@ -42,7 +39,7 @@ function SummaryCard({
   hint: string;
 }) {
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 sm:p-6">
+    <section className="border border-zinc-800 bg-zinc-900/60 p-5 sm:p-6">
       <h2 className="text-sm font-medium tracking-wide text-zinc-400">{title}</h2>
       <p className="mt-4 text-4xl font-semibold tracking-tight text-zinc-50">
         {value}
@@ -56,7 +53,7 @@ function OnlineNow({ rows }: { rows: StudioOnlineRow[] }) {
   if (rows.length === 0) {
     return (
       <p className="mt-4 text-sm text-zinc-400">
-        אין מחוברים כרגע (פעילות ב־5 הדקות האחרונות).
+        אין מחוברים כרגע (פעילות ב-5 הדקות האחרונות).
       </p>
     );
   }
@@ -140,44 +137,21 @@ function RecentLogins({ rows }: { rows: AuthLoginEvent[] }) {
 export function StudioUsersDashboard({ data }: StudioUsersDashboardProps) {
   return (
     <div className="space-y-10">
-      <header className="space-y-6">
-        <StudioNav
-          active="users"
-          actions={
-            <Link
-              href="/studio/leads"
-              className="border border-zinc-700 px-3 py-2 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
-            >
-              לידים
-            </Link>
-          }
-        />
-        <div>
-          <p className="text-xs text-zinc-500">ניהול פנימי</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
-            משתמשים ומחוברים
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-            מי מחובר עכשיו, מי נכנס לאחרונה, ומי מקבל גישה לספרייה.
-          </p>
-        </div>
-      </header>
-
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
           title="מחוברים כרגע"
           value={data.onlineCount}
-          hint="פעילות ב־5 דקות אחרונות"
+          hint="פעילות ב-5 דקות אחרונות"
         />
         <SummaryCard
           title="משתמשים"
           value={data.totalUsers}
-          hint="מ־Auth (עד 200)"
+          hint='מ-Auth (עד 200)'
         />
         <SummaryCard
           title="כניסות היום"
           value={data.loginsToday}
-          hint="מ־auth_login_events"
+          hint="מ-auth_login_events"
         />
         <SummaryCard
           title="גישת וידאו"
@@ -186,7 +160,7 @@ export function StudioUsersDashboard({ data }: StudioUsersDashboardProps) {
         />
       </div>
 
-      <section className="rounded-2xl border border-emerald-900/50 bg-emerald-950/20 p-6 sm:p-8">
+      <section className="border border-emerald-900/50 bg-emerald-950/20 p-6 sm:p-8">
         <h2 className="text-lg font-semibold text-zinc-100">
           מחוברים כרגע לאתר
         </h2>
@@ -196,12 +170,12 @@ export function StudioUsersDashboard({ data }: StudioUsersDashboardProps) {
         <OnlineNow rows={data.onlineNow} />
       </section>
 
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 sm:p-8">
+      <section className="border border-zinc-800 bg-zinc-900/40 p-6 sm:p-8">
         <h2 className="text-lg font-semibold text-zinc-100">כניסות אחרונות</h2>
         <RecentLogins rows={data.recentLogins} />
       </section>
 
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 sm:p-8">
+      <section className="border border-zinc-800 bg-zinc-900/40 p-6 sm:p-8">
         <h2 className="text-lg font-semibold text-zinc-100">כל המשתמשים</h2>
         <p className="mt-1 text-xs text-zinc-500">
           ממוין לפי כניסה אחרונה. אפשר להעניק גישה מכאן.

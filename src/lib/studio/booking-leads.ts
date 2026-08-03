@@ -1,17 +1,10 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import type { SingleVideoLead } from "@/types/supabase";
+import type { BookingLead } from "@/types/supabase";
 
-export type SingleVideoLeadStatus =
-  | "requested"
-  | "chatting"
-  | "paid"
-  | "sent"
-  | "closed";
-
-export type SingleVideoLeadsDashboardData = {
-  rows: SingleVideoLead[];
+export type BookingLeadsDashboardData = {
+  rows: BookingLead[];
   totalToday: number;
   totalThisWeek: number;
   openCount: number;
@@ -30,11 +23,8 @@ function daysAgo(days: number, now = new Date()): Date {
   return d;
 }
 
-/**
- * Load single-video purchase / request leads for Studio (service role).
- */
-export async function getSingleVideoLeadsDashboard(): Promise<SingleVideoLeadsDashboardData> {
-  const empty: SingleVideoLeadsDashboardData = {
+export async function getBookingLeadsDashboard(): Promise<BookingLeadsDashboardData> {
+  const empty: BookingLeadsDashboardData = {
     rows: [],
     totalToday: 0,
     totalThisWeek: 0,
@@ -45,7 +35,7 @@ export async function getSingleVideoLeadsDashboard(): Promise<SingleVideoLeadsDa
   try {
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
-      .from("single_video_leads")
+      .from("booking_leads")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(200);
@@ -53,12 +43,12 @@ export async function getSingleVideoLeadsDashboard(): Promise<SingleVideoLeadsDa
     if (error) {
       return {
         ...empty,
-        loadError: error.message || "טעינת לידי סרטון בודד נכשלה.",
+        loadError: error.message || "טעינת לידי יצירת קשר נכשלה.",
       };
     }
     if (!data) return empty;
 
-    const rows = data as SingleVideoLead[];
+    const rows = data as BookingLead[];
     const todayStart = startOfLocalDay().getTime();
     const weekStart = daysAgo(7).getTime();
 
@@ -70,12 +60,8 @@ export async function getSingleVideoLeadsDashboard(): Promise<SingleVideoLeadsDa
       totalThisWeek: rows.filter(
         (row) => new Date(row.created_at).getTime() >= weekStart,
       ).length,
-      openCount: rows.filter(
-        (row) =>
-          row.status === "requested" ||
-          row.status === "chatting" ||
-          row.status === "paid",
-      ).length,
+      openCount: rows.filter((row) => row.status === "new" || row.status === "contacted")
+        .length,
       loadError: null,
     };
   } catch (err) {
@@ -84,7 +70,7 @@ export async function getSingleVideoLeadsDashboard(): Promise<SingleVideoLeadsDa
       loadError:
         err instanceof Error
           ? err.message
-          : "טעינת לידי סרטון בודד נכשלה.",
+          : "טעינת לידי יצירת קשר נכשלה (בדוק מיגרציה 33).",
     };
   }
 }

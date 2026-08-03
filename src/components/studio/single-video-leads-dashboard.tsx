@@ -6,8 +6,14 @@ import {
   fulfillSingleVideoLead,
   updateSingleVideoLeadStatus,
 } from "@/actions/single-video-leads";
+import { StudioCsvExportButton } from "@/components/studio/studio-csv-export-button";
+import {
+  buildLeadTelHref,
+  buildLeadWhatsAppHref,
+} from "@/lib/studio/lead-contact";
 import type { SingleVideoLeadsDashboardData } from "@/lib/studio/single-video-leads";
 import type { SingleVideoLead } from "@/types/supabase";
+import { MessageCircle, Phone } from "lucide-react";
 
 type SingleVideoLeadsDashboardProps = {
   data: SingleVideoLeadsDashboardData;
@@ -84,9 +90,30 @@ function LeadRow({
             {lead.video_id ?? "no video id"}
           </p>
           {lead.phone ? (
-            <p className="mt-1 text-sm text-zinc-400" dir="ltr">
-              {lead.phone}
-            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <p className="text-sm text-zinc-400" dir="ltr">
+                {lead.phone}
+              </p>
+              <a
+                href={buildLeadTelHref(lead.phone)}
+                className="inline-flex min-h-9 items-center gap-1 border border-zinc-700 px-2 text-[11px] text-zinc-200 hover:border-zinc-500"
+              >
+                <Phone className="h-3 w-3" aria-hidden="true" />
+                חיוג
+              </a>
+              <a
+                href={buildLeadWhatsAppHref(
+                  lead.phone,
+                  `היי, כאן יקיר מ-NeverMinde לגבי הסרטון: ${lead.video_title}`,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-9 items-center gap-1 border border-zinc-700 px-2 text-[11px] text-zinc-200 hover:border-zinc-500"
+              >
+                <MessageCircle className="h-3 w-3" aria-hidden="true" />
+                וואטסאפ
+              </a>
+            </div>
           ) : null}
         </div>
         <div className="text-end">
@@ -239,13 +266,43 @@ export function SingleVideoLeadsDashboard({
 
   return (
     <section className="space-y-6">
-      <div>
-        <h2 className="text-base font-semibold text-zinc-100">
-          לידים לסרטון בודד
-        </h2>
-        <p className="mt-1 text-sm text-zinc-400">
-          בקשות צפייה בודדת מה־CTA. רישום לחיצה, עדכון סטטוס, הנפקת קישור.
+      {data.loadError ? (
+        <p
+          role="alert"
+          className="border border-red-900/60 bg-red-950/30 px-4 py-3 text-sm text-red-200"
+        >
+          לא נטען: {data.loadError}
         </p>
+      ) : null}
+
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-100">
+            לידים לסרטון בודד
+          </h2>
+          <p className="mt-1 text-sm text-zinc-400">
+            בקשות צפייה בודדת מה-CTA. רישום לחיצה, עדכון סטטוס, הנפקת קישור.
+          </p>
+        </div>
+        <StudioCsvExportButton
+          filename={`single-video-leads-${new Date().toISOString().slice(0, 10)}.csv`}
+          headers={[
+            "video_title",
+            "phone",
+            "status",
+            "source",
+            "created_at",
+            "watch_url",
+          ]}
+          rows={data.rows.map((row) => [
+            row.video_title,
+            row.phone,
+            row.status,
+            row.source,
+            row.created_at,
+            row.watch_url,
+          ])}
+        />
       </div>
 
       <div

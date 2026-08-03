@@ -367,7 +367,9 @@ export type Database = {
           phone: string;
           email: string | null;
           source: string;
+          status: string;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -378,7 +380,9 @@ export type Database = {
           phone: string;
           email?: string | null;
           source?: string;
+          status?: string;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -389,7 +393,45 @@ export type Database = {
           phone?: string;
           email?: string | null;
           source?: string;
+          status?: string;
           created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      booking_leads: {
+        Row: {
+          id: string;
+          name: string;
+          phone: string;
+          email: string;
+          context: string;
+          source: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          phone: string;
+          email: string;
+          context?: string;
+          source?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          phone?: string;
+          email?: string;
+          context?: string;
+          source?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -1110,6 +1152,8 @@ export type PreMeetingLead =
   Database["public"]["Tables"]["pre_meeting_leads"]["Row"];
 export type SingleVideoLead =
   Database["public"]["Tables"]["single_video_leads"]["Row"];
+export type BookingLead =
+  Database["public"]["Tables"]["booking_leads"]["Row"];
 export type PushSubscriber =
   Database["public"]["Tables"]["subscribers"]["Row"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];

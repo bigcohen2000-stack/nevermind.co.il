@@ -12,6 +12,7 @@ import {
   Mail,
   Menu,
   MoreHorizontal,
+  Radio,
   Search,
   Settings2,
   Accessibility,
@@ -29,6 +30,7 @@ import { HeaderSearch } from "@/components/layout/header-search";
 import { InstallAppButton } from "@/components/layout/install-app-button";
 import { SiteLogo } from "@/components/layout/site-logo";
 import type { HeaderSession } from "@/lib/auth/header-session-shared";
+import type { SiteAccessTier } from "@/lib/access/site-tier";
 import {
   isNavActive,
   PRIMARY_NAV,
@@ -36,10 +38,12 @@ import {
 } from "@/lib/site-nav";
 import type { SiteTheme } from "@/lib/theme/theme";
 import { cn } from "@/lib/utils";
+import { ClubMemberChrome } from "@/components/layout/club-member-chrome";
 
 type SiteHeaderProps = {
   session: HeaderSession;
   theme: SiteTheme;
+  accessTier?: SiteAccessTier;
 };
 
 const NAV_ICONS: Record<string, LucideIcon> = {
@@ -54,6 +58,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "/mechanisms": Settings2,
   "/books": Library,
   "/booking": Calendar,
+  "/live": Radio,
   "/my-list": Bookmark,
   "/profile": User,
   "/accessibility": Accessibility,
@@ -167,11 +172,16 @@ function IconButton({
  * Sticky RTL header: brand + search on top, nav rail on wide screens.
  * Lucide icons only. Auth + install app on the trailing side.
  */
-export function SiteHeader({ session, theme }: SiteHeaderProps) {
+export function SiteHeader({
+  session,
+  theme,
+  accessTier = "guest",
+}: SiteHeaderProps) {
   const pathname = usePathname() ?? "/";
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const panelId = useId();
+  const isClub = accessTier === "club";
 
   useEffect(() => {
     setMenuOpen(false);
@@ -198,7 +208,12 @@ export function SiteHeader({ session, theme }: SiteHeaderProps) {
   }, [menuOpen, mobileSearchOpen]);
 
   return (
-    <header className="border-b border-foreground/10 bg-background/90 backdrop-blur-lg supports-[backdrop-filter]:bg-background/65">
+    <header
+      className={cn(
+        "border-b bg-background/90 backdrop-blur-lg supports-[backdrop-filter]:bg-background/65",
+        isClub ? "border-action/25" : "border-foreground/10",
+      )}
+    >
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <div className="flex items-center justify-between gap-3 py-3 lg:gap-6 lg:py-3.5">
           <SiteLogo variant="on-dark" size="header" priority />
@@ -208,11 +223,13 @@ export function SiteHeader({ session, theme }: SiteHeaderProps) {
           </div>
 
           <div className="hidden shrink-0 items-center gap-2 lg:flex">
+            {isClub ? <ClubMemberChrome variant="chip" /> : null}
             <HeaderAuthControls session={session} theme={theme} />
             <InstallAppButton compact />
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5 lg:hidden">
+            {isClub ? <ClubMemberChrome variant="chip" /> : null}
             <IconButton
               label={mobileSearchOpen ? "סגירת חיפוש" : "פתיחת חיפוש"}
               expanded={mobileSearchOpen}

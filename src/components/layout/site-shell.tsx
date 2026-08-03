@@ -2,7 +2,11 @@ import type { ReactNode } from "react";
 
 import { AccessibilityToolbar } from "@/components/a11y/accessibility-toolbar";
 import { WhatsAppFloat } from "@/components/contact/whatsapp-float";
+import { AccessTierMarker } from "@/components/layout/access-tier-marker";
+import { ClubMemberChrome } from "@/components/layout/club-member-chrome";
 import { getHeaderSession } from "@/lib/auth/header-session";
+import { resolveSiteAccessTier } from "@/lib/access/site-tier";
+import { resolveVideoEntitlement } from "@/lib/club/access";
 import { getLiveUpdateItems } from "@/lib/site/live-updates";
 import { resolveSiteTheme } from "@/lib/theme/preference";
 import { DailyResetPrompt } from "@/components/push/daily-reset-prompt";
@@ -29,15 +33,29 @@ import { SiteStatusBanner } from "./site-status-banner";
  */
 
 export async function SiteShell({ children }: { children: ReactNode }) {
-  const [session, liveUpdates] = await Promise.all([
+  const [session, liveUpdates, access] = await Promise.all([
     getHeaderSession(),
     getLiveUpdateItems().catch(() => []),
+    resolveVideoEntitlement().catch(() => ({
+      entitled: false,
+      clubSession: false,
+      hasVideoAccess: false,
+      isAuthenticated: false,
+      phone: null as string | null,
+      displayName: null as string | null,
+    })),
   ]);
   const theme = await resolveSiteTheme(session);
+  const accessTier = resolveSiteAccessTier({
+    authUserId: session.authUserId,
+    entitled: access.entitled || access.hasVideoAccess,
+  });
+  const isClub = accessTier === "club";
 
   return (
     <FocusModeProvider>
       <SiteShellFrame>
+        <AccessTierMarker tier={accessTier} />
         <a
           href="#main-content"
           className="absolute start-4 top-0 z-[100] -translate-y-[120%] border border-transparent bg-action px-4 py-2 text-sm font-semibold text-white transition focus:translate-y-4 focus:outline-none focus:ring-2 focus:ring-white"
@@ -53,11 +71,20 @@ export async function SiteShell({ children }: { children: ReactNode }) {
             <LiveUpdatesBar items={liveUpdates} />
           </FocusModeChrome>
           <FocusModeChrome>
-            <SiteStatusBanner session={session} />
+            <SiteStatusBanner session={session} accessTier={accessTier} />
           </FocusModeChrome>
           <FocusModeChrome>
-            <SiteHeader session={session} theme={theme} />
+            <SiteHeader
+              session={session}
+              theme={theme}
+              accessTier={accessTier}
+            />
           </FocusModeChrome>
+          {isClub ? (
+            <FocusModeChrome>
+              <ClubMemberChrome variant="strip" />
+            </FocusModeChrome>
+          ) : null}
         </div>
         <div
           id="main-content"
@@ -69,9 +96,11 @@ export async function SiteShell({ children }: { children: ReactNode }) {
         <FocusModeChrome>
           <SiteFooter />
         </FocusModeChrome>
-        <FocusModeChrome>
-          <SiteBetaBanner />
-        </FocusModeChrome>
+        {!isClub ? (
+          <FocusModeChrome>
+            <SiteBetaBanner />
+          </FocusModeChrome>
+        ) : null}
         <FocusModeChrome>
           <MobileCtaBar />
         </FocusModeChrome>

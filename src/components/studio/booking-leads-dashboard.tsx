@@ -1,21 +1,21 @@
 "use client";
 
-import { MessageCircle, Phone } from "lucide-react";
+import { Mail, MessageCircle, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 
-import { updatePreMeetingLeadStatus } from "@/actions/studio-lead-status";
+import { updateBookingLeadStatus } from "@/actions/studio-lead-status";
 import { LeadMeetingInviteTools } from "@/components/studio/lead-meeting-invite-tools";
 import { StudioCsvExportButton } from "@/components/studio/studio-csv-export-button";
+import type { BookingLeadsDashboardData } from "@/lib/studio/booking-leads";
 import {
   buildLeadTelHref,
   buildLeadWhatsAppHref,
 } from "@/lib/studio/lead-contact";
-import type { PreMeetingLeadsDashboardData } from "@/lib/studio/pre-meeting-leads";
-import type { PreMeetingLead } from "@/types/supabase";
+import type { BookingLead } from "@/types/supabase";
 
-type PreMeetingLeadsDashboardProps = {
-  data: PreMeetingLeadsDashboardData;
+type BookingLeadsDashboardProps = {
+  data: BookingLeadsDashboardData;
 };
 
 const STATUS_OPTIONS = ["new", "contacted", "closed"] as const;
@@ -32,16 +32,10 @@ function formatDateTime(iso: string): string {
   });
 }
 
-function preview(text: string, max = 120): string {
-  const trimmed = text.trim().replace(/\s+/g, " ");
-  if (trimmed.length <= max) return trimmed;
-  return `${trimmed.slice(0, max - 1)}...`;
-}
-
-function LeadCard({ lead }: { lead: PreMeetingLead }) {
+function LeadCard({ lead }: { lead: BookingLead }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const status = (lead.status ?? "new") as (typeof STATUS_OPTIONS)[number];
+  const status = lead.status as (typeof STATUS_OPTIONS)[number];
 
   return (
     <article className="border border-zinc-800 bg-zinc-900/60 p-5 sm:p-6">
@@ -49,8 +43,7 @@ function LeadCard({ lead }: { lead: PreMeetingLead }) {
         <div>
           <h3 className="text-lg font-semibold text-zinc-50">{lead.name}</h3>
           <p className="mt-1 text-sm text-zinc-400" dir="ltr">
-            {lead.phone}
-            {lead.email ? ` · ${lead.email}` : ""}
+            {lead.phone} · {lead.email}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <a
@@ -72,6 +65,13 @@ function LeadCard({ lead }: { lead: PreMeetingLead }) {
               <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
               וואטסאפ
             </a>
+            <a
+              href={`mailto:${encodeURIComponent(lead.email)}`}
+              className="inline-flex min-h-10 items-center gap-1.5 border border-zinc-700 px-3 text-xs text-zinc-200 hover:border-zinc-500"
+            >
+              <Mail className="h-3.5 w-3.5" aria-hidden="true" />
+              מייל
+            </a>
           </div>
         </div>
         <div className="text-end">
@@ -87,7 +87,7 @@ function LeadCard({ lead }: { lead: PreMeetingLead }) {
               onChange={(e) => {
                 const next = e.target.value;
                 startTransition(async () => {
-                  await updatePreMeetingLeadStatus({
+                  await updateBookingLeadStatus({
                     id: lead.id,
                     status: next,
                   });
@@ -107,48 +107,22 @@ function LeadCard({ lead }: { lead: PreMeetingLead }) {
           </p>
         </div>
       </header>
-
-      <dl className="mt-5 space-y-4 text-sm">
-        <div>
-          <dt className="text-xs font-medium tracking-wide text-zinc-500">
-            המצב והמחשבה
-          </dt>
-          <dd className="mt-1 leading-relaxed text-zinc-200">
-            {preview(lead.situation_text, 280)}
-          </dd>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <dt className="text-xs font-medium tracking-wide text-red-400/80">
-              עובדות
-            </dt>
-            <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-zinc-300">
-              {preview(lead.objective_facts, 200)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs font-medium tracking-wide text-zinc-500">
-              הסיפור
-            </dt>
-            <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-zinc-300">
-              {preview(lead.subjective_story, 200)}
-            </dd>
-          </div>
-        </div>
-      </dl>
+          {lead.context?.trim() ? (
+        <p className="mt-5 text-sm leading-relaxed text-zinc-300">
+          {lead.context}
+        </p>
+      ) : null}
       <LeadMeetingInviteTools
         name={lead.name}
         phone={lead.phone}
         email={lead.email}
-        contextHint={lead.situation_text}
+        contextHint={lead.context}
       />
     </article>
   );
 }
 
-export function PreMeetingLeadsDashboard({
-  data,
-}: PreMeetingLeadsDashboardProps) {
+export function BookingLeadsDashboard({ data }: BookingLeadsDashboardProps) {
   return (
     <div className="space-y-8">
       {data.loadError ? (
@@ -156,7 +130,7 @@ export function PreMeetingLeadsDashboard({
           role="alert"
           className="border border-red-900/60 bg-red-950/30 px-4 py-3 text-sm text-red-200"
         >
-          לא נטען: {data.loadError}
+          לא נטען: {data.loadError}. החל מיגרציה 33 אם הטבלה חסרה.
         </p>
       ) : null}
 
@@ -191,14 +165,14 @@ export function PreMeetingLeadsDashboard({
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-zinc-100">
-              לידים אחרונים
+              פניות יצירת קשר / תיאום
             </h3>
             <p className="mt-1 text-xs text-zinc-500">
               {data.rows.length} לידים (חדש למעלה)
             </p>
           </div>
           <StudioCsvExportButton
-            filename={`pre-meeting-leads-${new Date().toISOString().slice(0, 10)}.csv`}
+            filename={`booking-leads-${new Date().toISOString().slice(0, 10)}.csv`}
             headers={[
               "name",
               "phone",
@@ -206,23 +180,24 @@ export function PreMeetingLeadsDashboard({
               "status",
               "source",
               "created_at",
-              "situation",
+              "context",
             ]}
             rows={data.rows.map((row) => [
               row.name,
               row.phone,
               row.email,
-              row.status ?? "new",
+              row.status,
               row.source,
               row.created_at,
-              row.situation_text,
+              row.context,
             ])}
           />
         </div>
 
         {data.rows.length === 0 ? (
           <p className="text-sm text-zinc-400">
-            עדיין אין לידים. שליחות ממפרק המחשבות יופיעו כאן.
+            עדיין אין פניות. טפסי /contact וטפסי תיאום יופיעו כאן אחרי מיגרציה
+            33.
           </p>
         ) : (
           <ul className="space-y-4">

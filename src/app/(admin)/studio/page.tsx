@@ -12,7 +12,8 @@ import { StudioFeedbackPanel } from "@/components/studio/studio-feedback-panel";
 import { StudioHealthPanel } from "@/components/studio/studio-health-panel";
 import { StudioLibraryPanel } from "@/components/studio/studio-library-panel";
 import { StudioLockButton } from "@/components/studio/studio-lock-button";
-import { StudioNav } from "@/components/studio/studio-nav";
+import { StudioOpsTipsPanel } from "@/components/studio/studio-ops-tips";
+import { StudioPageShell } from "@/components/studio/studio-page-shell";
 import { StudioSessionRequired } from "@/components/studio/studio-session-required";
 import { StudioTeaserPanel } from "@/components/studio/studio-teaser-panel";
 import { VideoIngestionStudio } from "@/components/studio/video-ingestion-studio";
@@ -34,6 +35,7 @@ const JUMP_LINKS = [
   { href: "#password", label: "סיסמה" },
   { href: "#members", label: "חברים" },
   { href: "#tokens", label: "קישורים" },
+  { href: "#ops-help", label: "עזרה" },
   { href: "#feedback", label: "משוב" },
 ] as const;
 
@@ -152,26 +154,12 @@ export default async function StudioPage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-6 py-12 sm:py-16" dir="rtl">
-      <header className="space-y-5">
-        <StudioNav active="ingestion" actions={<StudioLockButton />} />
-        <div>
-          <p className="text-xs text-zinc-500">ניהול פנימי</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
-            סטודיו
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
-            ייבוא סרטונים, מועדון, טעימות ושידור חי. העמוד לא מפורסם באתר
-            הציבורי. כניסה רק דרך הסימנייה הפרטית.{" "}
-            <a
-              href="/studio/guide"
-              className="text-zinc-200 underline-offset-2 hover:underline"
-            >
-              מדריך: מה כל אזור עושה
-            </a>
-            .
-          </p>
-        </div>
+    <StudioPageShell
+      active="ingestion"
+      title="סטודיו"
+      description="ייבוא סרטונים, מועדון, טעימות ושידור חי. העמוד לא מפורסם באתר הציבורי. כניסה רק דרך הסימנייה הפרטית."
+      actions={<StudioLockButton />}
+      summary={
         <nav
           aria-label="מעבר מהיר בתוך הסטודיו"
           className="flex flex-wrap gap-2 text-xs"
@@ -185,69 +173,83 @@ export default async function StudioPage() {
               {item.label}
             </a>
           ))}
+          <a
+            href="/studio/guide"
+            className="border border-zinc-700 px-2.5 py-1.5 text-zinc-300 hover:border-zinc-500 hover:text-zinc-100"
+          >
+            מדריך
+          </a>
         </nav>
-      </header>
+      }
+    >
+      <div className="space-y-8">
+        <StudioHealthPanel health={health} />
 
-      <StudioHealthPanel health={health} />
-
-      <StudioAccordion
-        items={[
-          {
-            id: "library",
-            title: "ספרייה וסנכרון",
-            summary: "12 אחרונים, פערי טעימות, סנכרון YouTube",
-            defaultOpen: true,
-            children: <StudioLibraryPanel status={libraryStatus} />,
-          },
-          {
-            id: "ingest",
-            title: "ייבוא",
-            summary: "קישור יוטיוב, לא רשום, אחרונים",
-            children: (
-              <VideoIngestionStudio
-                initialVideos={recentVideos}
-                embedded
-              />
-            ),
-          },
-          {
-            id: "live",
-            title: "שידור חי",
-            children: <LiveStreamStudioPanel status={liveStatus} />,
-          },
-          {
-            id: "teasers",
-            title: "טעימות",
-            children: <StudioTeaserPanel videos={gatedForTeaser} />,
-          },
-          {
-            id: "password",
-            title: "סיסמת מועדון",
-            children: <ClubPasswordPanel status={passwordStatus} />,
-          },
-          {
-            id: "members",
-            title: "חברי מועדון",
-            children: (
-              <ClubMembersPanel
-                members={members}
-                recentLogins={recentLogins}
-              />
-            ),
-          },
-          {
-            id: "tokens",
-            title: "קישורי כניסה",
-            children: <ClubTokenMint recentTokens={recentTokens} />,
-          },
-          {
-            id: "feedback",
-            title: "משוב ולבבות",
-            summary: "דיסלייקים ובקשות תשובה מהאתר",
-            children: <StudioFeedbackPanel items={feedbackItems} />,
-          },
-        ]}
-      />
-    </main>
+        <StudioAccordion
+          items={[
+            {
+              id: "library",
+              title: "ספרייה וסנכרון",
+              summary: "12 אחרונים, פערי טעימות, סנכרון YouTube",
+              defaultOpen: true,
+              children: <StudioLibraryPanel status={libraryStatus} />,
+            },
+            {
+              id: "ingest",
+              title: "ייבוא",
+              summary: "קישור יוטיוב, לא רשום, אחרונים",
+              children: (
+                <VideoIngestionStudio
+                  initialVideos={recentVideos}
+                  embedded
+                />
+              ),
+            },
+            {
+              id: "live",
+              title: "שידור חי",
+              children: <LiveStreamStudioPanel status={liveStatus} />,
+            },
+            {
+              id: "teasers",
+              title: "טעימות",
+              children: <StudioTeaserPanel videos={gatedForTeaser} />,
+            },
+            {
+              id: "password",
+              title: "סיסמת מועדון",
+              children: <ClubPasswordPanel status={passwordStatus} />,
+            },
+            {
+              id: "members",
+              title: "חברי מועדון",
+              children: (
+                <ClubMembersPanel
+                  members={members}
+                  recentLogins={recentLogins}
+                />
+              ),
+            },
+            {
+              id: "tokens",
+              title: "קישורי כניסה",
+              children: <ClubTokenMint recentTokens={recentTokens} />,
+            },
+            {
+              id: "ops-help",
+              title: "עזרה לניהול",
+              summary: "סיסמאות, פרסומים, תבניות עדכון",
+              children: <StudioOpsTipsPanel />,
+            },
+            {
+              id: "feedback",
+              title: "משוב ולבבות",
+              summary: "דיסלייקים ובקשות תשובה מהאתר",
+              children: <StudioFeedbackPanel items={feedbackItems} />,
+            },
+          ]}
+        />
+      </div>
+    </StudioPageShell>
   );
 }

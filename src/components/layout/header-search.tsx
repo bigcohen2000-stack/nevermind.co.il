@@ -18,6 +18,12 @@ import {
   type SuggestItem,
 } from "@/lib/search/types";
 import { pushRecentSearch } from "@/lib/recent-searches";
+import {
+  BREAKDOWN_LEVELS,
+  BREAKDOWN_LEVEL_LABELS,
+  BREAKDOWN_LEVEL_NUMBERS,
+  type BreakdownLevel,
+} from "@/lib/videos/investigation";
 import { cn } from "@/lib/utils";
 import { useSearchHotkey } from "@/hooks/use-search-hotkey";
 
@@ -49,6 +55,7 @@ export function HeaderSearch({
   const [activeIndex, setActiveIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [breakdown, setBreakdown] = useState<BreakdownLevel | null>(null);
 
   const trimmed = query.trim();
   const showSuggest = open && items.length > 0;
@@ -71,10 +78,11 @@ export function HeaderSearch({
       abortRef.current = controller;
       setLoading(true);
       try {
-        const res = await fetch(
-          `/api/search/suggest?q=${encodeURIComponent(q)}`,
-          { signal: controller.signal },
-        );
+        const params = new URLSearchParams({ q });
+        if (breakdown) params.set("breakdown", breakdown);
+        const res = await fetch(`/api/search/suggest?${params.toString()}`, {
+          signal: controller.signal,
+        });
         const data = (await res.json()) as { items?: SuggestItem[] };
         setItems(data.items ?? []);
         setOpen(true);
@@ -90,7 +98,7 @@ export function HeaderSearch({
     }, 300);
 
     return () => window.clearTimeout(handle);
-  }, [query]);
+  }, [query, breakdown]);
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
@@ -246,8 +254,54 @@ export function HeaderSearch({
           id={listId}
           role="listbox"
           aria-live="polite"
-          className="absolute z-[60] mt-1 max-h-72 w-full min-w-[16rem] overflow-auto border border-foreground/15 bg-background text-start text-sm shadow-float end-0"
+          className="absolute z-[60] mt-1 max-h-72 w-full min-w-[18rem] overflow-auto border border-foreground/15 bg-background text-start text-sm shadow-float end-0"
         >
+          {trimmed.length >= 2 ? (
+            <div
+              className="sticky top-0 z-[1] border-b border-foreground/10 bg-background px-2 py-2"
+              role="group"
+              aria-label="סינון לפי רמת פירוק"
+            >
+              <ul className="flex flex-wrap gap-1">
+                <li>
+                  <button
+                    type="button"
+                    className={cn(
+                      "inline-flex min-h-7 items-center border px-1.5 text-[10px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                      breakdown === null
+                        ? "border-action bg-action/10 text-action"
+                        : "border-foreground/20 text-foreground/80",
+                    )}
+                    aria-pressed={breakdown === null}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setBreakdown(null)}
+                  >
+                    הכל
+                  </button>
+                </li>
+                {BREAKDOWN_LEVELS.map((level) => (
+                  <li key={level}>
+                    <button
+                      type="button"
+                      className={cn(
+                        "inline-flex min-h-7 items-center border px-1.5 text-[10px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                        breakdown === level
+                          ? "border-action bg-action text-background"
+                          : "border-foreground/20 text-foreground/80",
+                      )}
+                      aria-pressed={breakdown === level}
+                      title={BREAKDOWN_LEVEL_LABELS[level]}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setBreakdown(level)}
+                    >
+                      {BREAKDOWN_LEVEL_NUMBERS[level]}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {loading ? (
             <div className="space-y-2 p-3" aria-hidden="true">
               {[0, 1, 2].map((row) => (

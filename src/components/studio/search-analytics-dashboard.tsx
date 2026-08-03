@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { StudioNav } from "@/components/studio/studio-nav";
+import { StudioCsvExportButton } from "@/components/studio/studio-csv-export-button";
 import type {
   SearchAnalyticsDashboardData,
   SearchTermCount,
@@ -41,7 +41,14 @@ function TermList({
         >
           <span className="min-w-0 truncate text-zinc-200">
             <span className="me-2 text-zinc-500">{index + 1}.</span>
-            {item.term}
+            <Link
+              href={`/search?q=${encodeURIComponent(item.term)}`}
+              className="underline-offset-2 hover:text-action hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {item.term}
+            </Link>
           </span>
           <span
             className={`shrink-0 font-mono text-xs ${
@@ -64,7 +71,7 @@ function SummaryCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 sm:p-6">
+    <section className="border border-zinc-800 bg-zinc-900/60 p-5 sm:p-6">
       <h2 className="text-sm font-medium tracking-wide text-zinc-400">
         {title}
       </h2>
@@ -77,7 +84,7 @@ function AnalyticsTable({ rows }: { rows: SearchAnalytics[] }) {
   if (rows.length === 0) {
     return (
       <p className="mt-6 text-sm text-zinc-400">
-        No search events yet. Searches from the site hero will appear here.
+        עדיין אין חיפושים. חיפושים מהאתר יופיעו כאן.
       </p>
     );
   }
@@ -112,19 +119,26 @@ function AnalyticsTable({ rows }: { rows: SearchAnalytics[] }) {
                 }`}
               >
                 <td className="px-2 py-3 font-medium text-zinc-100">
-                  {row.search_query}
+                  <Link
+                    href={`/search?q=${encodeURIComponent(row.search_query)}`}
+                    className="underline-offset-2 hover:text-action hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {row.search_query}
+                  </Link>
                 </td>
                 <td className="px-2 py-3 whitespace-nowrap text-zinc-400">
                   {formatDateTime(row.created_at)}
                 </td>
                 <td className="px-2 py-3">
                   {row.user_id ? (
-                    <span className="rounded-md bg-emerald-950 px-2 py-1 text-xs text-emerald-300">
-                      Logged In
+                    <span className="border border-emerald-800 bg-emerald-950 px-2 py-1 text-xs text-emerald-300">
+                      מחובר
                     </span>
                   ) : (
-                    <span className="rounded-md bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
-                      Anonymous
+                    <span className="border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
+                      אורח
                     </span>
                   )}
                 </td>
@@ -147,7 +161,7 @@ function AnalyticsTable({ rows }: { rows: SearchAnalytics[] }) {
                   {feedbackLabel}
                 </td>
                 <td className="max-w-[14rem] truncate px-2 py-3 text-xs text-zinc-400">
-                  {row.feedback_note?.trim() || "—"}
+                  {row.feedback_note?.trim() || "-"}
                 </td>
               </tr>
             );
@@ -163,28 +177,14 @@ export function SearchAnalyticsDashboard({
 }: SearchAnalyticsDashboardProps) {
   return (
     <div className="space-y-10">
-      <header className="space-y-6">
-        <StudioNav
-          active="analytics"
-          actions={
-            <Link
-              href="/studio"
-              className="border border-zinc-700 px-3 py-2 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
-            >
-              חזרה לסטודיו
-            </Link>
-          }
-        />
-        <div>
-          <p className="text-xs text-zinc-500">ניהול פנימי</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
-            חיפושים
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-            מה אנשים מחפשים, ואיפה יש חורים במאגר (0 תוצאות).
-          </p>
-        </div>
-      </header>
+      {data.loadError ? (
+        <p
+          role="alert"
+          className="border border-red-900/60 bg-red-950/30 px-4 py-3 text-sm text-red-200"
+        >
+          לא נטען מ-Supabase: {data.loadError}
+        </p>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard title="חיפושים היום">
@@ -197,7 +197,7 @@ export function SearchAnalyticsDashboard({
         <SummaryCard title="טופ 5 השבוע">
           <TermList
             items={data.topTermsThisWeek}
-            emptyLabel="אין חיפושים ב־7 הימים האחרונים."
+            emptyLabel="אין חיפושים ב-7 הימים האחרונים."
           />
         </SummaryCard>
 
@@ -252,12 +252,29 @@ export function SearchAnalyticsDashboard({
               {data.rows.length} אירועים (חדש למעלה)
             </p>
           </div>
-          <Link
-            href="/studio"
-            className="text-xs text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
-          >
-            חזרה לסטודיו
-          </Link>
+          <StudioCsvExportButton
+            filename={`search-analytics-${new Date().toISOString().slice(0, 10)}.csv`}
+            headers={[
+              "query",
+              "created_at",
+              "results_count",
+              "user_feedback",
+              "feedback_note",
+              "user_id",
+            ]}
+            rows={data.rows.map((row) => [
+              row.search_query,
+              row.created_at,
+              row.results_count,
+              row.user_feedback == null
+                ? ""
+                : row.user_feedback
+                  ? "up"
+                  : "down",
+              row.feedback_note,
+              row.user_id,
+            ])}
+          />
         </div>
         <AnalyticsTable rows={data.rows} />
       </section>

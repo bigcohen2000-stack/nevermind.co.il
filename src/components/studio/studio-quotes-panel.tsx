@@ -17,6 +17,7 @@ import {
   quotePublicUrl,
   type QuoteProductKind,
 } from "@/lib/studio/quotes-shared";
+import { GENERIC_ADD_TIPS, QUOTE_WRITING_TIPS } from "@/lib/studio/writing-tips";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import type { StudioQuote } from "@/types/supabase";
 
@@ -343,7 +344,21 @@ export function StudioQuotesPanel({ initialQuotes }: StudioQuotesPanelProps) {
         </p>
       ) : null}
 
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 sm:p-6">
+      <section className="border border-zinc-800 bg-zinc-900/40 p-5 sm:p-6">
+        <h2 className="text-base font-semibold text-zinc-100">
+          איך כותבים הצעה
+        </h2>
+        <ul className="mt-3 list-disc space-y-1.5 pe-5 text-sm text-zinc-400">
+          {QUOTE_WRITING_TIPS.map((tip) => (
+            <li key={tip}>{tip}</li>
+          ))}
+        </ul>
+        <p className="mt-3 text-xs text-zinc-500">
+          {GENERIC_ADD_TIPS[0]} {GENERIC_ADD_TIPS[3]}
+        </p>
+      </section>
+
+      <section className="border border-zinc-800 bg-zinc-900/40 p-5 sm:p-6">
         <h2 className="text-base font-semibold text-zinc-100">הצעה חדשה</h2>
         <p className="mt-1 text-sm text-zinc-400">
           יוצרים קישור ציבורי ללקוח. אחרי אישור, מדביקים קישור תשלום ידנית.

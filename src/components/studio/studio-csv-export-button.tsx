@@ -18,7 +18,7 @@ export function StudioCsvExportButton({
   return (
     <button
       type="button"
-      className="rounded border border-zinc-600 px-3 py-1.5 text-xs text-zinc-200 transition hover:border-zinc-400"
+      className="inline-flex min-h-10 items-center border border-zinc-600 px-3 py-1.5 text-xs text-zinc-200 transition hover:border-zinc-400 disabled:opacity-40"
       onClick={() => {
         downloadCsv(filename, rowsToCsv(headers, rows));
       }}
