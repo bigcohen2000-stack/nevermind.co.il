@@ -3,6 +3,15 @@
 import { useState, useTransition } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import {
+  firstError,
+  ValidatedInput,
+} from "@/components/forms/validated-field";
+import {
+  validateEmail,
+  validatePhone,
+  validateRequiredText,
+} from "@/lib/forms/validators";
 
 type AuthMode = "email" | "sms";
 
@@ -10,7 +19,36 @@ type MyListSignInFormProps = {
   nextPath?: string;
   /** Compact: Google + email only (no SMS), for inline gates like transcript. */
   variant?: "full" | "compact";
+  /** From /auth/callback failure redirect (?auth_error=...). */
+  initialError?: string;
 };
+
+function GoogleMark() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="size-4 shrink-0"
+    >
+      <path
+        fill="#EA4335"
+        d="M12 10.2v3.6h5.1c-.2 1.2-.9 2.3-1.9 3l3.1 2.4c1.8-1.7 2.9-4.1 2.9-7 0-.7-.1-1.3-.2-1.9H12z"
+      />
+      <path
+        fill="#34A853"
+        d="M5.3 14.3l-.8.6-2.5 1.9C3.5 20 7.5 22.8 12 22.8c2.7 0 5-.9 6.7-2.4l-3.1-2.4c-.9.6-2 .9-3.6.9-2.8 0-5.1-1.9-5.9-4.4z"
+      />
+      <path
+        fill="#4A90E2"
+        d="M2 7.2C1.4 8.4 1 9.7 1 11.2s.4 2.8 1 4l3.3-2.5c-.2-.6-.3-1.2-.3-1.5 0-.5.1-1 .3-1.5z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M12 4.8c1.5 0 2.8.5 3.8 1.5l2.8-2.8C16.9 1.8 14.7 1 12 1 7.5 1 3.5 3.8 2 7.2l3.3 2.5C6.9 6.7 9.2 4.8 12 4.8z"
+      />
+    </svg>
+  );
+}
 
 /**
  * Account sign-in: Google OAuth, email magic link, optional phone SMS OTP.
@@ -20,6 +58,7 @@ type MyListSignInFormProps = {
 export function MyListSignInForm({
   nextPath = "/my-list",
   variant = "full",
+  initialError = "",
 }: MyListSignInFormProps) {
   const compact = variant === "compact";
   const [mode, setMode] = useState<AuthMode>("email");
@@ -27,9 +66,27 @@ export function MyListSignInForm({
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [showErrors, setShowErrors] = useState(Boolean(initialError));
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() =>
+    initialError === "missing_code"
+      ? "ההתחברות לא הושלמה. נסו שוב עם Google או אימייל."
+      : initialError,
+  );
   const [pending, startTransition] = useTransition();
+
+  function authCallbackOrigin(): string {
+    const siteUrl = (
+      process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+    ).replace(/\/$/, "");
+    if (
+      window.location.hostname.endsWith("nevermind.co.il") ||
+      window.location.hostname === "localhost"
+    ) {
+      return window.location.origin;
+    }
+    return siteUrl;
+  }
 
   function toE164(raw: string): string | null {
     const trimmed = raw.trim();
@@ -51,8 +108,8 @@ export function MyListSignInForm({
 
     startTransition(async () => {
       const supabase = createClient();
-      const origin = window.location.origin;
-      const { error: signError } = await supabase.auth.signInWithOAuth({
+      const origin = authCallbackOrigin();
+      const { data, error: signError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
@@ -64,24 +121,33 @@ export function MyListSignInForm({
 
       if (signError) {
         setError(signError.message);
+        return;
+      }
+
+      if (data?.url) {
+        setMessage("מעביר ל-Google...");
+        window.location.assign(data.url);
       }
     });
   }
 
   function onEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setShowErrors(true);
     setError("");
     setMessage("");
 
-    const trimmed = email.trim();
-    if (!trimmed) {
-      setError("נא להזין אימייל.");
+    const err = validateEmail(email, { required: true });
+    if (err) {
+      setError(err);
       return;
     }
 
+    const trimmed = email.trim();
+
     startTransition(async () => {
       const supabase = createClient();
-      const origin = window.location.origin;
+      const origin = authCallbackOrigin();
       const { error: signError } = await supabase.auth.signInWithOtp({
         email: trimmed,
         options: {
@@ -94,18 +160,25 @@ export function MyListSignInForm({
         return;
       }
 
-      setMessage("נשלח קישור התחברות לאימייל. בדוק את תיבת הדואר.");
+      setMessage("נשלח קישור התחברות לאימייל. בדקו את תיבת הדואר.");
     });
   }
 
   function onSendSmsOtp(e: React.FormEvent) {
     e.preventDefault();
+    setShowErrors(true);
     setError("");
     setMessage("");
 
+    const phoneErr = validatePhone(phone);
+    if (phoneErr) {
+      setError(phoneErr);
+      return;
+    }
+
     const e164 = toE164(phone);
     if (!e164) {
-      setError("נא להזין מספר טלפון תקין (למשל 05xxxxxxxx).");
+      setError("מספר טלפון לא תקין. לדוגמה: 05xxxxxxxx.");
       return;
     }
 
@@ -124,19 +197,26 @@ export function MyListSignInForm({
       }
 
       setOtpSent(true);
+      setShowErrors(false);
       setMessage("נשלח קוד SMS. הזינו אותו למטה.");
     });
   }
 
   function onVerifySmsOtp(e: React.FormEvent) {
     e.preventDefault();
+    setShowErrors(true);
     setError("");
     setMessage("");
 
     const e164 = toE164(phone);
     const token = otp.trim();
-    if (!e164 || !token) {
-      setError("נא להזין מספר וקוד.");
+    const err = firstError([
+      () => validatePhone(phone),
+      () =>
+        validateRequiredText(otp, "נא להזין את קוד ה-SMS.", { min: 4 }),
+    ]);
+    if (err || !e164) {
+      setError(err ?? "נא להזין מספר וקוד.");
       return;
     }
 
@@ -164,27 +244,25 @@ export function MyListSignInForm({
           type="button"
           onClick={onGoogleSignIn}
           disabled={pending}
-          className="btn btn-secondary w-full text-sm"
+          className="btn btn-secondary inline-flex w-full items-center justify-center gap-2 text-sm"
         >
+          <GoogleMark />
           {pending ? "מעביר ל-Google..." : "התחברות עם Google (חינם)"}
         </button>
         <form onSubmit={onEmailSubmit} className="space-y-3" noValidate>
-          <div>
-            <label htmlFor="transcript-auth-email" className="block text-sm font-medium">
-              אימייל
-            </label>
-            <input
-              id="transcript-auth-email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1.5 w-full rounded-md border border-foreground/20 bg-background px-3 py-2 text-sm"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
+          <ValidatedInput
+            id="transcript-auth-email"
+            label="אימייל"
+            help="נשלח קישור התחברות לתיבה שלכם."
+            value={email}
+            onChange={setEmail}
+            validate={(v) => validateEmail(v, { required: true })}
+            showErrors={showErrors}
+            type="email"
+            autoComplete="email"
+            dir="ltr"
+            placeholder="you@example.com"
+          />
           {error ? (
             <p className="text-sm text-action" role="alert">
               {error}
@@ -211,9 +289,7 @@ export function MyListSignInForm({
         disabled={pending}
         className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-zinc-600 bg-zinc-950 px-4 text-sm font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <span aria-hidden="true" className="text-base">
-          G
-        </span>
+        <GoogleMark />
         {pending ? "מעביר ל-Google..." : "התחברות עם Google"}
       </button>
 
@@ -262,22 +338,21 @@ export function MyListSignInForm({
 
       {mode === "email" ? (
         <form onSubmit={onEmailSubmit} className="space-y-4" noValidate>
-          <div>
-            <label htmlFor="my-list-email" className="block text-sm font-medium text-zinc-300">
-              אימייל
-            </label>
-            <input
-              id="my-list-email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-red-500/70"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
+          <ValidatedInput
+            id="my-list-email"
+            label="אימייל"
+            help="נשלח קישור התחברות. בדקו גם ספאם."
+            value={email}
+            onChange={setEmail}
+            validate={(v) => validateEmail(v, { required: true })}
+            showErrors={showErrors}
+            tone="dark"
+            type="email"
+            autoComplete="email"
+            dir="ltr"
+            placeholder="you@example.com"
+            inputClassName="rounded-xl border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 placeholder:text-zinc-600"
+          />
 
           {error ? (
             <p className="text-sm text-red-400" role="alert">
@@ -309,42 +384,44 @@ export function MyListSignInForm({
             className="space-y-4"
             noValidate
           >
-            <div>
-              <label htmlFor="my-list-phone" className="block text-sm font-medium text-zinc-300">
-                טלפון
-              </label>
-              <input
-                id="my-list-phone"
-                name="phone"
-                type="tel"
-                autoComplete="tel"
-                inputMode="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-red-500/70"
-                placeholder="05xxxxxxxx"
-                required
-              />
-            </div>
+            <ValidatedInput
+              id="my-list-phone"
+              label="טלפון"
+              help="לדוגמה: 05xxxxxxxx."
+              value={phone}
+              onChange={setPhone}
+              validate={validatePhone}
+              showErrors={showErrors}
+              tone="dark"
+              type="tel"
+              autoComplete="tel"
+              inputMode="tel"
+              dir="ltr"
+              placeholder="05xxxxxxxx"
+              inputClassName="rounded-xl border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 placeholder:text-zinc-600"
+            />
 
             {otpSent ? (
-              <div>
-                <label htmlFor="my-list-otp" className="block text-sm font-medium text-zinc-300">
-                  קוד SMS
-                </label>
-                <input
-                  id="my-list-otp"
-                  name="otp"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-red-500/70"
-                  placeholder="123456"
-                  required
-                />
-              </div>
+              <ValidatedInput
+                id="my-list-otp"
+                label="קוד SMS"
+                help="הקוד שנשלח למכשיר."
+                value={otp}
+                onChange={setOtp}
+                validate={(v) =>
+                  validateRequiredText(v, "נא להזין את קוד ה-SMS.", {
+                    min: 4,
+                  })
+                }
+                showErrors={showErrors}
+                tone="dark"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                dir="ltr"
+                placeholder="123456"
+                inputClassName="rounded-xl border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 placeholder:text-zinc-600"
+              />
             ) : null}
 
             {error ? (

@@ -62,7 +62,20 @@ function formatWatchedAt(iso: string): string {
   });
 }
 
-export default async function MyListPage() {
+export default async function MyListPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const authErrorRaw = params.auth_error;
+  const authError =
+    typeof authErrorRaw === "string"
+      ? authErrorRaw
+      : Array.isArray(authErrorRaw)
+        ? authErrorRaw[0]
+        : undefined;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -101,7 +114,10 @@ export default async function MyListPage() {
             </li>
           </ul>
 
-          <MyListSignInForm nextPath="/my-list" />
+          <MyListSignInForm
+            nextPath="/my-list"
+            initialError={authError}
+          />
           <p className="mt-8 text-sm text-zinc-500">
             או חזור ל{" "}
             <Link
