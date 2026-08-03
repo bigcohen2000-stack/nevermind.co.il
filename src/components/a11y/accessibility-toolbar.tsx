@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Accessibility } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
 import {
@@ -177,9 +178,7 @@ export function AccessibilityToolbar() {
           aria-controls={panelId}
           className="inline-flex min-h-12 min-w-12 items-center justify-center gap-2 border border-ink bg-ink px-3 text-sm font-medium text-[#FAFAF8] shadow-none transition hover:border-action hover:bg-action focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action"
         >
-          <span aria-hidden className="text-base leading-none">
-            ♿
-          </span>
+          <Accessibility className="h-5 w-5 shrink-0" aria-hidden="true" />
           <span className="sr-only sm:not-sr-only sm:inline">נגישות</span>
         </button>
       </div>

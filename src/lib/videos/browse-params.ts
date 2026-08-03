@@ -10,11 +10,28 @@ import {
 /** Fair grid size: 3 columns × 4 rows on large screens. */
 export const VIDEOS_PAGE_SIZE = 12;
 
+/** Duration dive filters for /videos. */
+export const VIDEO_DURATION_FILTERS = ["all", "short", "long"] as const;
+export type VideoBrowseDuration = (typeof VIDEO_DURATION_FILTERS)[number];
+
+export const VIDEO_DURATION_SHORT_MAX_SEC = 10 * 60;
+export const VIDEO_DURATION_LONG_MIN_SEC = 20 * 60;
+
+export function isVideoBrowseDuration(
+  value: unknown,
+): value is VideoBrowseDuration {
+  return (
+    typeof value === "string" &&
+    (VIDEO_DURATION_FILTERS as readonly string[]).includes(value)
+  );
+}
+
 export type VideosBrowseParams = {
   filter: VideoBrowseFilter;
   sort: VideoBrowseSort;
   concept?: string;
   breakdown?: BreakdownLevel;
+  duration: VideoBrowseDuration;
   page: number;
 };
 
@@ -28,6 +45,7 @@ export function parseVideosBrowseParams(raw: {
   concept?: string;
   breakdown?: string;
   level?: string;
+  duration?: string;
   page?: string;
 }): VideosBrowseParams {
   const filter =
@@ -52,11 +70,14 @@ export function parseVideosBrowseParams(raw: {
   const breakdownRaw = (raw.breakdown ?? raw.level)?.trim() ?? "";
   const breakdown = isBreakdownLevel(breakdownRaw) ? breakdownRaw : undefined;
 
+  const duration = isVideoBrowseDuration(raw.duration) ? raw.duration : "all";
+
   return {
     filter,
     sort,
     concept,
     breakdown,
+    duration,
     page: parsePageParam(raw.page),
   };
 }
@@ -81,6 +102,7 @@ export function videosBrowseHref(opts: {
   sort?: VideoBrowseSort;
   concept?: string;
   breakdown?: BreakdownLevel | string;
+  duration?: VideoBrowseDuration | string;
   page?: number;
   /** Scroll target after navigation (hash without #). */
   hash?: string;
@@ -94,6 +116,9 @@ export function videosBrowseHref(opts: {
   if (isBreakdownLevel(opts.breakdown)) {
     params.set("breakdown", opts.breakdown);
   }
+  if (isVideoBrowseDuration(opts.duration) && opts.duration !== "all") {
+    params.set("duration", opts.duration);
+  }
   const page = opts.page ?? 1;
   if (page > 1) params.set("page", String(page));
   const qs = params.toString();
@@ -105,4 +130,20 @@ export function clampPage(page: number, totalPages: number): number {
   const max = Math.max(1, totalPages);
   if (!Number.isFinite(page) || page < 1) return 1;
   return Math.min(Math.floor(page), max);
+}
+
+/** Keep videos that match the duration dive chip. */
+export function matchesDurationFilter(
+  durationSeconds: number | null | undefined,
+  duration: VideoBrowseDuration | undefined,
+): boolean {
+  if (!duration || duration === "all") return true;
+  const sec =
+    typeof durationSeconds === "number" && durationSeconds > 0
+      ? durationSeconds
+      : null;
+  if (sec == null) return false;
+  if (duration === "short") return sec < VIDEO_DURATION_SHORT_MAX_SEC;
+  if (duration === "long") return sec >= VIDEO_DURATION_LONG_MIN_SEC;
+  return true;
 }

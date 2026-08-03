@@ -305,6 +305,8 @@ export type ListBrowseVideosOptions = {
   concept?: string;
   /** Investigation breakdown level. */
   breakdown?: string;
+  /** Short / long dive filter (`all` skips). */
+  duration?: "all" | "short" | "long";
 };
 
 export type BrowseVideosPage = {
@@ -599,12 +601,20 @@ async function collectBrowseVideos(
     }
   }
 
+  const duration =
+    options.duration === "short" || options.duration === "long"
+      ? options.duration
+      : "all";
+
+  const { matchesDurationFilter } = await import("@/lib/videos/browse-params");
+
   const byId = new Map<string, Video>();
   for (const v of [...gatedTeasers, ...viaRls]) {
     if (conceptIds && !conceptIds.includes(v.id)) continue;
     if (breakdown && v.breakdown_level !== breakdown) continue;
     if (filter === "open" && (v.is_gated || v.is_unlisted)) continue;
     if (filter === "club" && !(v.is_gated || v.is_unlisted)) continue;
+    if (!matchesDurationFilter(v.duration_seconds, duration)) continue;
     if (isYoutubeUnavailableTitle(v.title)) continue;
     byId.set(v.id, v);
   }
