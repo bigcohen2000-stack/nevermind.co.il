@@ -4,9 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { deleteClubMember, mintClubFeedToken, upsertClubMember } from "@/actions/club-login";
+import { StudioCopyButton } from "@/components/studio/studio-copy-button";
 import { maskClubPhone } from "@/lib/club/phone";
+import { buildLeadWhatsAppHref } from "@/lib/studio/lead-contact";
 import {
   clubAccessGranted,
+  clubLoginGuide,
   expiryReminder,
 } from "@/lib/studio/whatsapp-templates";
 
@@ -54,6 +57,10 @@ export function ClubMembersPanel({
   const [error, setError] = useState<string | null>(null);
   const [feedUrl, setFeedUrl] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [lastSaved, setLastSaved] = useState<{
+    name: string;
+    phone: string;
+  } | null>(null);
 
   return (
     <section
@@ -87,7 +94,11 @@ export function ClubMembersPanel({
               setError(result.error);
               return;
             }
-            setStatus(result.message ?? "נשמר.");
+            setLastSaved({
+              name: displayName.trim() || "חבר/ת",
+              phone: phone.trim(),
+            });
+            setStatus(result.message ?? "נשמר. העתק הודעת כניסה למטה.");
             setPhone("");
             setDisplayName("");
             setNotes("");
@@ -156,6 +167,51 @@ export function ClubMembersPanel({
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
       {status ? <p className="text-sm text-zinc-300">{status}</p> : null}
+
+      {lastSaved ? (
+        <div className="space-y-2 border border-zinc-600 bg-zinc-950 p-4">
+          <p className="text-xs text-zinc-400">
+            הודעה מוכנה ל-{lastSaved.name} (הדרכה + יכולות. הוסף סיסמה ידנית אם
+            צריך, או הנפק קישור ב&quot;קישורי כניסה&quot;).
+          </p>
+          <pre className="max-h-48 overflow-auto whitespace-pre-wrap font-sans text-xs text-zinc-400">
+            {clubAccessGranted({
+              name: lastSaved.name,
+              includeBenefits: true,
+            })}
+          </pre>
+          <div className="flex flex-wrap gap-2">
+            <StudioCopyButton
+              text={clubAccessGranted({
+                name: lastSaved.name,
+                includeBenefits: true,
+              })}
+              label="העתק הודעה מלאה"
+              onCopied={() => setStatus("הודעה הועתקה.")}
+            />
+            <StudioCopyButton
+              text={clubLoginGuide({ name: lastSaved.name })}
+              label="העתק הדרכה קצרה"
+              onCopied={() => setStatus("הדרכה הועתקה.")}
+            />
+            <a
+              href={buildLeadWhatsAppHref(
+                lastSaved.phone,
+                clubAccessGranted({
+                  name: lastSaved.name,
+                  includeBenefits: true,
+                }),
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-10 items-center border border-zinc-500 px-3 text-xs text-zinc-100"
+            >
+              פתח וואטסאפ
+            </a>
+          </div>
+        </div>
+      ) : null}
+
       {feedUrl ? (
         <div className="rounded border border-zinc-600 bg-zinc-950 p-3">
           <p className="text-xs text-zinc-400">

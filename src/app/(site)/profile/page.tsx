@@ -30,7 +30,15 @@ function formatWatchedAt(iso: string): string {
   });
 }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string; tab?: string }>;
+}) {
+  const params = await searchParams;
+  const isRegister = params.mode === "register";
+  const showSettings = params.tab === "settings";
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -50,16 +58,40 @@ export default async function ProfilePage() {
       <main className="min-h-full w-full bg-[#000000] text-[#FAFAF8]">
         <div className="mx-auto flex w-full max-w-lg flex-col px-6 py-16 sm:py-24">
           <p className="text-xs font-medium tracking-[0.2em] text-[#9CA3AF] uppercase">
-            Profile
+            {isRegister ? "Register" : "Sign in"}
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-            התחבר לפרופיל
+            {isRegister ? "הרשמה לחשבון" : "התחברות לפרופיל"}
           </h1>
           <p className="mt-4 text-sm leading-relaxed text-[#9CA3AF]">
-            היסטוריית צפייה ופרטי חשבון זמינים אחרי התחברות. נשלח קישור לאימייל.
-            בלי סיסמה.
+            {isRegister
+              ? "יוצרים חשבון עם Google או קישור לאימייל. בלי סיסמה. אחרי האימות נפתחים רשימה והיסטוריית צפייה."
+              : "היסטוריית צפייה ופרטי חשבון זמינים אחרי התחברות. נשלח קישור לאימייל. בלי סיסמה."}
           </p>
           <MyListSignInForm nextPath="/profile" />
+          <p className="mt-6 text-sm text-[#9CA3AF]">
+            {isRegister ? (
+              <>
+                כבר יש חשבון?{" "}
+                <Link
+                  href="/profile"
+                  className="text-[#FAFAF8] underline-offset-2 hover:underline"
+                >
+                  התחברות
+                </Link>
+              </>
+            ) : (
+              <>
+                אין חשבון?{" "}
+                <Link
+                  href="/profile?mode=register"
+                  className="text-[#FAFAF8] underline-offset-2 hover:underline"
+                >
+                  הרשמה
+                </Link>
+              </>
+            )}
+          </p>
           {club.clubSession ? (
             <section className="mt-10 border border-[#FAFAF8]/10 bg-[#0A0A0B] p-5 text-sm">
               <h2 className="font-semibold tracking-tight">מועדון במכשיר</h2>
@@ -157,9 +189,61 @@ export default async function ProfilePage() {
               >
                 הרשימה שלי
               </Link>
+              <Link
+                href="/profile?tab=settings"
+                className="border border-[#FAFAF8]/25 px-4 py-2 text-sm text-[#FAFAF8] transition hover:border-[#D42B2B] hover:text-[#D42B2B]"
+              >
+                הגדרות
+              </Link>
               <SignOutButton />
             </div>
           </div>
+        </section>
+
+        <section
+          id="settings"
+          aria-labelledby="settings-title"
+          className={`mt-10 border border-[#FAFAF8]/10 bg-[#0A0A0B] p-6 sm:p-8 ${showSettings ? "ring-1 ring-[#D42B2B]/50" : ""}`}
+        >
+          <h2
+            id="settings-title"
+            className="text-xl font-semibold tracking-tight"
+          >
+            הגדרות
+          </h2>
+          <p className="mt-2 max-w-prose text-sm text-[#9CA3AF]">
+            ערכת נושא לחשבון מחובר זמינה מתפריט החשבון בראש האתר. כאן מנהלים
+            גישה, רשימה והיסטוריה.
+          </p>
+          <ul className="mt-6 space-y-3 text-sm text-[#FAFAF8]/85">
+            <li>
+              <Link
+                href="/my-list"
+                className="underline-offset-2 hover:underline"
+              >
+                הרשימה שלי
+              </Link>
+              {" · "}
+              סרטונים שנשמרו להמשך חקירה.
+            </li>
+            <li>
+              <a href="#watch-history-title" className="underline-offset-2 hover:underline">
+                היסטוריית צפייה
+              </a>
+              {" · "}
+              מה שהתחלת לצפות בו במכשיר הזה.
+            </li>
+            <li>
+              <Link
+                href="/privacy"
+                className="underline-offset-2 hover:underline"
+              >
+                מדיניות פרטיות
+              </Link>
+              {" · "}
+              איך נשמר מידע באתר.
+            </li>
+          </ul>
         </section>
 
         <section

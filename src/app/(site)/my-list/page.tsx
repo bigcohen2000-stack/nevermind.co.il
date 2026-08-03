@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { MyListSignInForm } from "@/components/auth/my-list-sign-in-form";
+import { SmartEmptyState } from "@/components/ui/smart-empty-state";
 import { VideoCard } from "@/components/videos/video-card";
 import { listSavedVideos } from "@/actions/saved-videos";
 import { listWatchHistory } from "@/actions/watch-history";
@@ -213,25 +214,10 @@ export default async function MyListPage({
           </div>
 
           {videos.length === 0 ? (
-            <div className="mt-8 border border-dashed border-zinc-700 bg-zinc-900/30 p-6 text-zinc-400">
-              <p className="text-sm leading-relaxed">
-                אין שמורים עדיין. פתחו סרטון, לחצו על הסימניה, והוא יופיע כאן.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Link href="/videos" className="btn btn-primary text-sm">
-                  <span aria-hidden="true" className="me-1.5">
-                    🎬
-                  </span>
-                  לכל הסרטונים
-                </Link>
-                <Link href="/search" className="btn btn-secondary text-sm">
-                  <span aria-hidden="true" className="me-1.5">
-                    🔍
-                  </span>
-                  חיפוש
-                </Link>
-              </div>
-            </div>
+            <SmartEmptyState
+              tone="dark"
+              message="אין שמורים עדיין. פתחו סרטון, לחצו על הסימניה, והוא יופיע כאן. בינתיים: מושגי ליבה במאגר."
+            />
           ) : (
             <ul className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {videos.map((video) => (

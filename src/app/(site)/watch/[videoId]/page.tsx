@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
+import { Lock, Tag } from "lucide-react";
 
 import { getVideoProgressSeconds } from "@/actions/video-progress";
 import { resolveVideoEntitlement } from "@/lib/club/access";
@@ -8,43 +9,64 @@ import { maskClubPhone } from "@/lib/club/phone";
 import { logClubWatchEvent } from "@/lib/club/watch-events";
 import { RelatedExploration } from "@/components/search/related-exploration";
 import { JsonLd } from "@/components/seo/json-ld";
-import { ShareExplorationButton } from "@/components/share/share-exploration-button";
+import { SetBreadcrumbCurrent } from "@/components/layout/site-breadcrumbs";
+import { SiteBanner } from "@/components/site/site-banner";
 import { Eyebrow } from "@/components/ui/editorial";
 import { BookingCta } from "@/components/videos/booking-cta";
-import { ClubWatchIdentity } from "@/components/videos/club-watch-identity";
-import { ContinueExplorationTeaser } from "@/components/videos/continue-exploration-teaser";
 import { CaptionTagCloud } from "@/components/videos/caption-tag-cloud";
+import { ContinueExplorationTeaser } from "@/components/videos/continue-exploration-teaser";
 import { FeaturedInvestigators } from "@/components/videos/featured-investigators";
-import { GatedLock } from "@/components/videos/gated-lock";
-import { TeaserWatchGate } from "@/components/videos/teaser-watch-gate";
-import { SiteBanner } from "@/components/site/site-banner";
 import { InvestigationMetrics } from "@/components/videos/investigation-metrics";
 import { ObjectiveTruthToggle } from "@/components/videos/objective-truth-toggle";
+import { PremiumWatchStatus } from "@/components/videos/premium-watch-status";
 import { RabbitHoleWatchBridge } from "@/components/premium/rabbit-hole-watch-bridge";
-import { RelatedVideoCard } from "@/components/videos/related-video-card";
+import { PublicWatchNextSteps } from "@/components/videos/public-watch-next-steps";
+import { TeaserWatchGate } from "@/components/videos/teaser-watch-gate";
 import { TranscriptHeatmap } from "@/components/videos/transcript-heatmap";
+import { WatchAccessChooser } from "@/components/videos/watch-access-chooser";
+import { WatchBookingNudge } from "@/components/videos/watch-booking-nudge";
+import { WatchContentTabs } from "@/components/videos/watch-content-tabs";
 import { WatchFocusLayout } from "@/components/videos/watch-focus-layout";
+import {
+  WatchExploreLinks,
+  WatchGuideStrip,
+  WatchLockedFaq,
+} from "@/components/videos/watch-guide-strip";
+import { WatchPrevNext } from "@/components/videos/watch-prev-next";
+import { WatchQuickActions } from "@/components/videos/watch-quick-actions";
+import { LogicalContinuationLink } from "@/components/videos/logical-continuation-link";
 import { WatchSeekProvider } from "@/components/videos/watch-seek-context";
+import {
+  WATCH_LOCKED_FAQ,
+  WATCH_LOCKED_HIGHLIGHTS,
+  WATCH_MEMBER_HIGHLIGHTS,
+  WATCH_PUBLIC_HIGHLIGHTS,
+} from "@/lib/content/watch-page";
 import { extractCuratedConcepts } from "@/lib/concepts/quality";
 import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
 import { getRelatedArticlesForTerms } from "@/lib/search/related-content";
 import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
+import { isMembersOnlyVideo } from "@/lib/videos/access";
+import { buildCaptionTagCloud } from "@/lib/videos/caption-tag-cloud";
 import {
   buildTranscriptHeatmap,
   segmentsFromFlatTranscript,
 } from "@/lib/videos/heatmap";
-import { isMembersOnlyVideo } from "@/lib/videos/access";
-import { buildCaptionTagCloud } from "@/lib/videos/caption-tag-cloud";
-import { getLockedTeaserYoutubeId } from "@/lib/videos/teaser";
-import { buildOpaqueThumbPath } from "@/lib/videos/thumb-token";
-import { getFeaturedInvestigatorComments } from "@/lib/videos/featured-comments";
+import { getLogicalContinuation } from "@/lib/videos/logical-continuation";
 import {
+  getAdjacentVideos,
   getRelatedVideos,
   getVideoConcepts,
   getVideoForWatch,
   getVideoTranscriptPayload,
 } from "@/lib/videos/queries";
-import { parseTimestampParam } from "@/lib/videos/timestamp";
+import { getLockedTeaserYoutubeId } from "@/lib/videos/teaser";
+import { buildOpaqueThumbPath } from "@/lib/videos/thumb-token";
+import {
+  formatTimestampLabel,
+  formatTimestampParam,
+  parseTimestampParam,
+} from "@/lib/videos/timestamp";
 import {
   getWatchHref,
   isUuidParam,
@@ -111,37 +133,45 @@ export async function generateMetadata({
   };
 }
 
-/**
- * Locked members-only watch shell.
- * Plays only a dedicated teaser clip id when set. Never the full archive id.
- */
 function LockedWatchPage({
   title,
   thumbSrc,
   videoId,
   teaserYoutubeId,
   returnPath,
+  isAuthenticated,
 }: {
   title: string;
   thumbSrc: string;
   videoId: string;
   teaserYoutubeId: string | null;
   returnPath: string;
+  isAuthenticated: boolean;
 }) {
   const teaserThumb = teaserYoutubeId
     ? `https://i.ytimg.com/vi/${teaserYoutubeId}/hqdefault.jpg`
     : null;
-
   const gateBanner = <SiteBanner slot="watch_gate" density="compact" />;
 
   return (
     <main className="w-full bg-background text-foreground" dir="rtl">
-      <div className="mx-auto w-full max-w-6xl px-6 py-12 lg:py-16">
-        <Eyebrow>צפייה</Eyebrow>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight lg:text-4xl">
+      <SetBreadcrumbCurrent title={title} />
+      <div className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 sm:py-12 lg:py-14">
+        <div className="flex flex-wrap items-center gap-2">
+          <Eyebrow>מועדון</Eyebrow>
+          <span className="inline-flex items-center gap-1 border border-action/40 px-2 py-0.5 text-xs text-action">
+            <Lock className="size-3" aria-hidden />
+            נעול
+          </span>
+        </div>
+        <h1 className="mt-3 text-xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
           {title}
         </h1>
-        <div className="mt-8 max-w-3xl">
+        <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted sm:text-base">
+          טיזר קצר אם יש. הסרטון המלא אחרי כניסה למועדון. אין סליקה באתר.
+        </p>
+
+        <div className="mt-6 max-w-3xl">
           {teaserYoutubeId ? (
             <TeaserWatchGate
               teaserYoutubeId={teaserYoutubeId}
@@ -153,34 +183,51 @@ function LockedWatchPage({
               gateBanner={gateBanner}
             />
           ) : (
-            <GatedLock
-              title={title}
-              thumbSrc={thumbSrc}
-              videoId={videoId}
-              returnPath={returnPath}
-              hasTeaser={false}
-              gateBanner={gateBanner}
-            />
+            <div className="relative aspect-video overflow-hidden border border-foreground/15 bg-paper">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={thumbSrc}
+                alt=""
+                className="h-full w-full object-cover opacity-80"
+              />
+              {gateBanner}
+            </div>
           )}
+        </div>
+
+        <div className="mt-8 max-w-3xl space-y-8">
+          <WatchGuideStrip
+            highlights={WATCH_LOCKED_HIGHLIGHTS}
+            title="מה אפשר כאן בלי כניסה"
+            lead="הכותרת גלויה. הצפייה המלאה אחרי מועדון או בקשת סרטון בודד."
+          />
+          <WatchAccessChooser
+            title={title}
+            videoId={videoId}
+            returnPath={returnPath}
+            isAuthenticated={isAuthenticated}
+            hasTeaser={Boolean(teaserYoutubeId)}
+          />
+          <WatchLockedFaq items={WATCH_LOCKED_FAQ} />
+          <WatchExploreLinks />
         </div>
       </div>
     </main>
   );
 }
 
-/** Clear Hebrew state when YouTube no longer serves the video. */
 function UnavailableWatchPage() {
   return (
     <main className="w-full bg-background text-foreground" dir="rtl">
-      <div className="mx-auto w-full max-w-6xl px-6 py-12 lg:py-16">
+      <div className="mx-auto w-full max-w-6xl px-3 py-8 sm:px-6 sm:py-12">
         <Eyebrow>צפייה</Eyebrow>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight lg:text-4xl">
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
           הסרטון לא זמין יותר ביוטיוב
         </h1>
-        <p className="mt-4 max-w-prose text-base leading-relaxed text-foreground/75">
+        <p className="mt-3 max-w-prose text-sm text-muted sm:text-base">
           הסרטון הוסר או הוסתר בערוץ. הוא יוסר גם מהאתר בסנכרון הבא.
         </p>
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/videos" className="btn btn-primary">
             לכל הסרטונים
           </Link>
@@ -212,8 +259,6 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
     return <UnavailableWatchPage />;
   }
 
-  // resolveVideoEntitlement already resolves premium/profile when needed.
-  // Avoid a second getPremiumStatus round-trip on the critical path.
   const access = await resolveVideoEntitlement().catch(() => ({
     entitled: false,
     clubSession: false,
@@ -225,22 +270,19 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
   const authed = access.isAuthenticated;
   const entitled = access.entitled;
   const locked = isMembersOnlyVideo(video) && !entitled;
+  const watchHref = getWatchHref(video);
 
-  // Members-only: canonicalize to opaque UUID so YouTube ids leave the address bar.
   if (
     isMembersOnlyVideo(video) &&
     isYoutubeIdParam(videoId) &&
     !isUuidParam(videoId)
   ) {
-    const dest = getWatchHref(video);
     const qs = t ? `?t=${encodeURIComponent(t)}` : "";
-    permanentRedirect(`${dest}${qs}`);
+    permanentRedirect(`${watchHref}${qs}`);
   }
 
-  // Hard stop: never mount full player / related / transcript when locked.
-  // Only a dedicated teaser_youtube_id may reach the client.
   if (locked) {
-    const returnPath = `${getWatchHref(video)}${t ? `?t=${encodeURIComponent(t)}` : ""}`;
+    const returnPath = `${watchHref}${t ? `?t=${encodeURIComponent(t)}` : ""}`;
     return (
       <LockedWatchPage
         title={video.title}
@@ -248,6 +290,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
         videoId={video.id}
         teaserYoutubeId={getLockedTeaserYoutubeId(video)}
         returnPath={returnPath}
+        isAuthenticated={authed}
       />
     );
   }
@@ -271,6 +314,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
     ? video.core_facts.filter((f) => typeof f === "string" && f.trim())
     : [];
   const conceptIds = concepts.map((c) => c.concept_id);
+  const conceptNames = concepts.map((c) => c.name);
 
   const heatConcepts = concepts.map((c) => ({
     name: c.name,
@@ -291,47 +335,68 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
           )
         : [];
   const heatmapBuckets = buildTranscriptHeatmap(timedSegments, heatConcepts);
-  const related = await getRelatedVideos(
-    video.id,
-    conceptIds,
-    video.playlist_id,
-    8,
-    { entitled },
-  ).catch(() => []);
+
+  const [related, continuation, adjacent] = await Promise.all([
+    getRelatedVideos(
+      video.id,
+      conceptIds,
+      video.playlist_id,
+      3,
+      { entitled },
+    ).catch(() => []),
+    getLogicalContinuation({
+      videoId: video.id,
+      conceptNames:
+        conceptNames.filter(Boolean).length > 0
+          ? conceptNames.filter(Boolean)
+          : extractCuratedConcepts(video.title, video.description ?? "", [], 6),
+    }).catch(() => null),
+    getAdjacentVideos(video.id, { entitled }).catch(() => ({
+      prev: null,
+      next: null,
+    })),
+  ]);
 
   const relatedArticles = getRelatedArticlesForTerms(
     [
-      ...concepts.map((c) => c.name).filter(Boolean),
-      ...extractCuratedConcepts(
-        video.title,
-        video.description ?? "",
-        [],
-        8,
-      ),
+      ...conceptNames.filter(Boolean),
+      ...extractCuratedConcepts(video.title, video.description ?? "", [], 8),
     ],
-    { limit: 4 },
+    { limit: 3 },
   );
   const articleSearchQuery =
     concepts.find((c) => c.name)?.name ||
     extractCuratedConcepts(video.title, video.description ?? "")[0] ||
     video.title;
 
-  const nextCandidate =
+  const relatedFallback =
     related.find((v) => v.sharedConcept && v.youtube_id?.trim()) ??
     related.find((v) => v.youtube_id?.trim()) ??
     null;
-  const nextUp = nextCandidate
-    ? {
-        youtubeId: nextCandidate.youtube_id,
-        title: nextCandidate.title,
-        thumbnailUrl: nextCandidate.thumbnail_url,
-        sharedConcept: nextCandidate.sharedConcept,
-      }
-    : null;
+  const nextUp =
+    continuation?.youtubeId
+      ? {
+          youtubeId: continuation.youtubeId,
+          title: continuation.videoTitle ?? continuation.nextTopic,
+          thumbnailUrl: continuation.thumbnailUrl,
+          sharedConcept: continuation.nextTopic,
+        }
+      : relatedFallback
+        ? {
+            youtubeId: relatedFallback.youtube_id,
+            title: relatedFallback.title,
+            thumbnailUrl: relatedFallback.thumbnail_url,
+            sharedConcept: relatedFallback.sharedConcept,
+          }
+        : null;
 
   const primaryTopic = concepts.find((c) => c.name)?.name || video.title;
+  const captionTags = buildCaptionTagCloud(transcript, conceptNames);
+  const hasMorePanel =
+    heatmapBuckets.length > 0 ||
+    Boolean(video.duration_seconds) ||
+    captionTags.length > 0;
 
-  // Public videos only: never emit VideoObject with YouTube urls for gated.
   const jsonLd = !isMembersOnlyVideo(video)
     ? {
         "@context": "https://schema.org",
@@ -353,14 +418,12 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
   const breadcrumbLd = buildBreadcrumbList([
     { name: "בית", path: "/" },
     { name: "סרטונים", path: "/videos" },
-    {
-      name: video.title,
-      path: getWatchHref(video),
-    },
+    { name: video.title, path: watchHref },
   ]);
 
   return (
     <>
+      <SetBreadcrumbCurrent title={video.title} />
       <JsonLd data={breadcrumbLd} />
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
 
@@ -383,130 +446,180 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
               nextUp={nextUp}
             />
           }
+          actions={
+            <WatchQuickActions
+              title={video.title}
+              shareUrl={watchHref}
+              isMembersOnly={isMembersOnlyVideo(video)}
+              isEntitled={entitled}
+            />
+          }
           belowPlayer={
-            <>
-              {access.clubSession ? (
-                <ClubWatchIdentity
+            <div className="space-y-5 sm:space-y-6">
+              {entitled ? (
+                <PremiumWatchStatus
                   displayName={access.displayName}
                   maskedPhone={maskClubPhone(access.phone)}
                 />
               ) : null}
 
-              <TranscriptHeatmap buckets={heatmapBuckets} />
-
-              <InvestigationMetrics
-                durationSeconds={video.duration_seconds}
-                breakdownLevel={video.breakdown_level}
-                heatmapBuckets={heatmapBuckets}
-                conceptNames={concepts.map((c) => c.name)}
-                watchHref={getWatchHref(video)}
+              <WatchGuideStrip
+                highlights={
+                  entitled ? WATCH_MEMBER_HIGHLIGHTS : WATCH_PUBLIC_HIGHLIGHTS
+                }
+                title={entitled ? "מה פתוח לחברים" : "מה יש כאן"}
+                lead={
+                  entitled
+                    ? "המאגר במכשיר הזה. אפשר להמשיך למושגים, לרמות, ולתיאום."
+                    : "סרטון פתוח. מאגר המועדון נפתח בנפרד אחרי אישור."
+                }
               />
 
-              <CaptionTagCloud
-                tags={buildCaptionTagCloud(
-                  transcript,
-                  concepts.map((c) => c.name),
-                )}
-              />
-
-              <FeaturedInvestigators
-                videoId={video.id}
-                youtubeId={video.youtube_id}
-                watchHref={getWatchHref(video)}
-              />
-
-              <ObjectiveTruthToggle
-                facts={coreFacts}
-                transcript={authed ? transcript : null}
-                transcriptAvailable={Boolean(transcript?.trim())}
-                canViewTranscript={authed}
-                signInNextPath={getWatchHref(video)}
-                videoTitle={video.title}
-                concepts={concepts.map((c) => c.name)}
-              />
+              <WatchPrevNext prev={adjacent.prev} next={adjacent.next} />
 
               {concepts.length > 0 ? (
-                <section className="mt-8" aria-labelledby="concepts-title">
-                  <h2 id="concepts-title" className="text-lg font-semibold">
-                    מושגים בסרטון
+                <section aria-labelledby="concepts-title">
+                  <h2
+                    id="concepts-title"
+                    className="flex items-center gap-2 text-sm font-semibold sm:text-base"
+                  >
+                    <Tag className="size-4 text-action" aria-hidden />
+                    מושגים. לחיצה קופצת לזמן.
                   </h2>
                   <ul className="mt-3 flex flex-wrap gap-2">
-                    {concepts.map((c) => (
-                      <li key={c.concept_id}>
-                        <Link
-                          href={
-                            c.start_timestamp != null
-                              ? `${getWatchHref(video)}?t=${c.start_timestamp}`
-                              : `/search?q=${encodeURIComponent(c.name)}`
-                          }
-                          className="border border-foreground/15 px-3 py-1.5 text-sm hover:border-action hover:text-action"
-                        >
-                          {c.name}
-                          {c.start_timestamp != null
-                            ? ` · ${c.start_timestamp}ש׳`
-                            : ""}
-                        </Link>
-                      </li>
-                    ))}
+                    {concepts.map((c) => {
+                      const stampLabel = formatTimestampLabel(c.start_timestamp);
+                      const seekHref =
+                        c.start_timestamp != null
+                          ? `${watchHref}?t=${formatTimestampParam(c.start_timestamp)}`
+                          : `/search?q=${encodeURIComponent(c.name)}`;
+                      return (
+                        <li key={c.concept_id}>
+                          <Link
+                            href={seekHref}
+                            className="inline-flex min-h-10 items-center border border-foreground/15 bg-background px-3 py-1.5 text-sm transition hover:border-action hover:text-action"
+                          >
+                            {c.name}
+                            {stampLabel ? ` (${stampLabel})` : ""}
+                          </Link>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </section>
               ) : null}
 
-              <div className="mt-8">
-                <ShareExplorationButton
-                  title={video.title}
-                  text={`חקירה: ${video.title}`}
-                  url={getWatchHref(video)}
-                />
-              </div>
-
-              {!isMembersOnlyVideo(video) ? (
-                <ContinueExplorationTeaser
-                  label={video.club_teaser_label}
-                  href={video.club_teaser_href}
+              {continuation ? (
+                <LogicalContinuationLink
+                  continuation={continuation}
+                  className="lg:hidden"
                 />
               ) : null}
 
-              <div className="mt-8">
-                <BookingCta topic={primaryTopic} context={video.title} />
-              </div>
-
-              <RelatedExploration
-                articles={relatedArticles}
-                searchQuery={articleSearchQuery}
-                showEmpty={{ articles: true }}
+              <WatchContentTabs
+                insight={
+                  <div className="space-y-4 [&>section]:mt-0">
+                    <ObjectiveTruthToggle
+                      facts={coreFacts}
+                      transcript={authed ? transcript : null}
+                      transcriptAvailable={Boolean(transcript?.trim())}
+                      canViewTranscript={authed}
+                      signInNextPath={watchHref}
+                      videoTitle={video.title}
+                      concepts={conceptNames}
+                    />
+                    {!isMembersOnlyVideo(video) && !entitled ? (
+                      <ContinueExplorationTeaser
+                        label={video.club_teaser_label}
+                        href={video.club_teaser_href}
+                      />
+                    ) : null}
+                    <RelatedExploration
+                      articles={relatedArticles}
+                      searchQuery={articleSearchQuery}
+                      showEmpty={{ articles: false }}
+                    />
+                  </div>
+                }
+                more={
+                  hasMorePanel ? (
+                    <div className="space-y-6">
+                      <TranscriptHeatmap buckets={heatmapBuckets} />
+                      <InvestigationMetrics
+                        durationSeconds={video.duration_seconds}
+                        breakdownLevel={video.breakdown_level}
+                        heatmapBuckets={heatmapBuckets}
+                        conceptNames={conceptNames}
+                        watchHref={watchHref}
+                      />
+                      <CaptionTagCloud tags={captionTags} />
+                      <FeaturedInvestigators
+                        videoId={video.id}
+                        youtubeId={video.youtube_id}
+                        watchHref={watchHref}
+                      />
+                    </div>
+                  ) : undefined
+                }
+                talk={<BookingCta topic={primaryTopic} context={video.title} />}
               />
-            </>
+
+              {!entitled ? (
+                <PublicWatchNextSteps
+                  isAuthenticated={authed}
+                  transcript={authed ? transcript : null}
+                  transcriptAvailable={Boolean(transcript?.trim())}
+                  videoTitle={video.title}
+                  signInNextPath={watchHref}
+                  clubLabel={video.club_teaser_label}
+                  clubHref={video.club_teaser_href}
+                />
+              ) : null}
+
+              <WatchExploreLinks />
+            </div>
           }
           sidebar={
-            <>
-              <h2
-                id="related-title"
-                className="text-xl font-semibold tracking-tight"
-              >
-                סרטונים נוספים לחקירה בנושא
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/70">
-                לפי מושגים משותפים או אותה רשימת השמעה.
-              </p>
-
-              {related.length > 0 ? (
-                <ul className="mt-6 space-y-3">
-                  {related.map((v) => (
+            continuation ? (
+              <LogicalContinuationLink continuation={continuation} />
+            ) : related.length > 0 ? (
+              <div>
+                <p className="text-xs font-medium tracking-wide text-action">
+                  המשך
+                </p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-xl">
+                  סרטונים להמשך
+                </h2>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                  מאותו נושא. ממשיכים בלי לחפש.
+                </p>
+                <ul className="mt-4 space-y-2.5 sm:mt-5 sm:space-y-3">
+                  {related.slice(0, 1).map((v) => (
                     <li key={v.id}>
-                      <RelatedVideoCard video={v} />
+                      <Link
+                        href={
+                          v.youtube_id
+                            ? `/watch/${v.youtube_id}`
+                            : `/watch/${v.id}`
+                        }
+                        className="block border border-foreground/10 p-3 text-sm no-underline transition hover:border-action hover:no-underline"
+                      >
+                        {v.title}
+                        {v.sharedConcept ? (
+                          <span className="mt-1 block text-xs text-muted">
+                            דרך: {v.sharedConcept}
+                          </span>
+                        ) : null}
+                      </Link>
                     </li>
                   ))}
                 </ul>
-              ) : (
-                <p className="mt-6 text-sm text-muted">
-                  אין עדיין סרטונים קשורים להצגה.
-                </p>
-              )}
-            </>
+              </div>
+            ) : null
           }
         />
       </WatchSeekProvider>
+      {!entitled ? <WatchBookingNudge /> : null}
     </>
   );
 }

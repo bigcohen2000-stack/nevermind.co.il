@@ -20,10 +20,18 @@ import { useSearchHotkey } from "@/hooks/use-search-hotkey";
 import { pushRecentSearch, readRecentSearches } from "@/lib/recent-searches";
 import { storeSearchAnalyticsId } from "@/lib/search/analytics-session";
 import {
+  suggestItemBadge,
   suggestItemHref,
   suggestItemLabel,
   type SuggestItem,
 } from "@/lib/search/types";
+import { searchUrlWithQuery } from "@/lib/search/search-params";
+import {
+  BREAKDOWN_LEVELS,
+  BREAKDOWN_LEVEL_LABELS,
+  BREAKDOWN_LEVEL_NUMBERS,
+  type BreakdownLevel,
+} from "@/lib/videos/investigation";
 import { cn } from "@/lib/utils";
 
 export type { SuggestItem } from "@/lib/search/types";
@@ -110,6 +118,7 @@ export function HeroSearch({
   const [recent, setRecent] = useState<string[]>([]);
   const [focused, setFocused] = useState(false);
   const [hasFetchedEmpty, setHasFetchedEmpty] = useState(false);
+  const [breakdown, setBreakdown] = useState<BreakdownLevel | null>(null);
 
   const isDark = variant === "dark";
   useSearchHotkey(inputRef);
@@ -150,9 +159,13 @@ export function HeroSearch({
       setActiveIndex(-1);
       if (syncUrl && q.length === 0) {
         const base = pathname === "/" ? "/" : pathname;
+        const next =
+          pathname === "/search"
+            ? searchUrlWithQuery(pathname, window.location.search, "")
+            : base;
         const current = `${window.location.pathname}${window.location.search}`;
-        if (current !== base) {
-          window.history.replaceState(null, "", base);
+        if (current !== next) {
+          window.history.replaceState(null, "", next);
         }
       }
       return;
@@ -161,7 +174,10 @@ export function HeroSearch({
     const handle = window.setTimeout(async () => {
       if (syncUrl) {
         const base = pathname === "/" ? "/" : pathname;
-        const next = `${base}?q=${encodeURIComponent(q)}`;
+        const next =
+          pathname === "/search"
+            ? searchUrlWithQuery(pathname, window.location.search, q)
+            : `${base}?q=${encodeURIComponent(q)}`;
         const current = `${window.location.pathname}${window.location.search}`;
         if (current !== next) {
           window.history.replaceState(null, "", next);
@@ -174,10 +190,11 @@ export function HeroSearch({
       setLoading(true);
       setHasFetchedEmpty(false);
       try {
-        const res = await fetch(
-          `/api/search/suggest?q=${encodeURIComponent(q)}`,
-          { signal: controller.signal },
-        );
+        const params = new URLSearchParams({ q });
+        if (breakdown) params.set("breakdown", breakdown);
+        const res = await fetch(`/api/search/suggest?${params.toString()}`, {
+          signal: controller.signal,
+        });
         const data = (await res.json()) as { items?: SuggestItem[] };
         const nextItems = data.items ?? [];
         setItems(nextItems);
@@ -198,7 +215,7 @@ export function HeroSearch({
     return () => {
       window.clearTimeout(handle);
     };
-  }, [query, pathname, syncUrl]);
+  }, [query, pathname, syncUrl, breakdown]);
 
   // Focus trap while the suggest / zero-state panel is open.
   useEffect(() => {
@@ -276,10 +293,6 @@ export function HeroSearch({
       setRecent(pushRecentSearch(label));
       setOpen(false);
       setFocused(false);
-      if (item.type === "article") {
-        router.push(suggestItemHref(item));
-        return;
-      }
 
       const videoSuggestCount =
         item.type === "video"
@@ -293,9 +306,22 @@ export function HeroSearch({
           /* analytics must not surface to the user */
         });
 
-      router.push(`/search?q=${encodeURIComponent(label)}`);
+      router.push(suggestItemHref(item));
     },
     [items, router],
+  );
+
+  const fillSearch = useCallback(
+    (term: string) => {
+      const trimmedTerm = term.trim();
+      if (!trimmedTerm) return;
+      setQuery(trimmedTerm);
+      setFocused(true);
+      setOpen(true);
+      inputRef.current?.focus();
+      goToSearch(trimmedTerm);
+    },
+    [goToSearch],
   );
 
   const clearQuery = useCallback(() => {
@@ -362,6 +388,7 @@ export function HeroSearch({
             setOpen(true);
             setFocused(true);
           }}
+          onClear={clearQuery}
           onSubmit={onSubmit}
           onKeyDown={onKeyDown}
           onFocus={() => {
@@ -384,6 +411,22 @@ export function HeroSearch({
           }
         />
 
+        {trimmed.length >= 2 ? (
+          <p
+            className={cn(
+              "mt-2 text-center text-[11px] tabular-nums",
+              isDark ? "text-white/55" : "text-muted",
+            )}
+            aria-live="polite"
+          >
+            {loading
+              ? "מחפש..."
+              : items.length === 1
+                ? "תוצאה אחת"
+                : `${items.length} תוצאות`}
+          </p>
+        ) : null}
+
         <div
           className={cn(
             "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
@@ -402,6 +445,52 @@ export function HeroSearch({
                 !panelOpen && "pointer-events-none",
               )}
             >
+              {(showSuggest || showEmpty || loading) && trimmed.length >= 2 ? (
+                <div
+                  className="sticky top-0 z-[1] border-b border-foreground/10 bg-background/95 px-3 py-2 backdrop-blur-sm"
+                  role="group"
+                  aria-label="סינון לפי רמת פירוק"
+                >
+                  <ul className="flex flex-wrap gap-1.5">
+                    <li>
+                      <button
+                        type="button"
+                        className={cn(
+                          "inline-flex min-h-8 items-center border px-2 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                          breakdown === null
+                            ? "border-action bg-action/10 text-action"
+                            : "border-foreground/20 text-foreground/80 hover:border-foreground/40",
+                        )}
+                        aria-pressed={breakdown === null}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setBreakdown(null)}
+                      >
+                        כל הרמות
+                      </button>
+                    </li>
+                    {BREAKDOWN_LEVELS.map((level) => (
+                      <li key={level}>
+                        <button
+                          type="button"
+                          className={cn(
+                            "inline-flex min-h-8 items-center border px-2 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                            breakdown === level
+                              ? "border-action bg-action text-background"
+                              : "border-foreground/20 text-foreground/80 hover:border-foreground/40",
+                          )}
+                          aria-pressed={breakdown === level}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => setBreakdown(level)}
+                        >
+                          {BREAKDOWN_LEVEL_NUMBERS[level]}.{" "}
+                          {BREAKDOWN_LEVEL_LABELS[level]}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
               {loading ? (
                 <div className="space-y-3 p-4" aria-hidden="true">
                   {[0, 1, 2].map((row) => (
@@ -440,7 +529,7 @@ export function HeroSearch({
                     <div>
                       <p className="px-1 text-xs text-muted">מושגים נפוצים</p>
                       <ul className="mt-1">
-                        {popularConcepts.slice(0, 6).map((c) => (
+                        {popularConcepts.slice(0, 8).map((c) => (
                           <li key={c.id} role="presentation">
                             <button
                               type="button"
@@ -448,7 +537,7 @@ export function HeroSearch({
                               aria-selected={false}
                               className="flex w-full px-3 py-2 text-start text-sm hover:bg-paper focus-visible:bg-paper focus-visible:outline-none"
                               onMouseDown={(e) => e.preventDefault()}
-                              onClick={() => goToSearch(c.name)}
+                              onClick={() => fillSearch(c.name)}
                             >
                               {c.name}
                             </button>
@@ -488,14 +577,11 @@ export function HeroSearch({
               {!loading && showSuggest
                 ? items.map((item, index) => {
                     const label = suggestItemLabel(item);
-                    const meta =
-                      item.type === "video"
-                        ? item.isGated
-                          ? "סרטון · לחברים"
-                          : "סרטון"
-                        : item.type === "article"
-                          ? "מאמר"
-                          : "מושג";
+                    const badge = suggestItemBadge(item);
+                    const snippet =
+                      item.type === "video" && item.snippet
+                        ? item.snippet
+                        : null;
                     const key =
                       item.type === "article"
                         ? `article-${item.slug}`
@@ -516,10 +602,19 @@ export function HeroSearch({
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => goToSuggestItem(item)}
                       >
-                        <span className="min-w-0 leading-relaxed">
-                          {highlightMatch(label, query)}
+                        <span className="min-w-0">
+                          <span className="block leading-relaxed">
+                            {highlightMatch(label, query)}
+                          </span>
+                          {snippet ? (
+                            <span className="mt-1 block text-xs leading-snug text-muted">
+                              "{highlightMatch(snippet, query)}"
+                            </span>
+                          ) : null}
                         </span>
-                        <span className="shrink-0 text-xs text-muted">{meta}</span>
+                        <span className="shrink-0 border border-foreground/15 px-1.5 py-0.5 text-[10px] font-medium text-muted">
+                          {badge}
+                        </span>
                       </button>
                     );
                   })
@@ -531,23 +626,37 @@ export function HeroSearch({
 
       {popularConcepts.length > 0 ? (
         <div
-          className="mt-5 flex flex-wrap justify-center gap-2"
+          className={cn(
+            "mt-5 -mx-1",
+            "overflow-x-auto overscroll-x-contain [scrollbar-width:thin]",
+            "sm:mx-0 sm:overflow-visible",
+          )}
           aria-label={chipsAriaLabel}
         >
-          {popularConcepts.map((c) => (
-            <Link
-              key={c.id}
-              href={`/search?q=${encodeURIComponent(c.name)}`}
-              className={cn(
-                "inline-flex min-h-11 items-center border px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
-                isDark
-                  ? "border-white/40 text-white hover:border-white hover:bg-white/10"
-                  : "border-foreground/15 text-foreground/80 hover:border-action hover:text-action",
-              )}
-            >
-              {c.name}
-            </Link>
-          ))}
+          <div
+            className={cn(
+              "flex w-max max-w-none gap-2 px-1 pb-1",
+              "sm:w-full sm:max-w-2xl sm:flex-wrap sm:justify-center sm:px-0 sm:pb-0",
+              "mx-auto",
+            )}
+          >
+            {popularConcepts.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => fillSearch(c.name)}
+                className={cn(
+                  "inline-flex shrink-0 items-center border px-3 py-2 text-sm transition",
+                  "min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                  isDark
+                    ? "border-white/40 text-white hover:border-white hover:bg-white/10"
+                    : "border-foreground/15 text-foreground/80 hover:border-action hover:text-action",
+                )}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
 

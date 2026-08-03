@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 
 import { submitBookingLead } from "@/actions/booking-lead";
+import { UnifiedLeadSuccess } from "@/components/forms/unified-lead-success";
 import {
   buildLeadWhatsAppText,
   CONTACT_INTERESTS,
@@ -37,6 +38,20 @@ export function ContactLeadForm({ source }: ContactLeadFormProps) {
     if (!source) return undefined;
     return LEAD_SOURCE_LABELS[source] ?? source;
   }, [source]);
+
+  if (emailSent) {
+    return (
+      <UnifiedLeadSuccess
+        whatsappText={buildLeadWhatsAppText({
+          name: name.trim() || "אורח",
+          phone: phone.trim() || "-",
+          interestLabel,
+          message,
+          source: sourceLabel,
+        })}
+      />
+    );
+  }
 
   function onWhatsApp(e: React.FormEvent) {
     e.preventDefault();
@@ -198,11 +213,6 @@ export function ContactLeadForm({ source }: ContactLeadFormProps) {
           {error}
         </p>
       ) : null}
-      {emailSent ? (
-        <p className="text-sm text-foreground/80" role="status">
-          נשלח במייל. נחזור אליך בהקדם.
-        </p>
-      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <button type="submit" className="btn btn-primary w-full sm:w-auto">
@@ -218,10 +228,10 @@ export function ContactLeadForm({ source }: ContactLeadFormProps) {
         <button
           type="button"
           onClick={onEmail}
-          disabled={pending || emailSent}
+          disabled={pending}
           className="btn btn-secondary w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {pending ? "שולח..." : emailSent ? "נשלח" : "שלח במייל"}
+          {pending ? "שולח..." : "שלח במייל"}
         </button>
       </div>
 

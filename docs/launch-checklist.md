@@ -1,18 +1,25 @@
 # Launch checklist (nevermind.co.il)
 
-Updated after live cutover (2026-08-03): DNS points at Vercel. Site returns `Server: Vercel`.
+Updated 2026-08-03: DNS points at Vercel behind Cloudflare proxy (`Server: cloudflare`, origin Next/Vercel). Health and core routes OK.
+
+**Production (`main`):** auth cookies + branded 404 deployed.
+
+**Pending polish (`wip/site-polish`):** LIVE archive/votes, watch UX, members/privacy, theme. TypeScript clean locally. Do not merge to production until Supabase migrations 31-32 (+ any 25-30 gaps) and QA pass.
 
 ## Done
 
-- [x] DNS apex A `76.76.21.21`, www CNAME `cname.vercel-dns.com` (grey cloud)
+- [x] DNS apex A `76.76.21.21`, www CNAME `cname.vercel-dns.com` (proxied / orange cloud)
 - [x] Production deploy Ready on Vercel
 - [x] Clean `public/` (prompts/READMEs/boilerplate moved or removed)
 - [x] Studio guide at `/studio/guide`
 - [x] CF Access JWT helper (`src/lib/studio/cf-access.ts`)
 - [x] `*.vercel.app` behind Vercel SSO
 - [x] Core env: Supabase, YouTube, CRON, WhatsApp, Resend, Club, Studio flags
-- [x] `STUDIO_REQUIRE_CF_ACCESS=0` until Access app is live (so `/nm-ops` works)
+- [x] Cloudflare Access app **NeverMind Studio** (`/nm-ops*` + `/studio*`, email `bigcohen2000@gmail.com`)
+- [x] Vercel Production: `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, `STUDIO_REQUIRE_CF_ACCESS=1`
 - [x] `STUDIO_GATE_SLUG=nm-ops`, `STUDIO_ALLOWED_EMAILS=bigcohen2000@gmail.com`
+- [x] Google OAuth callback cookies + visible `auth_error` on `/my-list`
+- [x] Branded 404 with search, hubs, login, contact
 
 ## Keep vs junk (do not delete blindly)
 
@@ -63,20 +70,17 @@ Zero Trust → Access → Applications → delete:
 - NeverMind Dashboard API (`/api/dashboard/*`)
 - NeverMind Admin API (`/api/admin/*`)  ← important before proxy
 
-### 3. Create Studio Access (then orange cloud)
+### 3. Studio Access (done)
 
-1. Add Self-hosted app: **NeverMind Studio**
-2. Paths: `nevermind.co.il/nm-ops*` and `nevermind.co.il/studio*`
-3. Policy: Allow email `bigcohen2000@gmail.com` only
-4. Turn **orange cloud** (Proxied) on apex + www
-5. SSL/TLS mode: **Full (strict)**
-6. Copy team domain + AUD tag into Vercel:
-   - `CF_ACCESS_TEAM_DOMAIN`
-   - `CF_ACCESS_AUD`
-7. Set `STUDIO_REQUIRE_CF_ACCESS=1` and redeploy
-8. WAF rate limit: `/nm-ops*` about 10 req/min/IP → Managed Challenge
+Access app + policy are live. Production env has AUD + team domain + `REQUIRE=1`.
+Redeploy Production after env change so middleware picks them up.
+Optional: WAF rate limit `/nm-ops*` about 10 req/min/IP → Managed Challenge.
 
 Details: `docs/studio-cloudflare-access.md`
+
+### 4. Polish branch (`wip/site-polish`)
+
+Before merge: apply Supabase migrations `31_profile_theme.sql` and `32_live_video_votes.sql`, then QA LIVE / watch / theme.
 
 ## Supabase (dashboard)
 

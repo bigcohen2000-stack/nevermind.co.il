@@ -28,22 +28,52 @@ export interface PathOffer {
   externalLabel?: string;
 }
 
-/** The only book currently acknowledged on the site. No ISBN, cover, or buy link yet. */
-export interface BookInProgress {
+/** Printed / digital book sold via WhatsApp (no on-site checkout). */
+export interface ShopBook {
   id: string;
   title: string;
   statusLabel: string;
   body: string;
+  /** Optional display price before VAT. */
+  priceBeforeVat?: string;
+  /** Display price line for books page (e.g. 150 ש"ח). */
+  priceLabel?: string;
+  /** Short note under the price. */
+  priceNote?: string;
+  /** Numeric ILS for schema.org Offer when sold as a meeting add-on. */
+  meetingAddonIls?: number;
+  /** WhatsApp prefill when requesting the book in a face-to-face meeting. */
+  meetingWhatsappText?: string;
+  ctaLabel: string;
   whatsappText: string;
+  /** Public path under /public, e.g. /books/love-20-pages.jpg */
+  coverSrc?: string;
+  coverAlt?: string;
 }
 
-export const BOOK_IN_PROGRESS: BookInProgress = {
+/** @deprecated Use SHOP_BOOK. Kept as alias for older imports. */
+export type BookInProgress = ShopBook;
+
+export const SHOP_BOOK: ShopBook = {
   id: "love-20-pages",
   title: "אהבה ב-20 עמודים",
-  statusLabel: "ספר, בכתיבה",
-  body: "עדיין לא יצא. אין כאן קישור לרכישה, עטיפה או מספר ISBN. אם תרצו לדעת מתי זה זמין, אפשר לשאול בוואטסאפ.",
-  whatsappText: "היי יקיר, מתי הספר אהבה ב-20 עמודים יהיה זמין?",
+  statusLabel: "זמין בפגישה פרונטלית",
+  body: "ספר קצר על אהבה כמנגנון, לא כסיפור. אפשר לקבל אותו כתוספת לפגישה פרונטלית. אין סליקה באתר.",
+  priceLabel: '150 ש"ח',
+  priceNote: "תוספת לפגישה פרונטלית, לפני מע\"מ",
+  meetingAddonIls: 150,
+  meetingWhatsappText:
+    'היי יקיר. אשמח לקבל את הספר "אהבה ב-20 עמודים" כתוספת לפגישה פרונטלית.',
+  ctaLabel: "לקבל את הספר בפגישה",
+  whatsappText:
+    'היי יקיר. אני רוצה לשאול על הספר "אהבה ב-20 עמודים".',
+  // Drop cover at public/books/love-20-pages.jpg (or .webp / .png) then set coverSrc.
+  coverSrc: "/books/love-20-pages.jpg",
+  coverAlt: 'עטיפת הספר אהבה ב-20 עמודים',
 };
+
+/** @deprecated Use SHOP_BOOK. */
+export const BOOK_IN_PROGRESS = SHOP_BOOK;
 
 export interface ProcessStep {
   index: string;
@@ -186,15 +216,32 @@ export function buildIntroCallWhatsAppText(): string {
 /** Paid open-mic guest seat in the weekly unlisted live. */
 export const LIVE_OPEN_MIC = {
   id: "live-open-mic" as const,
-  title: "אורח עם מיקרופון פתוח",
-  body: "מקום בשידור החי השבועי. יושבים עם מיקרופון פתוח בחקירה ספונטנית. נדרשת שיחת התאמה לפני אישור.",
+  title: "מיקרופון פתוח בלייב",
+  body: "חברי מאגר במסגרת חודשית יכולים לבחור מפגש היכרות אחד ללייב הקבוצתי של הפודקאסט. כרטיס עם מיקרופון פתוח. חובה להיות רשומים באתר. נדרשת שיחת התאמה לפני אישור.",
   priceBeforeVat: '980 ש"ח',
-  tags: ["שידור חי", "מיקרופון פתוח", '980 ש"ח + מע"מ'],
+  tags: ["שידור חי", "מיקרופון פתוח", "מסגרת חודשית", '980 ש"ח + מע"מ'],
   ctaLabel: "בקשת מקום עם מיקרופון",
   whatsappText: buildTrackWhatsAppText({
-    track: "אורח עם מיקרופון פתוח בשידור חי מהאין",
+    track: "מפגש היכרות ללייב הקבוצתי עם מיקרופון פתוח",
     priceBeforeVat: '980 ש"ח',
-    detail: "מקום בשיחה השבועית. מיקרופון פתוח.",
+    detail:
+      "חבר במסגרת חודשית. מפגש היכרות אחד בלייב הפודקאסט. מיקרופון פתוח. רשום באתר.",
+    requiresFitCall: true,
+  }),
+};
+
+/** Physical seat at the Modiin studio during a live podcast meeting. */
+export const LIVE_MODIIN_SEAT = {
+  id: "live-modiin-seat" as const,
+  title: "כיסא באולפן במודיעין",
+  body: "להגיע פיזית למפגש הפודקאסט במודיעין. יושבים באולפן בזמן השידור החי. נדרשת שיחת התאמה לפני אישור.",
+  priceBeforeVat: '980 ש"ח',
+  tags: ["מודיעין", "כיסא באולפן", "פודקאסט", '980 ש"ח + מע"מ'],
+  ctaLabel: "הזמנת כיסא במודיעין",
+  whatsappText: buildTrackWhatsAppText({
+    track: "כיסא באולפן במודיעין בזמן לייב הפודקאסט",
+    priceBeforeVat: '980 ש"ח',
+    detail: "מקום פיזי באולפן במודיעין. מפגש פודקאסט בשידור חי.",
     requiresFitCall: true,
   }),
 };
@@ -417,6 +464,64 @@ export const CONTACT_FAQ: FaqItem[] = [
     question: "איפה נפגשים?",
     answer:
       "אפשר בזום, אפשר פנים אל פנים במרכז הארץ, ואפשר בשיחת טלפון. מה שנוח לך.",
+  },
+];
+
+/** FAQ for /paths (pricing and track choice). */
+export const PATHS_FAQ: FaqItem[] = [
+  {
+    question: "יש סליקה באתר?",
+    answer:
+      "לא. ממלאים בקשה עם מסלול ומחיר לפני מע\"מ. האישור ידני אחרי בדיקת התאמה.",
+  },
+  {
+    question: "מה כוללת שיחת ההיכרות?",
+    answer:
+      "כ-10 דקות לבדיקת התאמה טכנית ולוגית בלבד. זו אינה שיחת ייעוץ.",
+  },
+  {
+    question: "מה ההבדל בין ייעוץ נקודתי לפגישה מורחבת?",
+    answer:
+      "ייעוץ נקודתי הוא שעה לפירוק סיטואציה ספציפית. פגישה מורחבת היא שעה וחצי לחקירה עמוקה יותר בלי לחץ זמן.",
+  },
+  {
+    question: "איך נכנסים למאגר הסרטונים?",
+    answer:
+      "אחרי שיחת התאמה, אם זה מתאים, פותחים גישה אישית. אין רכישה אוטומטית מהאתר.",
+  },
+  {
+    question: "המחירים כוללים מע\"מ?",
+    answer:
+      "המחירים באתר מוצגים לפני מע\"מ. פרטי התשלום נשלחים אחרי אישור.",
+  },
+];
+
+/** FAQ for /live (stream, archive, votes). */
+export const LIVE_FAQ: FaqItem[] = [
+  {
+    question: "מי יכול לצפות בשידור החי?",
+    answer:
+      "רשומים באתר אחרי אישור גיל. הקישור נפתח רק כשהשידור פעיל.",
+  },
+  {
+    question: "מה כולל ארכיון הלייבים?",
+    answer:
+      "תצוגה מקדימה לכולם. צפייה מלאה בלייבים קודמים שמורים למועדון.",
+  },
+  {
+    question: "למה צריך לייקים?",
+    answer:
+      "רשומים מצביעים על סרטונים. הסרטון המוביל עשוי לעלות בלייב חינם לרשומים.",
+  },
+  {
+    question: "איך מזמינים סרטון ללייב?",
+    answer:
+      "מתוך עמוד השידור החי או בוואטסאפ. חשבון חינם מספיק לבקשה.",
+  },
+  {
+    question: "אפשר כיסא באולפן?",
+    answer:
+      "כן. אפשר לבקש כיסא במודיעין דרך וואטסאפ. הפרטים בעמוד השידור החי.",
   },
 ];
 

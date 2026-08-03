@@ -7,6 +7,8 @@ export type PreMeetingLeadsDashboardData = {
   rows: PreMeetingLead[];
   totalToday: number;
   totalThisWeek: number;
+  openCount: number;
+  loadError: string | null;
 };
 
 function startOfLocalDay(now = new Date()): Date {
@@ -29,6 +31,8 @@ export async function getPreMeetingLeadsDashboard(): Promise<PreMeetingLeadsDash
     rows: [],
     totalToday: 0,
     totalThisWeek: 0,
+    openCount: 0,
+    loadError: null,
   };
 
   try {
@@ -39,7 +43,13 @@ export async function getPreMeetingLeadsDashboard(): Promise<PreMeetingLeadsDash
       .order("created_at", { ascending: false })
       .limit(200);
 
-    if (error || !data) return empty;
+    if (error) {
+      return {
+        ...empty,
+        loadError: error.message || "טעינת לידים לפני פגישה נכשלה.",
+      };
+    }
+    if (!data) return empty;
 
     const rows = data as PreMeetingLead[];
     const todayStart = startOfLocalDay().getTime();
@@ -53,8 +63,18 @@ export async function getPreMeetingLeadsDashboard(): Promise<PreMeetingLeadsDash
       totalThisWeek: rows.filter(
         (row) => new Date(row.created_at).getTime() >= weekStart,
       ).length,
+      openCount: rows.filter(
+        (row) => (row.status ?? "new") === "new" || row.status === "contacted",
+      ).length,
+      loadError: null,
     };
-  } catch {
-    return empty;
+  } catch (err) {
+    return {
+      ...empty,
+      loadError:
+        err instanceof Error
+          ? err.message
+          : "טעינת לידים לפני פגישה נכשלה.",
+    };
   }
 }

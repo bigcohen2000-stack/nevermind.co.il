@@ -12,7 +12,7 @@ const ConceptKnowledgeGraphCanvas = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[min(70vh,560px)] w-full items-center justify-center border border-white/10 bg-black text-sm text-[#9CA3AF]">
+      <div className="flex h-[min(70vh,560px)] w-full items-center justify-center border border-foreground/15 bg-[#121212] text-sm text-[#9CA3AF]">
         טוען מפה...
       </div>
     ),

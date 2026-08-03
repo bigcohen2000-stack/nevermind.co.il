@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   useEffect,
@@ -10,13 +9,21 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+import { X } from "lucide-react";
 
 import {
+  suggestItemBadge,
   suggestItemHref,
   suggestItemLabel,
   type SuggestItem,
 } from "@/lib/search/types";
 import { pushRecentSearch } from "@/lib/recent-searches";
+import {
+  BREAKDOWN_LEVELS,
+  BREAKDOWN_LEVEL_LABELS,
+  BREAKDOWN_LEVEL_NUMBERS,
+  type BreakdownLevel,
+} from "@/lib/videos/investigation";
 import { cn } from "@/lib/utils";
 import { useSearchHotkey } from "@/hooks/use-search-hotkey";
 
@@ -48,6 +55,7 @@ export function HeaderSearch({
   const [activeIndex, setActiveIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [breakdown, setBreakdown] = useState<BreakdownLevel | null>(null);
 
   const trimmed = query.trim();
   const showSuggest = open && items.length > 0;
@@ -70,10 +78,11 @@ export function HeaderSearch({
       abortRef.current = controller;
       setLoading(true);
       try {
-        const res = await fetch(
-          `/api/search/suggest?q=${encodeURIComponent(q)}`,
-          { signal: controller.signal },
-        );
+        const params = new URLSearchParams({ q });
+        if (breakdown) params.set("breakdown", breakdown);
+        const res = await fetch(`/api/search/suggest?${params.toString()}`, {
+          signal: controller.signal,
+        });
         const data = (await res.json()) as { items?: SuggestItem[] };
         setItems(data.items ?? []);
         setOpen(true);
@@ -89,7 +98,7 @@ export function HeaderSearch({
     }, 300);
 
     return () => window.clearTimeout(handle);
-  }, [query]);
+  }, [query, breakdown]);
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
@@ -116,11 +125,7 @@ export function HeaderSearch({
     const label = suggestItemLabel(item);
     pushRecentSearch(label);
     onNavigate?.();
-    if (item.type === "article") {
-      router.push(suggestItemHref(item));
-    } else {
-      router.push(`/search?q=${encodeURIComponent(label)}`);
-    }
+    router.push(suggestItemHref(item));
     setOpen(false);
     setFocused(false);
   }
@@ -136,6 +141,14 @@ export function HeaderSearch({
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Escape") {
+      if (query) {
+        e.preventDefault();
+        setQuery("");
+        setItems([]);
+        setActiveIndex(-1);
+        inputRef.current?.focus();
+        return;
+      }
       setOpen(false);
       setFocused(false);
       inputRef.current?.blur();
@@ -149,6 +162,13 @@ export function HeaderSearch({
       e.preventDefault();
       setActiveIndex((i) => (i <= 0 ? items.length - 1 : i - 1));
     }
+  }
+
+  function clearQuery() {
+    setQuery("");
+    setItems([]);
+    setActiveIndex(-1);
+    inputRef.current?.focus();
   }
 
   const hideOnSearchPage = pathname === "/search" && !expanded;
@@ -190,6 +210,12 @@ export function HeaderSearch({
             setFocused(true);
             setOpen(true);
           }}
+          onBlur={() => {
+            window.setTimeout(() => {
+              setOpen(false);
+              setFocused(false);
+            }, 150);
+          }}
           onKeyDown={onKeyDown}
           placeholder="חיפוש באתר"
           autoComplete="off"
@@ -202,12 +228,25 @@ export function HeaderSearch({
             activeIndex >= 0 ? `${listId}-option-${activeIndex}` : undefined
           }
           className={cn(
-            "min-h-10 w-full rounded-md border border-foreground/20 bg-background/80 pe-3 ps-9 text-sm text-foreground",
+            "min-h-10 w-full rounded-md border border-foreground/20 bg-background/80 ps-9 text-sm text-foreground",
+            query ? "pe-10" : "pe-3",
             "placeholder:text-muted",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
             expanded && "min-h-11",
           )}
         />
+        {query ? (
+          <button
+            type="button"
+            aria-label="ניקוי חיפוש"
+            title="ניקוי"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={clearQuery}
+            className="absolute inset-y-0 end-1 inline-flex min-w-9 items-center justify-center text-muted transition hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+          >
+            <X className="size-4" strokeWidth={1.75} aria-hidden />
+          </button>
+        ) : null}
       </form>
 
       {panelOpen ? (
@@ -215,8 +254,54 @@ export function HeaderSearch({
           id={listId}
           role="listbox"
           aria-live="polite"
-          className="absolute z-[60] mt-1 max-h-72 w-full min-w-[16rem] overflow-auto border border-foreground/15 bg-background text-start text-sm shadow-float end-0"
+          className="absolute z-[60] mt-1 max-h-72 w-full min-w-[18rem] overflow-auto border border-foreground/15 bg-background text-start text-sm shadow-float end-0"
         >
+          {trimmed.length >= 2 ? (
+            <div
+              className="sticky top-0 z-[1] border-b border-foreground/10 bg-background px-2 py-2"
+              role="group"
+              aria-label="סינון לפי רמת פירוק"
+            >
+              <ul className="flex flex-wrap gap-1">
+                <li>
+                  <button
+                    type="button"
+                    className={cn(
+                      "inline-flex min-h-7 items-center border px-1.5 text-[10px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                      breakdown === null
+                        ? "border-action bg-action/10 text-action"
+                        : "border-foreground/20 text-foreground/80",
+                    )}
+                    aria-pressed={breakdown === null}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setBreakdown(null)}
+                  >
+                    הכל
+                  </button>
+                </li>
+                {BREAKDOWN_LEVELS.map((level) => (
+                  <li key={level}>
+                    <button
+                      type="button"
+                      className={cn(
+                        "inline-flex min-h-7 items-center border px-1.5 text-[10px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                        breakdown === level
+                          ? "border-action bg-action text-background"
+                          : "border-foreground/20 text-foreground/80",
+                      )}
+                      aria-pressed={breakdown === level}
+                      title={BREAKDOWN_LEVEL_LABELS[level]}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setBreakdown(level)}
+                    >
+                      {BREAKDOWN_LEVEL_NUMBERS[level]}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {loading ? (
             <div className="space-y-2 p-3" aria-hidden="true">
               {[0, 1, 2].map((row) => (
@@ -232,15 +317,18 @@ export function HeaderSearch({
             <p className="p-3 text-muted">לא נמצאו תוצאות.</p>
           ) : null}
 
+          {!loading && showSuggest ? (
+            <p className="border-b border-foreground/10 px-3 py-1.5 text-[11px] tabular-nums text-muted">
+              {items.length === 1 ? "תוצאה אחת" : `${items.length} תוצאות`}
+            </p>
+          ) : null}
+
           {!loading && showSuggest
             ? items.map((item, index) => {
                 const label = suggestItemLabel(item);
-                const meta =
-                  item.type === "video"
-                    ? "סרטון"
-                    : item.type === "article"
-                      ? "מאמר"
-                      : "מושג";
+                const badge = suggestItemBadge(item);
+                const snippet =
+                  item.type === "video" && item.snippet ? item.snippet : null;
                 const key =
                   item.type === "article"
                     ? `article-${item.slug}`
@@ -259,8 +347,17 @@ export function HeaderSearch({
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => goToItem(item)}
                   >
-                    <span className="min-w-0 leading-snug">{label}</span>
-                    <span className="shrink-0 text-xs text-muted">{meta}</span>
+                    <span className="min-w-0">
+                      <span className="block leading-snug">{label}</span>
+                      {snippet ? (
+                        <span className="mt-0.5 block text-[11px] leading-snug text-muted">
+                          "{snippet}"
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="shrink-0 border border-foreground/15 px-1.5 py-0.5 text-[10px] text-muted">
+                      {badge}
+                    </span>
                   </button>
                 );
               })

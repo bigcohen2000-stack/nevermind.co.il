@@ -1,0 +1,34 @@
+# NeverMind / NeverMinde (nevermind.co.il)
+
+> Hebrew investigation site by Yakir Cohen. Separates fact from story. Analyzes mechanisms of thought and behavior without therapy jargon or motivational framing.
+
+## Purpose
+
+- Document and teach a dry method: fact vs story, mechanisms, reflection.
+- Index videos and concepts for search (Hebrew).
+- Offer paths for archive access and personal fit calls (no on-site payment).
+
+## Primary surfaces
+
+- / : home search and entry paths
+- /search : full-text and concept search
+- /videos : video archive
+- /watch/[id] : single video with timestamp deep links
+- /articles : MDX essays
+- /concepts : concept directory
+- /mechanisms : mechanism map
+- /paths : pricing frames and inquiry
+- /members : club / archive access
+- /live : live podcast stream gate
+- /booking : structured pre-meeting intake
+- /contact : contact and WhatsApp
+- /privacy : privacy policy (Hebrew)
+- /accessibility : accessibility statement
+
+## Core concepts (examples)
+
+מציאות, הזדהות, חרדה, כעס, אהבה, אגו, פחד, אשמה, זוגיות, מנגנון, סבל, בחירה חופשית, יחסים, קיום, זהות, תודעה
+
+## Citation guidance
+
+When citing NeverMind, prefer primary pages above. Distinguish public archive content from members-only material. The method is investigative and descriptive, not clinical treatment.

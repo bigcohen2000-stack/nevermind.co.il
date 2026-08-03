@@ -4,7 +4,9 @@ import { VideosPagination } from "@/components/videos/videos-pagination";
 import { getSavedYoutubeIds } from "@/actions/saved-videos";
 import {
   VIDEOS_PAGE_SIZE,
+  isVideoBrowseDuration,
   parsePageParam,
+  type VideoBrowseDuration,
 } from "@/lib/videos/browse-params";
 import { isBreakdownLevel, type BreakdownLevel } from "@/lib/videos/investigation";
 import {
@@ -18,6 +20,7 @@ type VideosResultsProps = {
   sort?: VideoBrowseSort;
   concept?: string;
   breakdown?: BreakdownLevel | string;
+  duration?: VideoBrowseDuration | string;
   page?: number | string;
 };
 
@@ -43,6 +46,7 @@ export async function VideosResults({
   sort: sortProp,
   concept: conceptProp,
   breakdown: breakdownProp,
+  duration: durationProp,
   page: pageProp,
 }: VideosResultsProps) {
   const filter = parseFilter(filterProp);
@@ -51,6 +55,9 @@ export async function VideosResults({
   const breakdown = isBreakdownLevel(breakdownProp)
     ? breakdownProp
     : undefined;
+  const duration: VideoBrowseDuration = isVideoBrowseDuration(durationProp)
+    ? durationProp
+    : "all";
   const requestedPage =
     typeof pageProp === "number"
       ? Math.max(1, Math.floor(pageProp) || 1)
@@ -75,6 +82,7 @@ export async function VideosResults({
         sort,
         concept,
         breakdown,
+        duration,
       }),
       getSavedYoutubeIds(),
     ]);
@@ -109,6 +117,7 @@ export async function VideosResults({
         sort={sort}
         concept={concept}
         breakdown={breakdown}
+        duration={duration}
       />
 
       <div id="videos-results" className="scroll-mt-24">
@@ -135,6 +144,7 @@ export async function VideosResults({
           sort={sort}
           concept={concept}
           breakdown={breakdown}
+          duration={duration}
         />
       </div>
     </>

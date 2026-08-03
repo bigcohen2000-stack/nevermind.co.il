@@ -81,7 +81,15 @@ export async function isAuthenticated(): Promise<boolean> {
   return Boolean(user);
 }
 
-export async function suggestSearch(query: string): Promise<{
+export type SuggestSearchOptions = {
+  /** When set, only videos with this breakdown_level are returned. */
+  breakdown?: string;
+};
+
+export async function suggestSearch(
+  query: string,
+  options: SuggestSearchOptions = {},
+): Promise<{
   items: SuggestItem[];
   concepts: Concept[];
 }> {
@@ -95,14 +103,19 @@ export async function suggestSearch(query: string): Promise<{
     return { items: [], concepts: [] };
   }
   const pattern = `%${q}%`;
+  const breakdown = isBreakdownLevel(options.breakdown)
+    ? options.breakdown
+    : undefined;
 
   const [{ data: titleVideos }, { data: concepts }, { data: transcriptHits }] =
     await Promise.all([
       supabase
         .from("videos")
-        .select("id, youtube_id, title, is_gated, is_unlisted")
+        .select(
+          "id, youtube_id, title, is_gated, is_unlisted, breakdown_level",
+        )
         .ilike("title", pattern)
-        .limit(6),
+        .limit(8),
       supabase
         .from("concepts")
         .select("id, name, category")
@@ -112,7 +125,7 @@ export async function suggestSearch(query: string): Promise<{
         .from("video_transcripts")
         .select("video_id")
         .textSearch("search_vector", q, { config: "simple", type: "plain" })
-        .limit(6),
+        .limit(8),
     ]);
 
   const byId = new Map<
@@ -123,24 +136,56 @@ export async function suggestSearch(query: string): Promise<{
       title: string;
       is_gated: boolean;
       is_unlisted: boolean;
+      breakdown_level: string | null;
     }
   >();
   for (const v of titleVideos ?? []) {
-    byId.set(v.id, v);
+    byId.set(v.id, {
+      ...v,
+      breakdown_level: v.breakdown_level ?? null,
+    });
   }
 
-  const missingTranscriptIds = (transcriptHits ?? [])
-    .map((row) => row.video_id)
-    .filter((id) => !byId.has(id));
+  const transcriptHitIds = (transcriptHits ?? []).map((row) => row.video_id);
+  const missingTranscriptIds = transcriptHitIds.filter((id) => !byId.has(id));
 
   if (missingTranscriptIds.length > 0) {
     const { data: transcriptVideos } = await supabase
       .from("videos")
-      .select("id, youtube_id, title, is_gated, is_unlisted")
+      .select(
+        "id, youtube_id, title, is_gated, is_unlisted, breakdown_level",
+      )
       .in("id", missingTranscriptIds)
-      .limit(6);
+      .limit(8);
     for (const v of transcriptVideos ?? []) {
-      byId.set(v.id, v);
+      byId.set(v.id, {
+        ...v,
+        breakdown_level: v.breakdown_level ?? null,
+      });
+    }
+  }
+
+  // Caption snippets only for transcript hits (title-only matches stay clean).
+  const snippetByVideoId = new Map<
+    string,
+    { snippet: string; startSeconds: number }
+  >();
+  const snippetIds = transcriptHitIds.filter((id) => byId.has(id));
+  if (snippetIds.length > 0) {
+    const { matchTranscriptSnippet } = await import(
+      "@/lib/search/transcript-snippet"
+    );
+    const { data: transcripts } = await supabase
+      .from("video_transcripts")
+      .select("video_id, content, segments")
+      .in("video_id", snippetIds);
+    for (const row of transcripts ?? []) {
+      const match = matchTranscriptSnippet(q, row.content, row.segments);
+      if (!match) continue;
+      snippetByVideoId.set(row.video_id, {
+        snippet: match.snippet,
+        startSeconds: match.startSeconds,
+      });
     }
   }
 
@@ -152,10 +197,16 @@ export async function suggestSearch(query: string): Promise<{
     description: a.description,
   }));
 
+  let videoRows = [...byId.values()];
+  if (breakdown) {
+    videoRows = videoRows.filter((v) => v.breakdown_level === breakdown);
+  }
+
   const items: SuggestItem[] = [
     ...articles,
-    ...[...byId.values()].slice(0, 6).map((v) => {
+    ...videoRows.slice(0, 6).map((v) => {
       const isGated = Boolean(v.is_gated) || Boolean(v.is_unlisted);
+      const snip = snippetByVideoId.get(v.id);
       return {
         type: "video" as const,
         id: v.id,
@@ -163,6 +214,9 @@ export async function suggestSearch(query: string): Promise<{
         youtubeId: isGated ? "" : v.youtube_id,
         title: v.title,
         isGated,
+        snippet: snip?.snippet ?? null,
+        startSeconds: isGated ? null : (snip?.startSeconds ?? null),
+        breakdownLevel: v.breakdown_level,
       };
     }),
     ...(concepts ?? []).map((c) => ({
@@ -251,6 +305,8 @@ export type ListBrowseVideosOptions = {
   concept?: string;
   /** Investigation breakdown level. */
   breakdown?: string;
+  /** Short / long dive filter (`all` skips). */
+  duration?: "all" | "short" | "long";
 };
 
 export type BrowseVideosPage = {
@@ -545,12 +601,20 @@ async function collectBrowseVideos(
     }
   }
 
+  const duration =
+    options.duration === "short" || options.duration === "long"
+      ? options.duration
+      : "all";
+
+  const { matchesDurationFilter } = await import("@/lib/videos/browse-params");
+
   const byId = new Map<string, Video>();
   for (const v of [...gatedTeasers, ...viaRls]) {
     if (conceptIds && !conceptIds.includes(v.id)) continue;
     if (breakdown && v.breakdown_level !== breakdown) continue;
     if (filter === "open" && (v.is_gated || v.is_unlisted)) continue;
     if (filter === "club" && !(v.is_gated || v.is_unlisted)) continue;
+    if (!matchesDurationFilter(v.duration_seconds, duration)) continue;
     if (isYoutubeUnavailableTitle(v.title)) continue;
     byId.set(v.id, v);
   }
@@ -718,6 +782,49 @@ export type RelatedVideo = Video & {
   startTimestamp: number | null;
   sharedConcept: string | null;
 };
+
+/** Previous / next public-browse neighbors by publish time (same filter family). */
+export async function getAdjacentVideos(
+  videoId: string,
+  opts?: { entitled?: boolean },
+): Promise<{
+  prev: Pick<
+    Video,
+    "id" | "youtube_id" | "title" | "is_gated" | "is_unlisted"
+  > | null;
+  next: Pick<
+    Video,
+    "id" | "youtube_id" | "title" | "is_gated" | "is_unlisted"
+  > | null;
+}> {
+  const empty = { prev: null, next: null };
+  try {
+    const listed = await listBrowseVideos({
+      limit: 80,
+      filter: opts?.entitled ? "all" : "open",
+      sort: "newest",
+    });
+    const idx = listed.findIndex((v) => v.id === videoId);
+    if (idx < 0) return empty;
+    const pick = (v: Video | undefined) =>
+      v
+        ? {
+            id: v.id,
+            youtube_id: v.youtube_id,
+            title: v.title,
+            is_gated: v.is_gated,
+            is_unlisted: v.is_unlisted,
+          }
+        : null;
+    // newest-first list: "prev" = older = higher index, "next" = newer = lower index
+    return {
+      prev: pick(listed[idx + 1]),
+      next: pick(listed[idx - 1]),
+    };
+  } catch {
+    return empty;
+  }
+}
 
 export async function getRelatedVideos(
   videoId: string,

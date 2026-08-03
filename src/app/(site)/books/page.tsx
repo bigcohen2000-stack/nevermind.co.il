@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BookOpen } from "lucide-react";
 
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
 import { getAllArticles } from "@/lib/content/articles";
@@ -13,14 +14,14 @@ const BOOKS_OG_TITLE = "אין חנות. יש מה שפתוח.";
 export const metadata: Metadata = {
   title: "תכנים וספרים",
   description:
-    "אין חנות. ספר אחד בכתיבה, ומאמרים, וידאו ומושגים שכבר פתוחים באתר.",
+    "ספר אהבה ב-20 עמודים בתוספת לפגישה פרונטלית, ומאמרים, וידאו ומושגים שכבר פתוחים באתר.",
   alternates: {
     canonical: "https://nevermind.co.il/books",
   },
   openGraph: {
     title: "תכנים וספרים | NeverMinde",
     description:
-      "אין חנות. ספר אחד בכתיבה, ומאמרים, וידאו ומושגים שכבר פתוחים באתר.",
+      "ספר אהבה ב-20 עמודים בתוספת לפגישה פרונטלית, ומאמרים, וידאו ומושגים שכבר פתוחים באתר.",
     url: "https://nevermind.co.il/books",
     type: "website",
     images: shareOgImage(BOOKS_OG_TITLE),
@@ -60,12 +61,28 @@ export default function BooksPage() {
     "@type": "CollectionPage",
     name: "תכנים וספרים",
     description:
-      "אין חנות. ספר אחד בכתיבה, ומאמרים, וידאו ומושגים שכבר פתוחים באתר.",
+      "ספר אהבה ב-20 עמודים בתוספת לפגישה פרונטלית, ומאמרים, וידאו ומושגים שכבר פתוחים באתר.",
     url: "https://nevermind.co.il/books",
     isPartOf: {
       "@type": "WebSite",
       name: "NeverMinde",
       url: "https://nevermind.co.il",
+    },
+    hasPart: {
+      "@type": "Book",
+      name: BOOK_IN_PROGRESS.title,
+      inLanguage: "he",
+      author: {
+        "@type": "Person",
+        name: "יקיר כהן",
+      },
+      offers: {
+        "@type": "Offer",
+        price: BOOK_IN_PROGRESS.meetingAddonIls,
+        priceCurrency: "ILS",
+        description: BOOK_IN_PROGRESS.priceNote,
+        availability: "https://schema.org/InStock",
+      },
     },
   };
 
@@ -91,8 +108,8 @@ export default function BooksPage() {
             יש מה שפתוח.
           </h1>
           <p className="mt-7 max-w-prose text-lg leading-relaxed text-foreground/80">
-            ספר אחד בכתיבה. שאר התוכן שכבר קיים באתר: מאמרים, וידאו, מושגים
-            וחיפוש. אין כאן רשימת מוצרים ריקה.
+            ספר אחד שאפשר לקבל בפגישה פרונטלית. שאר התוכן שכבר קיים באתר:
+            מאמרים, וידאו, מושגים וחיפוש.
           </p>
         </div>
       </section>
@@ -103,25 +120,64 @@ export default function BooksPage() {
       >
         <div className="mx-auto w-full max-w-3xl px-6 py-20 lg:py-28">
           <Eyebrow>ספר</Eyebrow>
-          <h2
-            id="books-book-title"
-            className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
-          >
-            {BOOK_IN_PROGRESS.title}
-          </h2>
-          <p className="mt-2 text-sm text-muted">{BOOK_IN_PROGRESS.statusLabel}</p>
+          <div className="mt-4 flex items-start gap-4">
+            <span
+              className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-foreground/15 bg-foreground/[0.03]"
+              aria-hidden="true"
+            >
+              <BookOpen className="h-6 w-6 text-action" strokeWidth={1.75} />
+            </span>
+            <div className="min-w-0">
+              <h2
+                id="books-book-title"
+                className="text-2xl font-semibold tracking-tight lg:text-3xl"
+              >
+                {BOOK_IN_PROGRESS.title}
+              </h2>
+              <p className="mt-2 text-sm text-muted">
+                {BOOK_IN_PROGRESS.statusLabel}
+              </p>
+            </div>
+          </div>
           <p className="mt-5 max-w-prose leading-relaxed text-foreground/80">
             {BOOK_IN_PROGRESS.body}
           </p>
-          <div className="mt-8">
-            <a
-              href={buildWhatsAppHref(BOOK_IN_PROGRESS.whatsappText)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary"
-            >
-              לשאול על הספר
-            </a>
+
+          <div className="mt-10 border border-foreground/15 bg-foreground/[0.02] p-6 sm:p-8">
+            <p className="text-sm font-medium tracking-wide text-muted">
+              מחיר הספר
+            </p>
+            <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums">
+              {BOOK_IN_PROGRESS.priceLabel}
+            </p>
+            <p className="mt-2 max-w-prose text-sm leading-relaxed text-foreground/75">
+              {BOOK_IN_PROGRESS.priceNote}. אין סליקה באתר.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <a
+                href={buildWhatsAppHref(
+                  BOOK_IN_PROGRESS.meetingWhatsappText ??
+                    BOOK_IN_PROGRESS.whatsappText,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary inline-flex items-center justify-center gap-2"
+              >
+                <BookOpen className="h-4 w-4" aria-hidden="true" />
+                לקבל את הספר בפגישה
+              </a>
+              <a
+                href={buildWhatsAppHref(BOOK_IN_PROGRESS.whatsappText)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary"
+              >
+                לשאול על הספר
+              </a>
+              <Link href="/paths" className="link-arrow text-sm sm:ms-1">
+                למסלולי פגישה ←
+              </Link>
+            </div>
           </div>
         </div>
       </section>

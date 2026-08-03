@@ -1,15 +1,19 @@
 import { HeroSearch, type ConceptChip } from "@/components/search/hero-search";
-import { CURATED_CONCEPTS, isCuratedConcept } from "@/lib/concepts/quality";
+import { CURATED_CONCEPTS } from "@/lib/concepts/quality";
 import { getTrendingSearches } from "@/lib/search/trending-searches";
-import { createClient } from "@/lib/supabase/server";
+import { listConceptsWithVideoCounts } from "@/lib/videos/queries";
 
 /** Fallback chips when Supabase has no concepts / trending data yet. */
-const DEFAULT_POPULAR: ConceptChip[] = CURATED_CONCEPTS.slice(0, 4).map(
+const DEFAULT_POPULAR: ConceptChip[] = CURATED_CONCEPTS.slice(0, 8).map(
   (name, index) => ({
     id: `fallback-${index}-${name}`,
     name,
   }),
 );
+
+/** How many concept chips to show under the search (only concepts with videos). */
+const CONCEPT_CHIP_LIMIT = 28;
+const TRENDING_CHIP_LIMIT = 8;
 
 type HeroSearchSectionProps = {
   variant?: "light" | "dark";
@@ -21,9 +25,11 @@ type HeroSearchSectionProps = {
   syncUrl?: boolean;
   /**
    * `trending` = top search_analytics terms (7 days, excluding 0-result).
-   * `concepts` = popular curated concepts from Supabase (default).
+   * `concepts` = concepts that actually have videos (default).
    */
   chipSource?: "concepts" | "trending";
+  /** Cap chip count. Defaults: concepts 28, trending 8. */
+  maxChips?: number;
 };
 
 /**
@@ -37,14 +43,16 @@ export async function HeroSearchSection({
   placeholders,
   syncUrl = false,
   chipSource = "concepts",
+  maxChips,
 }: HeroSearchSectionProps) {
   let chips: ConceptChip[] = popularConcepts ?? [];
-  let chipsAriaLabel = "מושגים נפוצים";
+  let chipsAriaLabel = "מושגים עם סרטונים";
 
   if (!popularConcepts && chipSource === "trending") {
     chipsAriaLabel = "חיפושים פופולריים";
+    const limit = maxChips ?? TRENDING_CHIP_LIMIT;
     try {
-      const trending = await getTrendingSearches(5);
+      const trending = await getTrendingSearches(limit);
       chips =
         trending.length > 0
           ? trending.map((item, index) => ({
@@ -56,45 +64,12 @@ export async function HeroSearchSection({
       chips = DEFAULT_POPULAR;
     }
   } else if (!popularConcepts) {
+    const limit = maxChips ?? CONCEPT_CHIP_LIMIT;
     try {
-      const supabase = await createClient();
-      // Aggregate counts only: avoid shipping every video_id for chip ranking.
-      const { data } = await supabase
-        .from("concepts")
-        .select("id, name, category, video_concepts(count)")
-        .order("name")
-        .limit(40);
-
-      const ranked =
-        data
-          ?.map((c) => {
-            const links = c.video_concepts as { count: number }[] | null;
-            const videoCount = Array.isArray(links)
-              ? Number(links[0]?.count ?? 0)
-              : 0;
-            return {
-              id: c.id,
-              name: c.name,
-              category: c.category,
-              videoCount,
-            };
-          })
-          .filter(
-            (c) =>
-              c.videoCount > 0 &&
-              (isCuratedConcept(c.name) || c.videoCount >= 2),
-          )
-          .sort(
-            (a, b) =>
-              Number(isCuratedConcept(b.name)) -
-                Number(isCuratedConcept(a.name)) ||
-              b.videoCount - a.videoCount,
-          )
-          .slice(0, 8) ?? [];
-
+      const ranked = await listConceptsWithVideoCounts();
       chips =
         ranked.length > 0
-          ? ranked.map((c) => ({
+          ? ranked.slice(0, limit).map((c) => ({
               id: c.id,
               name: c.name,
               category: c.category,

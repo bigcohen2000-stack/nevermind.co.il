@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
+import { clearSiteThemePreference } from "@/actions/theme";
 import { createClient } from "@/lib/supabase/client";
 
 export function SignOutButton() {
@@ -11,6 +12,7 @@ export function SignOutButton() {
 
   function onSignOut() {
     startTransition(async () => {
+      await clearSiteThemePreference().catch(() => undefined);
       const supabase = createClient();
       await supabase.auth.signOut();
       router.refresh();

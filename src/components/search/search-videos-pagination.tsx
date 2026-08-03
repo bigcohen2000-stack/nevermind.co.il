@@ -1,6 +1,10 @@
 import Link from "next/link";
 
-import { searchHref } from "@/lib/search/search-params";
+import {
+  searchHref,
+  type SearchResultType,
+  type SearchVideoFilter,
+} from "@/lib/search/search-params";
 import { cn } from "@/lib/utils";
 
 type SearchVideosPaginationProps = {
@@ -9,6 +13,8 @@ type SearchVideosPaginationProps = {
   total: number;
   pageSize: number;
   q: string;
+  filter?: SearchVideoFilter;
+  type?: SearchResultType;
 };
 
 /**
@@ -21,6 +27,8 @@ export function SearchVideosPagination({
   total,
   pageSize,
   q,
+  filter = "all",
+  type = "all",
 }: SearchVideosPaginationProps) {
   if (total <= pageSize || totalPages <= 1) return null;
 
@@ -29,11 +37,23 @@ export function SearchVideosPagination({
 
   const prevHref =
     page > 1
-      ? searchHref({ q, page: page - 1, hash: "search-videos" })
+      ? searchHref({
+          q,
+          filter,
+          type,
+          page: page - 1,
+          hash: "search-videos",
+        })
       : null;
   const nextHref =
     page < totalPages
-      ? searchHref({ q, page: page + 1, hash: "search-videos" })
+      ? searchHref({
+          q,
+          filter,
+          type,
+          page: page + 1,
+          hash: "search-videos",
+        })
       : null;
 
   const linkClass =

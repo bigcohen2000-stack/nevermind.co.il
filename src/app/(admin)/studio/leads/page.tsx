@@ -1,9 +1,8 @@
-import Link from "next/link";
-
-import { PreMeetingLeadsDashboard } from "@/components/studio/pre-meeting-leads-dashboard";
-import { SingleVideoLeadsDashboard } from "@/components/studio/single-video-leads-dashboard";
-import { StudioNav } from "@/components/studio/studio-nav";
+import { StudioLeadsTabs } from "@/components/studio/studio-leads-tabs";
+import { StudioLockButton } from "@/components/studio/studio-lock-button";
+import { StudioPageShell } from "@/components/studio/studio-page-shell";
 import { StudioSessionRequired } from "@/components/studio/studio-session-required";
+import { getBookingLeadsDashboard } from "@/lib/studio/booking-leads";
 import { getPreMeetingLeadsDashboard } from "@/lib/studio/pre-meeting-leads";
 import { getSingleVideoLeadsDashboard } from "@/lib/studio/single-video-leads";
 import { isStudioAuthenticated } from "@/lib/studio/session";
@@ -17,38 +16,47 @@ export default async function StudioLeadsPage() {
     return <StudioSessionRequired />;
   }
 
-  const [preMeeting, singleVideo] = await Promise.all([
+  const [booking, preMeeting, singleVideo] = await Promise.all([
+    getBookingLeadsDashboard(),
     getPreMeetingLeadsDashboard(),
     getSingleVideoLeadsDashboard(),
   ]);
 
-  return (
-    <main className="mx-auto w-full max-w-5xl space-y-16 px-6 py-12 sm:py-16">
-      <header className="space-y-6">
-        <StudioNav
-          active="leads"
-          actions={
-            <Link
-              href="/studio"
-              className="border border-zinc-700 px-3 py-2 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
-            >
-              חזרה לסטודיו
-            </Link>
-          }
-        />
-        <div>
-          <p className="text-xs text-zinc-500">ניהול פנימי</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
-            לידים
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-            בקשות סרטון בודד וטפסי פגישה לפני שיחה.
-          </p>
-        </div>
-      </header>
+  const openTotal =
+    booking.openCount + preMeeting.openCount + singleVideo.openCount;
 
-      <SingleVideoLeadsDashboard data={singleVideo} />
-      <PreMeetingLeadsDashboard data={preMeeting} />
-    </main>
+  return (
+    <StudioPageShell
+      active="leads"
+      title="לידים"
+      description='יצירת קשר ותיאום, מפרק מחשבות, ובקשות סרטון בודד. הכל מנתוני אמת ב-Supabase. טבלת booking_leads דורשת מיגרציה 33.'
+      actions={<StudioLockButton />}
+      summary={
+        <div className="flex flex-wrap gap-4 text-sm text-zinc-400">
+          <span>
+            פתוחים סה"כ:{" "}
+            <strong className="text-zinc-100">{openTotal}</strong>
+          </span>
+          <span>
+            קשר:{" "}
+            <strong className="text-zinc-100">{booking.openCount}</strong>
+          </span>
+          <span>
+            לפני פגישה:{" "}
+            <strong className="text-zinc-100">{preMeeting.openCount}</strong>
+          </span>
+          <span>
+            סרטון:{" "}
+            <strong className="text-zinc-100">{singleVideo.openCount}</strong>
+          </span>
+        </div>
+      }
+    >
+      <StudioLeadsTabs
+        booking={booking}
+        preMeeting={preMeeting}
+        singleVideo={singleVideo}
+      />
+    </StudioPageShell>
   );
 }

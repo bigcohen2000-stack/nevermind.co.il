@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ClubBadge } from "@/components/videos/club-badge";
 import { SaveVideoButton } from "@/components/videos/save-video-button";
 import { SingleVideoRequestCta } from "@/components/videos/single-video-request";
+import { videoIsNew } from "@/lib/content/is-new";
 import { cn } from "@/lib/utils";
 import { isMembersOnlyVideo } from "@/lib/videos/access";
 import { formatVideoMetaLine } from "@/lib/videos/format-meta";
@@ -62,6 +63,7 @@ export function VideoCard({
   const canSave = Boolean(video.youtube_id?.trim()) && !gated;
   const isDark = tone === "dark";
   const metaLine = formatVideoMetaLine(video);
+  const showNew = videoIsNew(video);
   const shellClass = cn(
     "group relative flex h-auto min-h-full w-full flex-col overflow-hidden",
     isDark
@@ -104,6 +106,11 @@ export function VideoCard({
               />
               {gated ? <ClubBadge /> : null}
               {gated ? <LockOverlay /> : null}
+              {showNew ? (
+                <span className="absolute start-2 top-2 z-[2] border border-background/40 bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-background">
+                  NEW
+                </span>
+              ) : null}
               {!gated ? (
                 <span
                   className="absolute inset-0 flex items-center justify-center bg-transparent opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"

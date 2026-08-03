@@ -1,20 +1,34 @@
 "use client";
 
+import {
+  Bookmark,
+  LogIn,
+  LogOut,
+  Moon,
+  Settings,
+  Sun,
+  User,
+  UserPlus,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { logoutClub } from "@/actions/club-login";
+import { clearSiteThemePreference } from "@/actions/theme";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import {
   formatHeaderAuthLabel,
   formatHeaderClubLabel,
   type HeaderSession,
 } from "@/lib/auth/header-session-shared";
 import { createClient } from "@/lib/supabase/client";
+import type { SiteTheme } from "@/lib/theme/theme";
 import { cn } from "@/lib/utils";
 
 type HeaderAuthControlsProps = {
   session: HeaderSession;
+  theme: SiteTheme;
   /** Stack vertically in the mobile drawer. */
   layout?: "inline" | "stack";
   onNavigate?: () => void;
@@ -22,12 +36,16 @@ type HeaderAuthControlsProps = {
   compact?: boolean;
 };
 
+const menuItemClass =
+  "flex min-h-10 w-full items-center gap-2 px-2 text-start transition hover:bg-paper";
+
 /**
- * Header auth: personal account only (Google / email).
- * Club gate stays contextual on members / locked watch, not here.
+ * Header auth: personal account (Google / email).
+ * Guest: התחברות + הרשמה. Logged-in: list, profile, settings, theme, sign out.
  */
 export function HeaderAuthControls({
   session,
+  theme,
   layout = "inline",
   onNavigate,
   compact = false,
@@ -58,12 +76,17 @@ export function HeaderAuthControls({
     };
   }, [open]);
 
+  function close() {
+    setOpen(false);
+    onNavigate?.();
+  }
+
   function signOutAccount() {
     startTransition(async () => {
+      await clearSiteThemePreference().catch(() => undefined);
       const supabase = createClient();
       await supabase.auth.signOut();
-      setOpen(false);
-      onNavigate?.();
+      close();
       router.refresh();
       router.push("/");
     });
@@ -71,9 +94,9 @@ export function HeaderAuthControls({
 
   function signOutClub() {
     startTransition(async () => {
+      await clearSiteThemePreference().catch(() => undefined);
       await logoutClub();
-      setOpen(false);
-      onNavigate?.();
+      close();
       router.refresh();
       router.push("/");
     });
@@ -96,39 +119,56 @@ export function HeaderAuthControls({
             <div className="flex flex-col gap-1 pt-2">
               <Link
                 href="/my-list"
-                className="nav-link flex min-h-11 items-center"
+                className="nav-link flex min-h-11 items-center gap-2"
                 onClick={onNavigate}
               >
-                <span aria-hidden="true" className="me-2">
-                  ⭐
-                </span>
+                <Bookmark className="h-4 w-4 shrink-0" aria-hidden="true" />
                 הרשימה שלי
               </Link>
               <Link
                 href="/profile"
-                className="nav-link flex min-h-11 items-center"
+                className="nav-link flex min-h-11 items-center gap-2"
                 onClick={onNavigate}
               >
-                <span aria-hidden="true" className="me-2">
-                  👤
-                </span>
-                פרופיל
+                <User className="h-4 w-4 shrink-0" aria-hidden="true" />
+                פרופיל אישי
               </Link>
+              <Link
+                href="/profile?tab=settings"
+                className="nav-link flex min-h-11 items-center gap-2"
+                onClick={onNavigate}
+              >
+                <Settings className="h-4 w-4 shrink-0" aria-hidden="true" />
+                הגדרות
+              </Link>
+              <div className="flex min-h-11 items-center justify-between gap-2 px-0">
+                <span className="flex items-center gap-2 text-sm text-foreground/80">
+                  {theme === "dark" ? (
+                    <Moon className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Sun className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  ערכת נושא
+                </span>
+                <ThemeToggle session={session} initialTheme={theme} />
+              </div>
               <button
                 type="button"
                 disabled={pending}
-                className="flex min-h-11 items-center text-start text-muted hover:text-action disabled:opacity-50"
+                className="flex min-h-11 items-center gap-2 text-start text-muted hover:text-action disabled:opacity-50"
                 onClick={signOutAccount}
               >
-                התנתק מהחשבון
+                <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+                יציאה
               </button>
               {session.clubPhone ? (
                 <button
                   type="button"
                   disabled={pending}
-                  className="flex min-h-11 items-center text-start text-muted hover:text-action disabled:opacity-50"
+                  className="flex min-h-11 items-center gap-2 text-start text-muted hover:text-action disabled:opacity-50"
                   onClick={signOutClub}
                 >
+                  <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
                   יציאה מהמועדון
                 </button>
               ) : null}
@@ -138,20 +178,32 @@ export function HeaderAuthControls({
           <ul className="flex flex-col gap-1">
             <li>
               <Link
-                href="/my-list"
-                className="nav-link flex min-h-12 items-center px-2 text-base"
+                href="/profile"
+                className="nav-link flex min-h-12 items-center gap-2 px-2 text-base"
                 onClick={onNavigate}
               >
-                <span aria-hidden="true" className="me-2">
-                  ✉️
-                </span>
-                התחברות (Google / אימייל)
+                <LogIn className="h-4 w-4 shrink-0" aria-hidden="true" />
+                התחברות
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/profile?mode=register"
+                className="nav-link flex min-h-12 items-center gap-2 px-2 text-base"
+                onClick={onNavigate}
+              >
+                <UserPlus className="h-4 w-4 shrink-0" aria-hidden="true" />
+                הרשמה
               </Link>
             </li>
             {session.clubPhone ? (
               <li className="px-2 pt-2 text-xs text-muted">
                 מועדון פתוח במכשיר ({clubLabel}). יציאה מ{" "}
-                <Link href="/members#login" className="underline" onClick={onNavigate}>
+                <Link
+                  href="/members#login"
+                  className="underline"
+                  onClick={onNavigate}
+                >
                   אזור המועדון
                 </Link>
                 .
@@ -163,12 +215,45 @@ export function HeaderAuthControls({
     );
   }
 
+  if (!hasAuth) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <Link
+          href="/profile"
+          className={cn(
+            "inline-flex min-h-10 items-center gap-1.5 border border-foreground/20 text-sm text-foreground transition",
+            compact ? "min-w-11 justify-center px-2" : "px-3",
+            "hover:border-action hover:text-action",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+          )}
+          aria-label="התחברות"
+        >
+          <LogIn className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {compact ? null : <span>התחברות</span>}
+        </Link>
+        <Link
+          href="/profile?mode=register"
+          className={cn(
+            "inline-flex min-h-10 items-center gap-1.5 border border-foreground/20 bg-foreground text-sm text-background transition",
+            compact ? "min-w-11 justify-center px-2" : "px-3",
+            "hover:border-action hover:bg-action hover:text-white",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+          )}
+          aria-label="הרשמה"
+        >
+          <UserPlus className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {compact ? null : <span>הרשמה</span>}
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div ref={rootRef} className="relative">
       <button
         type="button"
         className={cn(
-          "inline-flex min-h-10 items-center gap-1.5 rounded-md border border-foreground/20 text-sm text-foreground transition",
+          "inline-flex min-h-10 items-center gap-1.5 border border-foreground/20 text-sm text-foreground transition",
           compact ? "min-w-11 justify-center px-2" : "px-3",
           "hover:border-action hover:text-action",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
@@ -176,14 +261,14 @@ export function HeaderAuthControls({
         aria-expanded={open}
         aria-controls={menuId}
         aria-haspopup="menu"
-        aria-label={hasAuth ? "החשבון" : "התחברות"}
+        aria-label="תפריט חשבון"
         onClick={() => setOpen((v) => !v)}
       >
-        <span aria-hidden="true">{hasAuth ? "👤" : "🔐"}</span>
+        <User className="h-4 w-4 shrink-0" aria-hidden="true" />
         {compact ? (
-          <span className="sr-only">{hasAuth ? "החשבון" : "התחברות"}</span>
+          <span className="sr-only">החשבון</span>
         ) : (
-          <span>{hasAuth ? "החשבון" : "התחברות"}</span>
+          <span>החשבון</span>
         )}
       </button>
 
@@ -193,92 +278,69 @@ export function HeaderAuthControls({
           role="menu"
           className="absolute end-0 z-[60] mt-2 w-64 border border-foreground/15 bg-background p-2 text-sm shadow-float"
         >
-          {hasAuth ? (
-            <div className="space-y-1">
-              {authLabel ? (
-                <p className="px-2 py-1 text-xs text-muted">חשבון: {authLabel}</p>
-              ) : null}
-              {clubLabel ? (
-                <p className="px-2 py-1 text-xs text-muted">מועדון: {clubLabel}</p>
-              ) : null}
-              <Link
-                role="menuitem"
-                href="/my-list"
-                className="flex min-h-10 items-center rounded-md px-2 hover:bg-paper"
-                onClick={() => {
-                  setOpen(false);
-                  onNavigate?.();
-                }}
-              >
-                הרשימה שלי
-              </Link>
-              <Link
-                role="menuitem"
-                href="/profile"
-                className="flex min-h-10 items-center rounded-md px-2 hover:bg-paper"
-                onClick={() => {
-                  setOpen(false);
-                  onNavigate?.();
-                }}
-              >
-                פרופיל
-              </Link>
+          <div className="space-y-1">
+            {authLabel ? (
+              <p className="px-2 py-1 text-xs text-muted">חשבון: {authLabel}</p>
+            ) : null}
+            {clubLabel ? (
+              <p className="px-2 py-1 text-xs text-muted">מועדון: {clubLabel}</p>
+            ) : null}
+            <Link
+              role="menuitem"
+              href="/my-list"
+              className={menuItemClass}
+              onClick={close}
+            >
+              <Bookmark className="h-4 w-4 shrink-0" aria-hidden="true" />
+              הרשימה שלי
+            </Link>
+            <Link
+              role="menuitem"
+              href="/profile"
+              className={menuItemClass}
+              onClick={close}
+            >
+              <User className="h-4 w-4 shrink-0" aria-hidden="true" />
+              פרופיל אישי
+            </Link>
+            <Link
+              role="menuitem"
+              href="/profile?tab=settings"
+              className={menuItemClass}
+              onClick={close}
+            >
+              <Settings className="h-4 w-4 shrink-0" aria-hidden="true" />
+              הגדרות
+            </Link>
+            <div className="flex min-h-10 items-center justify-between gap-2 border-y border-foreground/10 px-2 py-1">
+              <span className="flex items-center gap-2 text-xs text-muted">
+                ערכת נושא
+              </span>
+              <ThemeToggle session={session} initialTheme={theme} />
+            </div>
+            <button
+              type="button"
+              role="menuitem"
+              disabled={pending}
+              className={cn(menuItemClass, "text-muted disabled:opacity-50")}
+              onClick={signOutAccount}
+            >
+              <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+              יציאה
+            </button>
+            {session.clubPhone ? (
               <button
                 type="button"
                 role="menuitem"
                 disabled={pending}
-                className="flex min-h-10 w-full items-center rounded-md px-2 text-start text-muted hover:bg-paper disabled:opacity-50"
-                onClick={signOutAccount}
+                className={cn(menuItemClass, "text-muted disabled:opacity-50")}
+                onClick={signOutClub}
               >
-                התנתק מהחשבון
+                <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+                יציאה מהמועדון
               </button>
-              {session.clubPhone ? (
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled={pending}
-                  className="flex min-h-10 w-full items-center rounded-md px-2 text-start text-muted hover:bg-paper disabled:opacity-50"
-                  onClick={signOutClub}
-                >
-                  יציאה מהמועדון
-                </button>
-              ) : null}
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <p className="px-2 py-1 text-xs text-muted">
-                שמירת סרטונים והיסטוריה
-              </p>
-              <Link
-                role="menuitem"
-                href="/my-list"
-                className="flex min-h-10 items-center gap-2 rounded-md px-2 hover:bg-paper"
-                onClick={() => {
-                  setOpen(false);
-                  onNavigate?.();
-                }}
-              >
-                <span aria-hidden="true">✉️</span>
-                התחברות (Google / אימייל)
-              </Link>
-              {session.clubPhone ? (
-                <p className="px-2 py-2 text-xs text-muted">
-                  מועדון פתוח במכשיר ({clubLabel}). ניהול ב{" "}
-                  <Link
-                    href="/members#login"
-                    className="underline"
-                    onClick={() => {
-                      setOpen(false);
-                      onNavigate?.();
-                    }}
-                  >
-                    /members
-                  </Link>
-                  .
-                </p>
-              ) : null}
-            </div>
-          )}
+            ) : null}
+          </div>
         </div>
       ) : null}
     </div>

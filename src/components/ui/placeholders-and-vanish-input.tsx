@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { Mic } from "lucide-react";
+import { Mic, X } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -49,6 +49,8 @@ export type PlaceholdersAndVanishInputProps = {
   onBlur?: (e: FocusEvent<HTMLInputElement>) => void;
   /** Called when voice recognition fills the field. */
   onVoiceResult?: (transcript: string) => void;
+  /** Clears the field in one click (shown when value is not empty). */
+  onClear?: () => void;
   inputRef?: Ref<HTMLInputElement>;
   id?: string;
   className?: string;
@@ -94,6 +96,7 @@ export function PlaceholdersAndVanishInput({
   onFocus,
   onBlur,
   onVoiceResult,
+  onClear,
   inputRef: inputRefProp,
   id,
   className,
@@ -302,9 +305,27 @@ export function PlaceholdersAndVanishInput({
     onChange(e);
   };
 
+  const handleClear = () => {
+    if (animating) return;
+    if (onClear) {
+      onClear();
+      inputElRef.current?.focus();
+      return;
+    }
+    if (!isControlled) setInternalValue("");
+    onChange({
+      target: { value: "" },
+      currentTarget: { value: "" },
+    } as ChangeEvent<HTMLInputElement>);
+    inputElRef.current?.focus();
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     onKeyDownProp?.(e);
   };
+
+  const showClear = Boolean(value) && !animating;
+  const endActions = 1 + (voiceSupported ? 1 : 0) + (showClear ? 1 : 0);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -391,7 +412,11 @@ export function PlaceholdersAndVanishInput({
         aria-activedescendant={ariaActiveDescendant}
         className={cn(
           "relative z-50 h-full w-full rounded-full border-none bg-transparent text-sm text-white outline-none sm:text-base",
-          voiceSupported ? "ps-5 pe-24 sm:ps-6" : "ps-5 pe-14 sm:ps-6",
+          endActions >= 3
+            ? "ps-5 pe-32 sm:ps-6"
+            : endActions === 2
+              ? "ps-5 pe-24 sm:ps-6"
+              : "ps-5 pe-14 sm:ps-6",
           "text-end",
           (value || animating) && "caret-white",
           animating && !reducedMotion && "text-transparent",
@@ -404,6 +429,23 @@ export function PlaceholdersAndVanishInput({
           "end-2",
         )}
       >
+        {showClear ? (
+          <button
+            type="button"
+            aria-label="ניקוי חיפוש"
+            title="ניקוי"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={handleClear}
+            className={cn(
+              "inline-flex size-9 items-center justify-center rounded-full transition",
+              "bg-transparent text-white/70 hover:bg-white/10 hover:text-white",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+            )}
+          >
+            <X className="size-4" strokeWidth={1.75} aria-hidden="true" />
+          </button>
+        ) : null}
+
         {voiceSupported ? (
           <button
             type="button"

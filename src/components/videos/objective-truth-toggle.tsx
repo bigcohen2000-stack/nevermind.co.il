@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useId, useState } from "react";
 
 import { MyListSignInForm } from "@/components/auth/my-list-sign-in-form";
+import { ArticleGlossary } from "@/components/content/article-glossary";
 import { cn } from "@/lib/utils";
 
 type ObjectiveTruthToggleProps = {
@@ -181,7 +182,9 @@ export function ObjectiveTruthToggle({
           </div>
           {transcriptOpen ? (
             <div className="mt-3 max-h-[18rem] overflow-y-auto border border-foreground/10 bg-paper/40 p-4 text-sm leading-relaxed text-foreground/80">
-              <p className="whitespace-pre-wrap">{transcript}</p>
+              <ArticleGlossary>
+                <p className="whitespace-pre-wrap">{transcript}</p>
+              </ArticleGlossary>
             </div>
           ) : (
             <p className="mt-3 text-sm text-muted">

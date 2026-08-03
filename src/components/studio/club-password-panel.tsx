@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
 import { setClubSharedPassword } from "@/actions/club-login";
+import { StudioOpsTipsPanel } from "@/components/studio/studio-ops-tips";
+import { StudioCopyButton } from "@/components/studio/studio-copy-button";
 import type { ClubPasswordStatus } from "@/lib/club/password-status";
+import { clubAccessGranted } from "@/lib/studio/whatsapp-templates";
 
 type ClubPasswordPanelProps = {
   status: ClubPasswordStatus;
@@ -102,11 +105,13 @@ export function ClubPasswordPanel({ status }: ClubPasswordPanelProps) {
         <li>בחרו סיסמה (או לחצו &quot;הצע סיסמה&quot;).</li>
         <li>אשרו אותה בשדה השני ולחצו &quot;שמור סיסמה&quot;.</li>
         <li>
-          שלחו לחברים: היכנסו ל־
+          שלחו לחברים: היכנסו ל-
           <span className="text-zinc-200"> /members </span>
-          עם טלפון + הסיסמה.
+          עם טלפון + הסיסמה. אפשר להעתיק הודעה מוכנה אחרי שמירה.
         </li>
       </ol>
+
+      <StudioOpsTipsPanel mode="password" />
 
       <p className="text-xs text-zinc-500">
         גרסה {status.version}
@@ -212,16 +217,28 @@ export function ClubPasswordPanel({ status }: ClubPasswordPanelProps) {
           </button>
           <button
             type="button"
-            className="rounded-md border border-zinc-600 px-3 py-2 text-xs text-zinc-200 hover:border-zinc-400 disabled:opacity-40"
+            className="border border-zinc-600 px-3 py-2 text-xs text-zinc-200 hover:border-zinc-400 disabled:opacity-40"
             disabled={!password.trim()}
             onClick={onCopy}
           >
-            העתק
+            העתק סיסמה
           </button>
+          <StudioCopyButton
+            text={clubAccessGranted({
+              name: "חבר/ת",
+              password: password.trim() || "___",
+              includeBenefits: true,
+            })}
+            label="העתק הודעת כניסה+יכולות"
+            disabled={!password.trim()}
+            onCopied={() =>
+              setMessage("הודעת וואטסאפ עם סיסמה ויכולות הועתקה.")
+            }
+          />
           <button
             type="submit"
             disabled={pending}
-            className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-950 disabled:opacity-50"
+            className="bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-950 disabled:opacity-50"
           >
             {pending ? "שומר..." : "שמור סיסמה"}
           </button>

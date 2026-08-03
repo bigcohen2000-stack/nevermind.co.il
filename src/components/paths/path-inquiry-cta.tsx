@@ -3,6 +3,7 @@
 import { useId, useState, useTransition, type FormEvent } from "react";
 
 import { submitBookingLead } from "@/actions/booking-lead";
+import { UnifiedLeadSuccess } from "@/components/forms/unified-lead-success";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +64,7 @@ export function PathInquiryCta({
   const [purpose, setPurpose] = useState("");
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const openTriggerClass = tone === "dark" ? secondaryBtnDark : primaryBtnClass;
@@ -142,7 +144,8 @@ export function PathInquiryCta({
         setError(result.error);
         return;
       }
-      setStatus("הבקשה נשלחה במייל. נחזור אחרי בדיקת התאמה.");
+      setEmailSent(true);
+      setStatus("");
     });
   }
 
@@ -154,6 +157,7 @@ export function PathInquiryCta({
           setOpen(true);
           setError("");
           setStatus("");
+          setEmailSent(false);
         }}
         className={openTriggerClass}
       >
@@ -173,6 +177,15 @@ export function PathInquiryCta({
             </DialogDescription>
           </DialogHeader>
 
+          {emailSent ? (
+            <div className="mt-4">
+              <UnifiedLeadSuccess
+                tone="dark"
+                whatsappText={buildTrackWhatsAppText(trackInput())}
+              />
+            </div>
+          ) : (
+            <>
           <div className="mt-4 border border-[#FAFAF8]/15 bg-black/40 px-3 py-3 text-sm">
             <p className="text-[#9CA3AF]">מבקשים</p>
             <p className="mt-1 font-medium text-[#FAFAF8]">{track}</p>
@@ -299,6 +312,8 @@ export function PathInquiryCta({
               </button>
             </div>
           </form>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

@@ -73,8 +73,9 @@ export function MembersPricing() {
 
   return (
     <section
+      id="membership-prices"
       aria-labelledby="members-pricing-title"
-      className="bg-background text-foreground"
+      className="scroll-mt-28 bg-background text-foreground"
     >
       <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-28">
         <p className="text-xs font-medium tracking-wide text-action">

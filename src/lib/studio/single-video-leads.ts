@@ -15,6 +15,7 @@ export type SingleVideoLeadsDashboardData = {
   totalToday: number;
   totalThisWeek: number;
   openCount: number;
+  loadError: string | null;
 };
 
 function startOfLocalDay(now = new Date()): Date {
@@ -38,6 +39,7 @@ export async function getSingleVideoLeadsDashboard(): Promise<SingleVideoLeadsDa
     totalToday: 0,
     totalThisWeek: 0,
     openCount: 0,
+    loadError: null,
   };
 
   try {
@@ -48,7 +50,13 @@ export async function getSingleVideoLeadsDashboard(): Promise<SingleVideoLeadsDa
       .order("created_at", { ascending: false })
       .limit(200);
 
-    if (error || !data) return empty;
+    if (error) {
+      return {
+        ...empty,
+        loadError: error.message || "טעינת לידי סרטון בודד נכשלה.",
+      };
+    }
+    if (!data) return empty;
 
     const rows = data as SingleVideoLead[];
     const todayStart = startOfLocalDay().getTime();
@@ -68,8 +76,15 @@ export async function getSingleVideoLeadsDashboard(): Promise<SingleVideoLeadsDa
           row.status === "chatting" ||
           row.status === "paid",
       ).length,
+      loadError: null,
     };
-  } catch {
-    return empty;
+  } catch (err) {
+    return {
+      ...empty,
+      loadError:
+        err instanceof Error
+          ? err.message
+          : "טעינת לידי סרטון בודד נכשלה.",
+    };
   }
 }

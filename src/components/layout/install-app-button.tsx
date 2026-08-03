@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Check, Download } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import {
@@ -23,7 +24,7 @@ type InstallAppButtonProps = {
   compact?: boolean;
 };
 
-type HelpKind = "ios" | "android-prompt" | "generic";
+type HelpKind = "ios" | "android-prompt" | "generic" | "installed";
 
 function isIosDevice(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -45,8 +46,7 @@ function isStandaloneDisplay(): boolean {
 
 /**
  * "הורדת אפליקציה" for השם לא משנה.
- * Always opens a branded, high-contrast dialog (with app icon).
- * If beforeinstallprompt is available, the primary action triggers the native install.
+ * Always visible. Opens install help (iOS / Chrome) or native prompt when available.
  */
 export function InstallAppButton({
   className,
@@ -64,6 +64,7 @@ export function InstallAppButton({
   useEffect(() => {
     if (isStandaloneDisplay()) {
       setInstalled(true);
+      setHelpKind("installed");
       setReady(true);
       return;
     }
@@ -78,6 +79,7 @@ export function InstallAppButton({
     const onInstalled = () => {
       setInstalled(true);
       setDeferred(null);
+      setHelpKind("installed");
       setHelpOpen(false);
     };
 
@@ -91,7 +93,9 @@ export function InstallAppButton({
   }, []);
 
   const onInstallClick = useCallback(() => {
-    if (isIosDevice()) {
+    if (installed || isStandaloneDisplay()) {
+      setHelpKind("installed");
+    } else if (isIosDevice()) {
       setHelpKind("ios");
     } else if (deferred) {
       setHelpKind("android-prompt");
@@ -99,7 +103,7 @@ export function InstallAppButton({
       setHelpKind("generic");
     }
     setHelpOpen(true);
-  }, [deferred]);
+  }, [deferred, installed]);
 
   const onNativeInstall = useCallback(async () => {
     if (!deferred || busy) return;
@@ -109,23 +113,39 @@ export function InstallAppButton({
       const choice = await deferred.userChoice;
       if (choice.outcome === "accepted") {
         setInstalled(true);
+        setHelpKind("installed");
         setHelpOpen(false);
       }
       setDeferred(null);
-      setHelpKind("generic");
     } finally {
       setBusy(false);
     }
   }, [busy, deferred]);
 
-  if (!ready || installed) return null;
+  if (!ready) {
+    return (
+      <span
+        className={cn(
+          compact
+            ? "inline-flex min-h-11 min-w-[7.5rem] items-center justify-center border border-foreground/15 px-3 text-sm text-muted"
+            : "btn btn-secondary opacity-60",
+          className,
+        )}
+        aria-hidden="true"
+      >
+        …
+      </span>
+    );
+  }
 
   const title =
     helpKind === "ios"
       ? "הוספה למסך הבית"
       : helpKind === "android-prompt"
         ? "התקנה למסך הבית"
-        : "איך מתקינים";
+        : helpKind === "installed"
+          ? "האפליקציה במסך הבית"
+          : "איך מתקינים";
 
   return (
     <>
@@ -134,13 +154,18 @@ export function InstallAppButton({
         onClick={onInstallClick}
         className={cn(
           compact
-            ? "inline-flex min-h-11 items-center justify-center border border-foreground/25 px-3 py-2 text-sm text-foreground transition hover:border-action hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
-            : "btn btn-secondary",
+            ? "inline-flex min-h-11 items-center justify-center gap-1.5 border border-foreground/25 px-3 py-2 text-sm text-foreground transition hover:border-action hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+            : "btn btn-secondary inline-flex items-center justify-center gap-2",
           className,
         )}
         aria-label="הורדת אפליקציה: השם לא משנה"
       >
-        הורדת אפליקציה
+        {installed ? (
+          <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+        ) : (
+          <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
+        )}
+        <span>{installed ? "האפליקציה" : "הורדת אפליקציה"}</span>
       </button>
 
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
@@ -161,7 +186,7 @@ export function InstallAppButton({
               </span>
               <div className="min-w-0">
                 <p className="text-xs tracking-[0.14em] text-[#9CA3AF] uppercase">
-                  אפליקציה
+                  אפליקציה מקומית
                 </p>
                 <p className="mt-1 text-base font-semibold tracking-tight text-[#FAFAF8]">
                   השם לא משנה
@@ -171,10 +196,12 @@ export function InstallAppButton({
             <DialogTitle className="text-[#FAFAF8]">{title}</DialogTitle>
             <DialogDescription className="text-[#9CA3AF]">
               {helpKind === "ios"
-                ? "ב-Safari מוסיפים את האתר למסך הבית. האייקון נשאר כמו אפליקציה, בלי חנות."
+                ? "ב-Safari מוסיפים את האתר למסך הבית. האייקון נשאר כמו אפליקציה מקומית, בלי חנות."
                 : helpKind === "android-prompt"
                   ? "לחיצה אחת פותחת את חלון ההתקנה של הדפדפן. האייקון יופיע במסך הבית."
-                  : "בדפדפן תומך בוחרים התקן אפליקציה או הוסף למסך הבית. האייקון יופיע במסך הבית."}
+                  : helpKind === "installed"
+                    ? "האתר כבר פועל כהתקנה מקומית במכשיר הזה."
+                    : "בדפדפן תומך בוחרים התקן אפליקציה או הוסף למסך הבית. האייקון יופיע במסך הבית."}
             </DialogDescription>
           </DialogHeader>
 
@@ -199,6 +226,10 @@ export function InstallAppButton({
               <li>גללו ובחרו הוסף למסך הבית.</li>
               <li>אשרו את השם: השם לא משנה.</li>
             </ol>
+          ) : helpKind === "installed" ? (
+            <p className="mt-4 text-sm leading-relaxed text-[#FAFAF8]/85">
+              אפשר לפתוח את השם לא משנה ישירות מהאייקון במסך הבית.
+            </p>
           ) : (
             <ol className="mt-4 list-decimal space-y-2 pe-5 text-sm leading-relaxed text-[#FAFAF8]/85">
               <li>פתחו את תפריט הדפדפן (שלוש נקודות).</li>

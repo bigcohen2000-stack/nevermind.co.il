@@ -19,6 +19,7 @@ export type SearchAnalyticsDashboardData = {
     note: string;
     createdAt: string;
   }>;
+  loadError: string | null;
 };
 
 function startOfLocalDay(now = new Date()): Date {
@@ -64,6 +65,7 @@ export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDash
     topZeroResultTerms: [],
     thumbsDownThisWeek: 0,
     feedbackNotes: [],
+    loadError: null,
   };
 
   try {
@@ -74,7 +76,13 @@ export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDash
       .order("created_at", { ascending: false })
       .limit(5000);
 
-    if (error || !data) return empty;
+    if (error) {
+      return {
+        ...empty,
+        loadError: error.message || "טעינת אנליטיקס נכשלה.",
+      };
+    }
+    if (!data) return empty;
 
     const rows = data as SearchAnalytics[];
     const todayStart = startOfLocalDay().getTime();
@@ -110,8 +118,13 @@ export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDash
       topZeroResultTerms: topTerms(zeroRows, 3),
       thumbsDownThisWeek: weekFeedbackDown,
       feedbackNotes,
+      loadError: null,
     };
-  } catch {
-    return empty;
+  } catch (err) {
+    return {
+      ...empty,
+      loadError:
+        err instanceof Error ? err.message : "טעינת אנליטיקס נכשלה.",
+    };
   }
 }

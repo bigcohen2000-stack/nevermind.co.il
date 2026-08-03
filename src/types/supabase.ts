@@ -27,6 +27,8 @@
  *   29_unlisted_live.sql
  *   29_studio_ops_expiry_feedback.sql
  *   30_quotes_and_banners.sql
+ *   31_profile_theme.sql
+ *   32_live_video_votes.sql
  *
  * Replace with generated types after linking a live project:
  *   npx supabase gen types typescript --project-id <YOUR_NEW_PROJECT_ID> > src/types/supabase.ts
@@ -365,7 +367,9 @@ export type Database = {
           phone: string;
           email: string | null;
           source: string;
+          status: string;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -376,7 +380,9 @@ export type Database = {
           phone: string;
           email?: string | null;
           source?: string;
+          status?: string;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -387,7 +393,45 @@ export type Database = {
           phone?: string;
           email?: string | null;
           source?: string;
+          status?: string;
           created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      booking_leads: {
+        Row: {
+          id: string;
+          name: string;
+          phone: string;
+          email: string;
+          context: string;
+          source: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          phone: string;
+          email: string;
+          context?: string;
+          source?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          phone?: string;
+          email?: string;
+          context?: string;
+          source?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -480,6 +524,7 @@ export type Database = {
           age_confirmed_at: string | null;
           access_expires_at: string | null;
           watch_time_seconds: number;
+          theme: "light" | "dark";
           created_at: string;
           updated_at: string;
         };
@@ -490,6 +535,7 @@ export type Database = {
           age_confirmed_at?: string | null;
           access_expires_at?: string | null;
           watch_time_seconds?: number;
+          theme?: "light" | "dark";
           created_at?: string;
           updated_at?: string;
         };
@@ -500,6 +546,7 @@ export type Database = {
           age_confirmed_at?: string | null;
           access_expires_at?: string | null;
           watch_time_seconds?: number;
+          theme?: "light" | "dark";
           created_at?: string;
           updated_at?: string;
         };
@@ -571,6 +618,96 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      live_video_likes: {
+        Row: {
+          user_id: string;
+          video_id: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          video_id: string;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          video_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "live_video_likes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "live_video_likes_video_id_fkey";
+            columns: ["video_id"];
+            isOneToOne: false;
+            referencedRelation: "videos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      live_video_like_counts: {
+        Row: {
+          video_id: string;
+          like_count: number;
+        };
+        Insert: {
+          video_id: string;
+          like_count?: number;
+        };
+        Update: {
+          video_id?: string;
+          like_count?: number;
+        };
+        Relationships: [];
+      };
+      live_video_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          video_id: string | null;
+          video_title: string;
+          note: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          video_id?: string | null;
+          video_title: string;
+          note?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          video_id?: string | null;
+          video_title?: string;
+          note?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "live_video_requests_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "live_video_requests_video_id_fkey";
+            columns: ["video_id"];
+            isOneToOne: false;
+            referencedRelation: "videos";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       auth_login_events: {
         Row: {
@@ -1015,6 +1152,8 @@ export type PreMeetingLead =
   Database["public"]["Tables"]["pre_meeting_leads"]["Row"];
 export type SingleVideoLead =
   Database["public"]["Tables"]["single_video_leads"]["Row"];
+export type BookingLead =
+  Database["public"]["Tables"]["booking_leads"]["Row"];
 export type PushSubscriber =
   Database["public"]["Tables"]["subscribers"]["Row"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
