@@ -26,6 +26,8 @@ Apply these **in order** on the **new** isolated Supabase project (SQL Editor or
 | `19_videos_select_entitled.sql` | Entitled select policies for full gated rows |
 | `20_video_publish_duration.sql` | `published_at` + `duration_seconds` for /videos sort |
 | `21_single_video_leads.sql` | Single-video 50 NIS request leads for Studio |
+| `22`-`35` | Club, presence, quotes, live archive, booking, meetings (see files in this folder) |
+| `36_live_stream_queue.sql` | Live stream queue + `notify_live` / `notify_daily` / `user_id` on subscribers. Apply after `35_ensure_club_members.sql`. Types: `live_stream_queue` + subscriber prefs in `src/types/supabase.ts`. |
 
 ## How to apply
 

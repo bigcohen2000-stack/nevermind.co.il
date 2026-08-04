@@ -16,9 +16,12 @@ import {
   LiveScheduleBlock,
   LiveWatchExplain,
 } from "@/components/live/live-join-paths";
+import { LiveNotifyHint } from "@/components/live/live-notify-hint";
+import { LiveRecBadge } from "@/components/live/live-rec-badge";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ProductFaq } from "@/components/seo/product-faq";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
+import { InfoTip } from "@/components/ui/info-tip";
 import { SiteAccordion } from "@/components/ui/site-accordion";
 import { resolveVideoEntitlement } from "@/lib/club/access";
 import { LIVE_FAQ } from "@/lib/content/offers";
@@ -26,11 +29,12 @@ import {
   getLiveArchiveItems,
   getLiveVoteLeaders,
 } from "@/lib/live/archive";
+import { listUpcomingLivePublic } from "@/lib/live/queue";
 import { getLivePublicStatus } from "@/lib/live/status";
 import { shareImageMetadata } from "@/lib/og/share-image";
 import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -58,18 +62,21 @@ const LIVE_HIGHLIGHTS = [
     icon: Users,
     title: "הצטרפות",
     body: "אישי באולפן, או קבוצתי עם מיקרופון.",
+    tip: "שני מסלולים: כיסא באולפן במודיעין, או מיקרופון בלייב הקבוצתי. תיאום בשיחה. אין סליקה באתר.",
   },
   {
     id: "watch",
     icon: Radio,
     title: "צפייה בלייב",
     body: "מהאתר. הרשמה ואישור גיל כשהשידור פעיל.",
+    tip: "כשהשידור פעיל מופיע שער כניסה למטה. נדרשים חשבון חינם ואישור 18+. הקישור לא מוצג לציבור הפתוח.",
   },
   {
     id: "archive",
     icon: Lock,
     title: "ארכיון",
     body: "הקלטות לא רשומות. רק לחברי מועדון.",
+    tip: "הקלטות מהשידורים הלא רשומים נפתחות לחברי מועדון בלבד. לא מוצגות כאן לציבור.",
   },
 ] as const;
 
@@ -104,7 +111,7 @@ async function getLiveViewerState(): Promise<{
 }
 
 export default async function LivePage() {
-  const [status, viewer, access] = await Promise.all([
+  const [status, viewer, access, upcoming] = await Promise.all([
     getLivePublicStatus(),
     getLiveViewerState(),
     resolveVideoEntitlement().catch(() => ({
@@ -112,6 +119,7 @@ export default async function LivePage() {
       hasVideoAccess: false,
       isAuthenticated: false,
     })),
+    listUpcomingLivePublic(8),
   ]);
 
   const hasClubAccess = access.entitled || access.hasVideoAccess;
@@ -149,16 +157,7 @@ export default async function LivePage() {
           >
             {status.isLive ? (
               <span className="inline-flex flex-wrap items-center gap-3">
-                <span
-                  className="relative inline-flex size-2.5 shrink-0"
-                  aria-hidden="true"
-                >
-                  <span className="absolute inset-0 animate-ping rounded-full bg-action/70" />
-                  <span className="relative inline-flex size-2.5 rounded-full bg-action" />
-                </span>
-                <span className="text-[0.7rem] font-semibold tracking-[0.14em] text-action">
-                  REC
-                </span>
+                <LiveRecBadge active tipTone="dark" />
                 <span>השידור פעיל עכשיו</span>
               </span>
             ) : (
@@ -169,12 +168,20 @@ export default async function LivePage() {
               </>
             )}
           </h1>
-          <p className="mt-6 max-w-prose text-base leading-relaxed text-foreground/80 sm:text-lg">
-            {status.isLive
-              ? status.topic
-                ? `נושא עכשיו: ${status.topic}. הרשמה ואישור גיל נדרשים לקישור.`
-                : "השידור פעיל. הרשמה ואישור גיל נדרשים לקישור."
-              : "רוצים להצטרף למפגש: כיסא באולפן או מיקרופון בלייב הקבוצתי. צופים מהאתר. ארכיון רק לחברים."}
+          <p className="mt-6 inline-flex max-w-prose flex-wrap items-start gap-1.5 text-base leading-relaxed text-foreground/80 sm:text-lg">
+            <span>
+              {status.isLive
+                ? status.topic
+                  ? `נושא עכשיו: ${status.topic}. הרשמה ואישור גיל נדרשים לקישור.`
+                  : "השידור פעיל. הרשמה ואישור גיל נדרשים לקישור."
+                : "רוצים להצטרף למפגש: כיסא באולפן או מיקרופון בלייב הקבוצתי. צופים מהאתר. ארכיון רק לחברים."}
+            </span>
+            {!status.isLive ? (
+              <InfoTip label="מה יש בעמוד הזה" tone="dark">
+                כאן מצטרפים למפגש, בודקים מתי משדרים, נכנסים לשידור כשהוא פעיל,
+                ורואים ארכיון אם יש גישת מועדון.
+              </InfoTip>
+            ) : null}
           </p>
 
           <ul className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -187,7 +194,14 @@ export default async function LivePage() {
                 >
                   <p className="flex items-center gap-2 text-sm font-semibold">
                     <Icon className="size-4 text-action" aria-hidden />
-                    {item.title}
+                    <span>{item.title}</span>
+                    <InfoTip
+                      label={`הסבר: ${item.title}`}
+                      tone="dark"
+                      className="size-6"
+                    >
+                      {item.tip}
+                    </InfoTip>
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-foreground/70">
                     {item.body}
@@ -201,6 +215,7 @@ export default async function LivePage() {
             <a
               href="#join"
               className="inline-flex min-h-10 items-center gap-1.5 border border-foreground/20 px-3 text-sm no-underline transition hover:border-action hover:text-action hover:no-underline"
+              title="מעבר להצטרפות למפגש"
             >
               <Mic className="size-3.5 text-action" aria-hidden />
               הצטרפות
@@ -208,6 +223,7 @@ export default async function LivePage() {
             <a
               href="#schedule"
               className="inline-flex min-h-10 items-center gap-1.5 border border-foreground/20 px-3 text-sm no-underline transition hover:border-action hover:text-action hover:no-underline"
+              title="מעבר ללוח השידורים"
             >
               <CalendarDays className="size-3.5 text-action" aria-hidden />
               מתי
@@ -215,6 +231,7 @@ export default async function LivePage() {
             <a
               href="#watch"
               className="inline-flex min-h-10 items-center gap-1.5 border border-foreground/20 px-3 text-sm no-underline transition hover:border-action hover:text-action hover:no-underline"
+              title="מעבר לצפייה בשידור"
             >
               <Radio className="size-3.5 text-action" aria-hidden />
               צפייה
@@ -222,6 +239,7 @@ export default async function LivePage() {
             <a
               href="#archive"
               className="inline-flex min-h-10 items-center gap-1.5 border border-foreground/20 px-3 text-sm no-underline transition hover:border-action hover:text-action hover:no-underline"
+              title="מעבר לארכיון לייבים"
             >
               <Lock className="size-3.5 text-action" aria-hidden />
               ארכיון
@@ -266,8 +284,11 @@ export default async function LivePage() {
             {
               id: "schedule",
               title: "מתי משדרים",
-              summary: "שלישי וחמישי 20:00. מוצאי שבת 22:00.",
-              children: <LiveScheduleBlock />,
+              summary:
+                upcoming.length > 0
+                  ? "תאריכים מתוכננים + לוח קבוע."
+                  : "שלישי וחמישי 20:00. מוצאי שבת 22:00.",
+              children: <LiveScheduleBlock upcoming={upcoming} />,
             },
             {
               id: "watch",
@@ -308,6 +329,7 @@ export default async function LivePage() {
                       כרגע אין שידור פעיל. בדקו את הלוח, או הוסיפו ליומן.
                     </p>
                   ) : null}
+                  <LiveNotifyHint signedIn={viewer.signedIn} />
                 </div>
               ),
             },
@@ -338,14 +360,14 @@ export default async function LivePage() {
           >
             יצירת קשר
           </Link>
-          {" · "}
+          {", "}
           <Link
             href="/members"
             className="text-action no-underline hover:underline"
           >
             מועדון
           </Link>
-          {" · "}
+          {", "}
           <Link
             href="/paths"
             className="text-action no-underline hover:underline"

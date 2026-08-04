@@ -29,6 +29,7 @@ import { HeaderAuthControls } from "@/components/layout/header-auth-controls";
 import { HeaderSearch } from "@/components/layout/header-search";
 import { InstallAppButton } from "@/components/layout/install-app-button";
 import { SiteLogo } from "@/components/layout/site-logo";
+import { useCommandPaletteOptional } from "@/components/search/command-palette-context";
 import type { HeaderSession } from "@/lib/auth/header-session-shared";
 import type { SiteAccessTier } from "@/lib/access/site-tier";
 import {
@@ -182,6 +183,7 @@ export function SiteHeader({
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const panelId = useId();
   const isClub = accessTier === "club";
+  const commandPalette = useCommandPaletteOptional();
 
   useEffect(() => {
     setMenuOpen(false);
@@ -207,6 +209,17 @@ export function SiteHeader({
     };
   }, [menuOpen, mobileSearchOpen]);
 
+  function openMobileSearch() {
+    if (commandPalette) {
+      setMenuOpen(false);
+      setMobileSearchOpen(false);
+      commandPalette.openPalette();
+      return;
+    }
+    setMobileSearchOpen((v) => !v);
+    setMenuOpen(false);
+  }
+
   return (
     <header
       className={cn(
@@ -231,12 +244,9 @@ export function SiteHeader({
           <div className="flex shrink-0 items-center gap-1.5 lg:hidden">
             {isClub ? <ClubMemberChrome variant="chip" /> : null}
             <IconButton
-              label={mobileSearchOpen ? "סגירת חיפוש" : "פתיחת חיפוש"}
+              label="פתיחת חיפוש"
               expanded={mobileSearchOpen}
-              onClick={() => {
-                setMobileSearchOpen((v) => !v);
-                setMenuOpen(false);
-              }}
+              onClick={openMobileSearch}
             >
               <Search className="h-4 w-4" aria-hidden="true" />
             </IconButton>

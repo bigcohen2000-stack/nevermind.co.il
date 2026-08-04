@@ -30,7 +30,7 @@ export function HomePathsAccordion() {
                       {path.title}
                     </span>
                     <span className="mt-1 block text-sm text-muted">
-                      {path.tags.join(" · ")}
+                      {path.tags.join(", ")}
                     </span>
                   </span>
                   <span

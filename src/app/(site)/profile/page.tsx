@@ -7,6 +7,7 @@ import { listWatchHistory } from "@/actions/watch-history";
 import { MyListSignInForm } from "@/components/auth/my-list-sign-in-form";
 import { ClearWatchHistoryButton } from "@/components/profile/clear-watch-history-button";
 import { ClubMemberVoucher } from "@/components/profile/club-member-voucher";
+import { LiveNotifySettings } from "@/components/profile/live-notify-settings";
 import { ProgressDashboard } from "@/components/profile/progress-dashboard";
 import { SignOutButton } from "@/components/profile/sign-out-button";
 import { resolveVideoEntitlement } from "@/lib/club/access";
@@ -57,8 +58,8 @@ export default async function ProfilePage({
     return (
       <main className="min-h-full w-full bg-[#000000] text-[#FAFAF8]">
         <div className="mx-auto flex w-full max-w-lg flex-col px-6 py-16 sm:py-24">
-          <p className="text-xs font-medium tracking-[0.2em] text-[#9CA3AF] uppercase">
-            {isRegister ? "Register" : "Sign in"}
+          <p className="text-xs font-medium tracking-[0.2em] text-[#9CA3AF]">
+            {isRegister ? "הרשמה" : "התחברות"}
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
             {isRegister ? "הרשמה לחשבון" : "התחברות לפרופיל"}
@@ -96,7 +97,7 @@ export default async function ProfilePage({
             <section className="mt-10 border border-[#FAFAF8]/10 bg-[#0A0A0B] p-5 text-sm">
               <h2 className="font-semibold tracking-tight">מועדון במכשיר</h2>
               <p className="mt-2 text-[#9CA3AF]">
-                {club.displayName ? `${club.displayName} · ` : ""}
+                {club.displayName ? `${club.displayName}. ` : ""}
                 {maskClubPhone(club.phone)}. שכבה נפרדת מחשבון האתר.
               </p>
               <form action={logoutClub} className="mt-4">
@@ -141,8 +142,8 @@ export default async function ProfilePage({
   return (
     <main className="min-h-full w-full bg-[#000000] text-[#FAFAF8]">
       <div className="mx-auto w-full max-w-6xl px-6 py-16 lg:py-24">
-        <p className="text-xs font-medium tracking-[0.2em] text-[#9CA3AF] uppercase">
-          Profile
+        <p className="text-xs font-medium tracking-[0.2em] text-[#9CA3AF]">
+          פרופיל
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight lg:text-5xl">
           הפרופיל שלי
@@ -223,14 +224,14 @@ export default async function ProfilePage({
               >
                 הרשימה שלי
               </Link>
-              {" · "}
+              {": "}
               סרטונים שנשמרו להמשך חקירה.
             </li>
             <li>
               <a href="#watch-history-title" className="underline-offset-2 hover:underline">
                 היסטוריית צפייה
               </a>
-              {" · "}
+              {": "}
               מה שהתחלת לצפות בו במכשיר הזה.
             </li>
             <li>
@@ -240,10 +241,11 @@ export default async function ProfilePage({
               >
                 מדיניות פרטיות
               </Link>
-              {" · "}
+              {": "}
               איך נשמר מידע באתר.
             </li>
           </ul>
+          <LiveNotifySettings />
         </section>
 
         <section
@@ -270,7 +272,7 @@ export default async function ProfilePage({
               <span>
                 <span className="text-[#9CA3AF]">מועדון: </span>
                 {club.clubSession
-                  ? `${club.displayName ? `${club.displayName} · ` : ""}${maskClubPhone(club.phone)}`
+                  ? `${club.displayName ? `${club.displayName}. ` : ""}${maskClubPhone(club.phone)}`
                   : "לא מחובר במכשיר הזה"}
               </span>
               {club.clubSession ? (

@@ -1,12 +1,15 @@
+import { getLivePushStats } from "@/actions/live-push";
 import { getClubPasswordStatus } from "@/actions/club-login";
 import { listStudioViewerFeedback } from "@/actions/viewer-feedback";
 import { ClubMembersPanel } from "@/components/studio/club-members-panel";
 import { ClubPasswordPanel } from "@/components/studio/club-password-panel";
 import { ClubTokenMint } from "@/components/studio/club-token-mint";
+import { LiveQueueStudioPanel } from "@/components/studio/live-queue-studio-panel";
 import {
   LiveStreamStudioPanel,
   type LiveStudioStatus,
 } from "@/components/studio/live-stream-studio-panel";
+import { listLiveQueue } from "@/lib/live/queue";
 import { StudioAccordion } from "@/components/studio/studio-accordion";
 import { StudioFeedbackPanel } from "@/components/studio/studio-feedback-panel";
 import { StudioHealthPanel } from "@/components/studio/studio-health-panel";
@@ -174,6 +177,8 @@ export default async function StudioPage() {
     recentLogins,
     liveRow,
     feedbackItems,
+    liveQueue,
+    livePush,
   ] = await Promise.all([
     getStudioHealth(),
     getStudioLibraryStatus(),
@@ -185,6 +190,8 @@ export default async function StudioPage() {
     listRecentClubLogins(30),
     getLiveStreamRow(),
     listStudioViewerFeedback(40),
+    listLiveQueue(40),
+    getLivePushStats(),
   ]);
 
   const liveStatus: LiveStudioStatus = {
@@ -250,7 +257,19 @@ export default async function StudioPage() {
             {
               id: "live",
               title: "שידור חי",
-              children: <LiveStreamStudioPanel status={liveStatus} />,
+              children: (
+                <div className="space-y-6">
+                  <LiveStreamStudioPanel
+                    status={liveStatus}
+                    pushReady={livePush.vapidConfigured}
+                    liveOptIns={livePush.optIns}
+                  />
+                  <LiveQueueStudioPanel
+                    items={liveQueue.items}
+                    loadError={liveQueue.error}
+                  />
+                </div>
+              ),
             },
             {
               id: "teasers",

@@ -2,26 +2,36 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
 
+import { BooksArchiveMatrixSection } from "@/components/books/books-archive-matrix-section";
+import { BooksArchiveMetrics } from "@/components/books/books-archive-metrics";
+import {
+  buildArticleMatrixRows,
+  buildVideoMatrixRows,
+} from "@/components/books/books-investigation-matrix";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
+import { getBooksLoveVideos } from "@/lib/books/love-videos";
 import { getAllArticles } from "@/lib/content/articles";
+import { BOOKS_HERO, BOOKS_LOVE_CONCEPT } from "@/lib/content/books-page";
 import { BOOK_IN_PROGRESS } from "@/lib/content/offers";
 import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
-import { getSpotifyShowUrl } from "@/lib/podcast/links";
+import { isMembersOnlyVideo } from "@/lib/videos/access";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 
-const BOOKS_OG_TITLE = "אין חנות. יש מה שפתוח.";
+const BOOKS_OG_TITLE = BOOK_IN_PROGRESS.title;
+/** Brand OG for JSON-LD only. No cover image in the page UI. */
+const BOOKS_SCHEMA_IMAGE = "https://nevermind.co.il/og-books.png";
 
 export const metadata: Metadata = {
-  title: "תכנים וספרים",
+  title: "ספריית כתבים ואהבה",
   description:
-    "ספר אהבה ב-20 עמודים בתוספת לפגישה פרונטלית, ומאמרים, וידאו ומושגים שכבר פתוחים באתר.",
+    "ספר אהבה ב-20 עמודים, ולידו ארכיון סרטונים ומאמרים על אהבה כמנגנון. מדדים יבשים, בלי חנות.",
   alternates: {
     canonical: "https://nevermind.co.il/books",
   },
   openGraph: {
-    title: "תכנים וספרים | NeverMinde",
+    title: "ספריית כתבים ואהבה | NeverMinde",
     description:
-      "ספר אהבה ב-20 עמודים בתוספת לפגישה פרונטלית, ומאמרים, וידאו ומושגים שכבר פתוחים באתר.",
+      "ספר אהבה ב-20 עמודים, ולידו ארכיון סרטונים ומאמרים על אהבה כמנגנון.",
     url: "https://nevermind.co.il/books",
     type: "website",
     images: shareOgImage(BOOKS_OG_TITLE),
@@ -29,39 +39,43 @@ export const metadata: Metadata = {
   twitter: shareImageMetadata(BOOKS_OG_TITLE).twitter,
 };
 
-const OPEN_PATHS = [
-  {
-    href: "/articles",
-    label: "מאמרים",
-    body: "ניתוח לוגי בכתב. מנגנון אחר מנגנון.",
-  },
-  {
-    href: "/videos",
-    label: "וידאו",
-    body: "ספריית סרטונים לפי נושא.",
-  },
-  {
-    href: "/search",
-    label: "חיפוש",
-    body: "חיפוש חופשי בתוכן הווידאו והמושגים.",
-  },
-  {
-    href: "/concepts",
-    label: "מושגים",
-    body: "מפת נושאים וקישור לסרטונים.",
-  },
-] as const;
+function loveRelatedArticles() {
+  return getAllArticles().filter((a) => {
+    if (a.category === "relationships") return true;
+    const blob = `${a.title} ${a.description} ${(a.relatedTerms ?? []).join(" ")}`;
+    return /אהבה|יחסים|האשמה|קרבה/.test(blob);
+  });
+}
 
-export default function BooksPage() {
-  const articles = getAllArticles();
-  const spotifyUrl = getSpotifyShowUrl();
+export default async function BooksPage() {
+  const love = await getBooksLoveVideos(28).catch(() => ({
+    videos: [],
+    bookTalkCount: 0,
+    relatedCount: 0,
+    total: 0,
+  }));
+  const articles = loveRelatedArticles();
+  const videoRows = buildVideoMatrixRows(love.videos);
+  const articleRows = buildArticleMatrixRows(articles);
+  const rows = [...videoRows, ...articleRows];
+
+  const openVideoCount = love.videos.filter((v) => !isMembersOnlyVideo(v)).length;
+  const clubVideoCount = love.videos.length - openVideoCount;
+
+  const filterConcepts = Array.from(
+    new Set([
+      BOOKS_LOVE_CONCEPT,
+      "יחסים",
+      ...articles.flatMap((a) => a.relatedTerms ?? []).slice(0, 8),
+    ]),
+  );
 
   const pageLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "תכנים וספרים",
+    name: "ספריית כתבים ואהבה",
     description:
-      "ספר אהבה ב-20 עמודים בתוספת לפגישה פרונטלית, ומאמרים, וידאו ומושגים שכבר פתוחים באתר.",
+      "ספר אהבה ב-20 עמודים וארכיון חקירת אהבה: סרטונים ומאמרים עם מדדים יבשים.",
     url: "https://nevermind.co.il/books",
     isPartOf: {
       "@type": "WebSite",
@@ -72,6 +86,7 @@ export default function BooksPage() {
       "@type": "Book",
       name: BOOK_IN_PROGRESS.title,
       inLanguage: "he",
+      image: BOOKS_SCHEMA_IMAGE,
       author: {
         "@type": "Person",
         name: "יקיר כהן",
@@ -95,65 +110,66 @@ export default function BooksPage() {
 
       <section aria-labelledby="books-hero-title" className="band-dark">
         <Watermark className="bottom-[-1.5rem] start-[-0.5rem] text-[6rem] text-foreground/[0.045] sm:text-[9rem] lg:text-[12rem]">
-          תכנים
+          אהבה
         </Watermark>
-        <div className="relative z-10 mx-auto w-full max-w-3xl px-6 py-24 lg:py-32">
-          <Eyebrow onDark>תכנים וספרים</Eyebrow>
-          <h1
-            id="books-hero-title"
-            className="mt-5 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
-          >
-            אין חנות.
-            <br />
-            יש מה שפתוח.
-          </h1>
-          <p className="mt-7 max-w-prose text-lg leading-relaxed text-foreground/80">
-            ספר אחד שאפשר לקבל בפגישה פרונטלית. שאר התוכן שכבר קיים באתר:
-            מאמרים, וידאו, מושגים וחיפוש.
-          </p>
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-20 lg:py-28">
+          <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+            <div className="max-w-2xl">
+              <Eyebrow onDark>// ARCHIVE_TEXT_REPOSITORY</Eyebrow>
+              <h1
+                id="books-hero-title"
+                className="mt-4 text-3xl font-semibold leading-[1.05] tracking-tight sm:text-5xl"
+              >
+                {BOOKS_HERO.titleLine1}
+                <br />
+                {BOOKS_HERO.titleLine2}
+              </h1>
+              <p className="mt-5 max-w-prose text-sm leading-relaxed text-foreground/75 sm:text-base">
+                ספר אחד מודפס. לידו ארכיון סרטונים ומאמרים על אהבה כמנגנון. בלי
+                דרמה, בלי תגיות שיווקיות.
+              </p>
+            </div>
+            <BooksArchiveMetrics
+              videoCount={love.total}
+              articleCount={articles.length}
+              openVideoCount={openVideoCount}
+              clubVideoCount={clubVideoCount}
+            />
+          </div>
         </div>
       </section>
 
       <section
         aria-labelledby="books-book-title"
-        className="bg-background text-foreground"
+        className="border-b border-foreground/10 bg-background text-foreground"
       >
-        <div className="mx-auto w-full max-w-3xl px-6 py-20 lg:py-28">
-          <Eyebrow>ספר</Eyebrow>
-          <div className="mt-4 flex items-start gap-4">
-            <span
-              className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-foreground/15 bg-foreground/[0.03]"
-              aria-hidden="true"
-            >
-              <BookOpen className="h-6 w-6 text-action" strokeWidth={1.75} />
-            </span>
-            <div className="min-w-0">
-              <h2
-                id="books-book-title"
-                className="text-2xl font-semibold tracking-tight lg:text-3xl"
-              >
-                {BOOK_IN_PROGRESS.title}
-              </h2>
-              <p className="mt-2 text-sm text-muted">
-                {BOOK_IN_PROGRESS.statusLabel}
-              </p>
-            </div>
-          </div>
-          <p className="mt-5 max-w-prose leading-relaxed text-foreground/80">
-            {BOOK_IN_PROGRESS.body}
-          </p>
-
-          <div className="mt-10 border border-foreground/15 bg-foreground/[0.02] p-6 sm:p-8">
-            <p className="text-sm font-medium tracking-wide text-muted">
-              מחיר הספר
-            </p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums">
-              {BOOK_IN_PROGRESS.priceLabel}
-            </p>
-            <p className="mt-2 max-w-prose text-sm leading-relaxed text-foreground/75">
-              {BOOK_IN_PROGRESS.priceNote}. אין סליקה באתר.
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="mx-auto w-full max-w-6xl px-6 py-14 lg:py-20">
+          <div className="border border-foreground/15 bg-foreground/[0.02] p-6 md:p-8">
+            <div className="flex flex-col justify-between gap-6 border-b border-foreground/10 pb-6 md:flex-row md:items-center">
+              <div className="flex items-start gap-4">
+                <span
+                  className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center border border-foreground/15 bg-background"
+                  aria-hidden="true"
+                >
+                  <BookOpen className="h-6 w-6 text-action" strokeWidth={1.75} />
+                </span>
+                <div className="min-w-0">
+                  <div className="mb-1 flex flex-wrap items-center gap-3 font-mono text-xs text-muted">
+                    <span className="font-bold text-action">[#BOOK-LOVE-20]</span>
+                    <span>20 עמודים</span>
+                    <span>{BOOK_IN_PROGRESS.statusLabel}</span>
+                  </div>
+                  <h2
+                    id="books-book-title"
+                    className="text-2xl font-semibold tracking-tight lg:text-3xl"
+                  >
+                    {BOOK_IN_PROGRESS.title}
+                  </h2>
+                  <p className="mt-2 max-w-prose text-sm leading-relaxed text-foreground/75">
+                    {BOOK_IN_PROGRESS.body}
+                  </p>
+                </div>
+              </div>
               <a
                 href={buildWhatsAppHref(
                   BOOK_IN_PROGRESS.meetingWhatsappText ??
@@ -161,20 +177,31 @@ export default function BooksPage() {
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-primary inline-flex items-center justify-center gap-2"
+                className="inline-flex shrink-0 items-center justify-center bg-action px-4 py-2 font-mono text-xs font-bold text-background hover:bg-action/90"
               >
-                <BookOpen className="h-4 w-4" aria-hidden="true" />
-                לקבל את הספר בפגישה
+                בדיקת גישה לספר ←
               </a>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <p className="font-mono text-xs text-muted">
+                מחיר:{" "}
+                <span className="font-bold text-foreground tabular-nums">
+                  {BOOK_IN_PROGRESS.priceLabel}
+                </span>
+                {BOOK_IN_PROGRESS.priceNote
+                  ? `, ${BOOK_IN_PROGRESS.priceNote}`
+                  : null}
+              </p>
               <a
                 href={buildWhatsAppHref(BOOK_IN_PROGRESS.whatsappText)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-secondary"
+                className="btn btn-secondary text-sm"
               >
                 לשאול על הספר
               </a>
-              <Link href="/paths" className="link-arrow text-sm sm:ms-1">
+              <Link href="/paths" className="link-arrow text-sm">
                 למסלולי פגישה ←
               </Link>
             </div>
@@ -183,121 +210,56 @@ export default function BooksPage() {
       </section>
 
       <section
-        aria-labelledby="books-open-title"
-        className="band-paper border-y border-foreground/10"
-      >
-        <div className="mx-auto w-full max-w-3xl px-6 py-20 lg:py-28">
-          <Eyebrow>מה שכבר פתוח</Eyebrow>
-          <h2
-            id="books-open-title"
-            className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
-          >
-            תוכן שכבר נמצא באתר.
-          </h2>
-          <p className="mt-4 max-w-prose leading-relaxed">
-            אם חיפשתם ספרים או קורסים שעדיין לא יצאו, אפשר להתחיל כאן. זה מה
-            שזמין עכשיו.
-          </p>
-
-          <ul className="mt-12 divide-y divide-foreground/10 border-y border-foreground/10">
-            {OPEN_PATHS.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="row-link group flex flex-col gap-1 py-6 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
-                >
-                  <span className="text-lg font-semibold tracking-tight transition-colors duration-200 group-hover:text-action lg:text-xl">
-                    {item.label}
-                  </span>
-                  <span className="max-w-prose text-sm leading-relaxed text-foreground/70 sm:text-end">
-                    {item.body}
-                  </span>
-                </Link>
-              </li>
-            ))}
-            <li>
-              <a
-                href={spotifyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="row-link group flex flex-col gap-1 py-6 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
-              >
-                <span className="text-lg font-semibold tracking-tight transition-colors duration-200 group-hover:text-action lg:text-xl">
-                  פודקאסט מרפסת
-                </span>
-                <span className="max-w-prose text-sm leading-relaxed text-foreground/70 sm:text-end">
-                  האזנה בספוטיפיי. חופשי.
-                </span>
-              </a>
-            </li>
-          </ul>
-
-          {articles.length > 0 ? (
-            <div className="mt-14">
-              <h3 className="text-lg font-semibold tracking-tight lg:text-xl">
-                מאמרים שפורסמו
-              </h3>
-              <ol className="mt-6 border-t border-foreground/10">
-                {articles.map((article, i) => (
-                  <li
-                    key={article.slug}
-                    className="border-b border-foreground/10"
-                  >
-                    <Link
-                      href={`/articles/${article.slug}`}
-                      className="row-link group grid grid-cols-[auto_1fr] gap-x-5 py-5"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="text-sm font-semibold text-foreground/25"
-                      >
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <span className="text-base font-medium tracking-tight transition-colors duration-200 group-hover:text-action">
-                        {article.title}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ol>
-              <p className="mt-6">
-                <Link href="/articles" className="link-arrow">
-                  לכל המאמרים ←
-                </Link>
-              </p>
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section
-        aria-labelledby="books-not-yet-title"
+        aria-labelledby="books-matrix-title"
         className="bg-background text-foreground"
       >
-        <div className="mx-auto w-full max-w-3xl px-6 py-20 lg:py-28">
-          <Eyebrow>מה עדיין לא כאן</Eyebrow>
+        <div className="mx-auto w-full max-w-6xl px-6 py-14 lg:py-20">
+          <Eyebrow>חקירת אהבה</Eyebrow>
           <h2
-            id="books-not-yet-title"
+            id="books-matrix-title"
             className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
           >
-            בלי רשימת קורסים ריקה.
+            מטריצת סרטונים ומאמרים
           </h2>
-          <p className="mt-4 max-w-prose leading-relaxed text-foreground/80">
-            אין כאן קטלוג קורסים או כותרים שלא פורסמו. אזור החברים מתוכנן ועדיין
-            אינו פעיל. לשיחה או מסלול עבודה: תיאום או יצירת קשר.
+          <p className="mt-3 max-w-prose text-sm leading-relaxed text-foreground/75">
+            שורות מנתוני אמת במאגר. סרטוני מועדון מוצגים עם נעילה. אין חשיפת
+            מקור יוטיוב לאורחים.
           </p>
-          <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3">
+
+          <p className="mt-8 font-mono text-xs uppercase text-muted">
+            // CHAPTER_INDEX
+          </p>
+          <div className="mt-4">
+            {rows.length > 0 ? (
+              <BooksArchiveMatrixSection
+                rows={rows}
+                concepts={filterConcepts}
+              />
+            ) : (
+              <p className="border border-dashed border-foreground/15 p-6 text-sm text-muted">
+                עדיין אין סרטונים או מאמרים מקושרים לאהבה במאגר.{" "}
+                <Link href="/videos" className="text-action underline-offset-2 hover:underline">
+                  לספריית הווידאו
+                </Link>
+              </p>
+            )}
+          </div>
+
+          <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm">
+            <Link
+              href={`/search?q=${encodeURIComponent(BOOKS_LOVE_CONCEPT)}`}
+              className="link-arrow"
+            >
+              חיפוש: אהבה ←
+            </Link>
+            <Link href="/videos" className="link-arrow">
+              לכל הסרטונים ←
+            </Link>
             <Link href="/members" className="link-arrow">
               לאזור החברים ←
             </Link>
-            <Link href="/paths" className="link-arrow">
-              למסלולים ←
-            </Link>
-            <Link href="/booking" className="link-arrow">
-              לתיאום ←
-            </Link>
-            <Link href="/contact" className="link-arrow">
-              ליצירת קשר ←
+            <Link href="/articles" className="link-arrow">
+              לכל המאמרים ←
             </Link>
           </div>
         </div>

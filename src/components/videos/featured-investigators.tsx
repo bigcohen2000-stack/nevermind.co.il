@@ -56,7 +56,7 @@ export async function FeaturedInvestigators({
               {comment.authorName ? (
                 <p className="mt-2 text-xs text-muted">
                   {comment.authorName}
-                  {comment.commentedAt ? ` · ${comment.commentedAt}` : ""}
+                  {comment.commentedAt ? `, ${comment.commentedAt}` : ""}
                 </p>
               ) : null}
               <p className="mt-2 flex flex-wrap gap-3 text-xs">

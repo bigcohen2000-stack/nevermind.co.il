@@ -8,7 +8,7 @@ import { colors } from "@/lib/design-tokens";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "השם לא משנה · NeverMinde",
+    name: "השם לא משנה. NeverMinde",
     short_name: "השם לא משנה",
     description:
       "ניתוח לוגי של המציאות. הפרדה בין עובדה לבין סיפור, ללא דרמה.",

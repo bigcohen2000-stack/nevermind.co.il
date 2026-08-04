@@ -1,17 +1,20 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { normalizeYoutubeLiveUrl } from "@/lib/live/youtube-url";
+import { LIVE_STATUS_CACHE_TAG } from "@/lib/live/status";
+import { broadcastLiveStarted } from "@/lib/push/web-push";
 import { isStudioAuthenticated } from "@/lib/studio/session";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type LiveActionResult =
-  | { ok: true; message?: string; youtubeUrl?: string }
+  | { ok: true; message?: string; youtubeUrl?: string; notified?: number }
   | { ok: false; error: string };
 
 function revalidateLivePaths() {
+  revalidateTag(LIVE_STATUS_CACHE_TAG, "max");
   revalidatePath("/");
   revalidatePath("/live");
   revalidatePath("/studio");
@@ -57,8 +60,23 @@ export async function startLiveStream(input: {
       return { ok: false, error: error.message };
     }
 
+    let notified = 0;
+    try {
+      const push = await broadcastLiveStarted({ topic: topic || undefined });
+      notified = push.sent;
+    } catch {
+      // VAPID optional.
+    }
+
     revalidateLivePaths();
-    return { ok: true, message: "השידור פעיל. הקישור זמין ב-/live אחרי הרשמה ו-18+." };
+    return {
+      ok: true,
+      notified,
+      message:
+        notified > 0
+          ? `השידור פעיל. נשלחו ${notified} התראות למי שנרשם.`
+          : "השידור פעיל. הקישור זמין ב-/live אחרי הרשמה ו-18+.",
+    };
   } catch (err) {
     return {
       ok: false,
@@ -87,6 +105,11 @@ export async function endLiveStream(): Promise<LiveActionResult> {
     if (error) {
       return { ok: false, error: error.message };
     }
+
+    await admin
+      .from("live_stream_queue")
+      .update({ status: "done", updated_at: now })
+      .eq("status", "live");
 
     revalidateLivePaths();
     return { ok: true, message: "השידור הסתיים." };

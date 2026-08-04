@@ -43,6 +43,9 @@ export async function getStudioHealth(): Promise<StudioHealth> {
   const youtubeKeyConfigured = envTruthy(process.env.YOUTUBE_API_KEY);
   const cronSecretConfigured = envTruthy(process.env.CRON_SECRET);
   const clubGateSecretConfigured = envTruthy(process.env.CLUB_GATE_SECRET);
+  const vapidConfigured =
+    envTruthy(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) &&
+    envTruthy(process.env.VAPID_PRIVATE_KEY);
 
   const base: Omit<
     StudioHealth,
@@ -155,6 +158,14 @@ export async function getStudioHealth(): Promise<StudioHealth> {
           ? "CRON_SECRET מוגדר."
           : "אופציונלי: CRON_SECRET לסנכרון מתוזמן.",
       },
+      {
+        id: "vapid",
+        label: "התראות דפדפן (VAPID)",
+        ok: vapidConfigured,
+        hint: vapidConfigured
+          ? "התראות לייב ואיפוס יומי מוכנות."
+          : "חסרים NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY.",
+      },
     ];
 
     const paymentReady =
@@ -222,6 +233,14 @@ export async function getStudioHealth(): Promise<StudioHealth> {
         label: "סוד סנכרון (CRON)",
         ok: cronSecretConfigured,
         hint: cronSecretConfigured ? "CRON_SECRET מוגדר." : "אופציונלי.",
+      },
+      {
+        id: "vapid",
+        label: "התראות דפדפן (VAPID)",
+        ok: vapidConfigured,
+        hint: vapidConfigured
+          ? "התראות מוכנות."
+          : "חסרים מפתחות VAPID.",
       },
     ];
 

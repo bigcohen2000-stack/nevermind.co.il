@@ -16,7 +16,6 @@ import { getLatestContinueWatching } from "@/actions/video-progress";
 import { CATEGORY_LABELS, getAllArticles } from "@/lib/content/articles";
 import { CORE_INVESTIGATION_TOPICS } from "@/lib/videos/core-library";
 import { PROCESS_STEPS, SHOP_BOOK } from "@/lib/content/offers";
-import { getLivePublicStatus } from "@/lib/live/status";
 import { getSpotifyShowUrl } from "@/lib/podcast/links";
 import { shareImageMetadata } from "@/lib/og/share-image";
 import { getSocialSameAsUrls } from "@/lib/social";
@@ -79,7 +78,6 @@ export default async function Home() {
     "היי, אני באתר ויש לי שאלה. מתי נוח לך שנדבר?",
   );
   const continueWatching = await getLatestContinueWatching().catch(() => null);
-  const liveStatus = await getLivePublicStatus();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -153,7 +151,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <HomeLiveStrip status={liveStatus} />
+      <HomeLiveStrip />
 
       <InvestigationFactsStrip tone="paper" />
 
@@ -552,21 +550,21 @@ export default async function Home() {
                     <Link href="/books" className="font-medium text-foreground hover:text-action">
                       עמוד הספר
                     </Link>
-                    {" · "}
+                    {": "}
                     הזמנה ומשלוח, בלי סליקה באתר.
                   </li>
                   <li>
                     <Link href="/articles" className="font-medium text-foreground hover:text-action">
                       מאמרים
                     </Link>
-                    {" · "}
+                    {": "}
                     אותה חקירה בכתב, מנגנון אחר מנגנון.
                   </li>
                   <li>
                     <Link href="/contact" className="font-medium text-foreground hover:text-action">
                       יצירת קשר
                     </Link>
-                    {" · "}
+                    {": "}
                     שאלה קצרה לפני שמזמינים או מתאמים.
                   </li>
                 </ul>

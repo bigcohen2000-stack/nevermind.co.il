@@ -96,7 +96,7 @@ function PlatformStrip({ platform }: { platform: StudioPlatformSnapshot }) {
               <td className="py-2 pe-3 text-zinc-300">Vercel</td>
               <td className="py-2 pe-3 font-mono text-zinc-200" dir="ltr">
                 {platform.vercelEnv ?? "-"}
-                {platform.vercelCommit ? ` · ${platform.vercelCommit}` : ""}
+                {platform.vercelCommit ? `, ${platform.vercelCommit}` : ""}
               </td>
               <td className="py-2 text-zinc-500">
                 {platform.vercelUrl ? (
@@ -117,7 +117,7 @@ function PlatformStrip({ platform }: { platform: StudioPlatformSnapshot }) {
               <td className="py-2 pe-3 text-zinc-300">Cloudflare Access</td>
               <td className="py-2 pe-3 text-zinc-200">
                 {platform.cfAccessConfigured ? "מוגדר" : "לא מוגדר"}
-                {platform.studioRequireCfAccess ? " · חובה לסטודיו" : ""}
+                {platform.studioRequireCfAccess ? ", חובה לסטודיו" : ""}
               </td>
               <td className="py-2 text-zinc-500">הגנת /studio בלבד</td>
             </tr>

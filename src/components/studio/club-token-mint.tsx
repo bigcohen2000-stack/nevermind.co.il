@@ -185,9 +185,9 @@ export function ClubTokenMint({ recentTokens }: ClubTokenMintProps) {
                 className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 py-2"
               >
                 <span dir="ltr">
-                  {row.phone} · exp{" "}
+                  {row.phone}, exp{" "}
                   {new Date(row.expires_at).toLocaleString("he-IL")}
-                  {row.revoked_at ? " · בוטל" : ""}
+                  {row.revoked_at ? ", בוטל" : ""}
                 </span>
                 {!row.revoked_at ? (
                   <button

@@ -1,5 +1,8 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
+
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export type LivePublicStatus = {
@@ -17,10 +20,9 @@ export type LiveStreamRow = {
 
 const EMPTY_STATUS: LivePublicStatus = { isLive: false, topic: "" };
 
-/**
- * Public-safe status: never includes youtube_url.
- */
-export async function getLivePublicStatus(): Promise<LivePublicStatus> {
+export const LIVE_STATUS_CACHE_TAG = "live-status";
+
+async function fetchLivePublicStatus(): Promise<LivePublicStatus> {
   try {
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
@@ -39,6 +41,18 @@ export async function getLivePublicStatus(): Promise<LivePublicStatus> {
     return EMPTY_STATUS;
   }
 }
+
+const cachedLivePublicStatus = unstable_cache(
+  fetchLivePublicStatus,
+  ["live-public-status"],
+  { revalidate: 20, tags: [LIVE_STATUS_CACHE_TAG] },
+);
+
+/**
+ * Public-safe status: never includes youtube_url.
+ * Deduped per-request + short CDN/data cache for faster home/live paints.
+ */
+export const getLivePublicStatus = cache(cachedLivePublicStatus);
 
 /**
  * Studio / gated reveal: full row including URL (service role).

@@ -113,7 +113,7 @@ export function openMeetingInvitePrint(input: MeetingInviteInput): void {
     הדפסה או שמירה כ-PDF: Ctrl+P / Cmd+P
   </p>
   <div class="card">
-    <p class="muted">NeverMinde · השם לא משנה</p>
+    <p class="muted">NeverMinde. השם לא משנה</p>
     <h1>הזמנה לשיריון פגישה</h1>
     <dl>
       <dt>שם</dt><dd>${safe(input.name)}</dd>

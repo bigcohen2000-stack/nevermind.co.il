@@ -20,7 +20,7 @@ function InsightRow({ row }: { row: HeartInsight }) {
       </p>
       <p className="mt-2 text-xs text-muted">
         {row.authorName}
-        {row.commentedAt ? ` · ${row.commentedAt}` : ""}
+        {row.commentedAt ? `, ${row.commentedAt}` : ""}
       </p>
       <p className="mt-2">
         <a

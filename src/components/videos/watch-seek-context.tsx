@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import type { WatchPlayerHandle } from "@/components/videos/watch-player";
+import { formatTimestampParam } from "@/lib/videos/timestamp";
 
 type WatchSeekContextValue = {
   registerPlayer: (handle: WatchPlayerHandle | null) => void;
@@ -30,7 +31,7 @@ export function WatchSeekProvider({ children }: { children: ReactNode }) {
     handleRef.current?.seekTo(t);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      url.searchParams.set("t", String(t));
+      url.searchParams.set("t", formatTimestampParam(t));
       window.history.replaceState(null, "", url.toString());
     }
   }, []);

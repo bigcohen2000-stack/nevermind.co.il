@@ -41,7 +41,7 @@ export function InvestigationFactsStrip({
           className,
         )}
       >
-        {facts.map((f) => f.hint ?? `${f.label}: ${f.value}`).join(" · ")}
+        {facts.map((f) => f.hint ?? `${f.label}: ${f.value}`).join(", ")}
         {moreHref ? (
           <>
             {" "}

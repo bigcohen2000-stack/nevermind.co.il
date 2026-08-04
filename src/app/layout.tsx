@@ -12,7 +12,7 @@ const DEFAULT_OG_TITLE = "השם לא משנה";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "השם לא משנה · NeverMinde: יקיר כהן",
+    default: "השם לא משנה. NeverMinde: יקיר כהן",
     template: "%s | השם לא משנה",
   },
   description:
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "he_IL",
     url: SITE_URL,
-    siteName: "השם לא משנה · NeverMinde",
-    title: "השם לא משנה · NeverMinde",
+    siteName: "השם לא משנה. NeverMinde",
+    title: "השם לא משנה. NeverMinde",
     description:
       "ניתוח לוגי של המציאות. הפרדה בין עובדה לבין סיפור, ללא דרמה.",
     images: shareOgImage(DEFAULT_OG_TITLE),

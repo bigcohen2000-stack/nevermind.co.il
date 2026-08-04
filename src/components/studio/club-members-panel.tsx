@@ -305,14 +305,14 @@ export function ClubMembersPanel({
                     >
                       {row.display_name || "-"}
                     </span>
-                    {" · "}
+                    {", "}
                     <span dir="ltr">{row.phone}</span>
-                    {" · עודכן "}
+                    {", עודכן "}
                     {formatWhen(row.updated_at)}
                     {row.expires_at
-                      ? ` · תפוגה ${formatWhen(row.expires_at)}`
+                      ? `, תפוגה ${formatWhen(row.expires_at)}`
                       : ""}
-                    {expired ? " · פג תוקף" : ""}
+                    {expired ? ", פג תוקף" : ""}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -389,8 +389,8 @@ export function ClubMembersPanel({
           ) : (
             recentLogins.map((row) => (
               <li key={row.id}>
-                {formatWhen(row.created_at)} · {row.display_name || "-"} ·{" "}
-                <span dir="ltr">{maskClubPhone(row.phone)}</span> · {row.source}
+                {formatWhen(row.created_at)}, {row.display_name || "-"},{" "}
+                <span dir="ltr">{maskClubPhone(row.phone)}</span>, {row.source}
               </li>
             ))
           )}

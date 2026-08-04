@@ -61,7 +61,7 @@ export function StudioFeedbackPanel({ items }: StudioFeedbackPanelProps) {
                   {KIND_LABEL[row.kind] ?? row.kind}
                 </span>
                 <span className="text-xs text-zinc-500">
-                  {formatWhen(row.created_at)} · {STATUS_LABEL[row.status]}
+                  {formatWhen(row.created_at)}, {STATUS_LABEL[row.status]}
                 </span>
               </div>
               {row.video_title ? (
@@ -72,12 +72,12 @@ export function StudioFeedbackPanel({ items }: StudioFeedbackPanelProps) {
               <p className="mt-2 whitespace-pre-wrap text-zinc-300">{row.body}</p>
               {(row.author_name || row.contact_phone || row.contact_email) && (
                 <p className="mt-2 text-xs text-zinc-500">
-                  {row.author_name ? `${row.author_name} · ` : ""}
+                  {row.author_name ? `${row.author_name}, ` : ""}
                   {row.contact_phone ? (
                     <span dir="ltr">{row.contact_phone}</span>
                   ) : null}
-                  {row.contact_email ? ` · ${row.contact_email}` : null}
-                  {row.want_reply ? " · מבקש/ת תשובה" : ""}
+                  {row.contact_email ? `, ${row.contact_email}` : null}
+                  {row.want_reply ? ", מבקש/ת תשובה" : ""}
                 </p>
               )}
               <div className="mt-3 flex flex-wrap gap-2">

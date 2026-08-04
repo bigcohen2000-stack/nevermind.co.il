@@ -62,8 +62,8 @@ export function StudioTeaserPanel({ videos }: StudioTeaserPanelProps) {
             <p className="mt-1 font-mono text-xs text-zinc-500" dir="ltr">
               מלא: {video.youtube_id}
               {video.teaser_youtube_id
-                ? ` · טעימה: ${video.teaser_youtube_id}`
-                : " · טעימה: (אין, שער בלבד)"}
+                ? `, טעימה: ${video.teaser_youtube_id}`
+                : ", טעימה: (אין, שער בלבד)"}
             </p>
             <form
               className="mt-3 flex flex-wrap items-end gap-2"

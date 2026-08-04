@@ -115,7 +115,7 @@ export function ClubPasswordPanel({ status }: ClubPasswordPanelProps) {
 
       <p className="text-xs text-zinc-500">
         גרסה {status.version}
-        {updatedLabel ? ` · עודכן ${updatedLabel}` : ""}. אחרי שמירה, עוגיות
+        {updatedLabel ? `, עודכן ${updatedLabel}` : ""}. אחרי שמירה, עוגיות
         מועדון ישנות מתבטלות בכניסה הבאה.
       </p>
 

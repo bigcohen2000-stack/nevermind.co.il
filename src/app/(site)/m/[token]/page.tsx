@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import {
   confirmMeetingByToken,
@@ -28,6 +29,15 @@ function formatWhen(iso: string): string {
   });
 }
 
+function isMissingLinkError(message: string | undefined): boolean {
+  if (!message) return false;
+  return (
+    message.includes("לא נמצא") ||
+    message.includes("פג תוקף") ||
+    message.includes("לא תקין")
+  );
+}
+
 export default async function ConfirmMeetingPage({
   params,
   searchParams,
@@ -38,6 +48,10 @@ export default async function ConfirmMeetingPage({
 
   if (shouldConfirm) {
     const confirmed = await confirmMeetingByToken(token);
+    if (!confirmed.ok && isMissingLinkError(confirmed.error)) {
+      notFound();
+    }
+
     return (
       <main
         className="mx-auto flex min-h-[70vh] w-full max-w-lg flex-col justify-center px-4 py-16"
@@ -50,7 +64,7 @@ export default async function ConfirmMeetingPage({
         {confirmed.ok ? (
           <div className="mt-6 space-y-3 border border-emerald-700/40 bg-emerald-50 p-5 dark:bg-emerald-950/30">
             <p className="text-lg font-medium text-emerald-800 dark:text-emerald-200">
-              V אושר
+              אושר
             </p>
             <p className="text-sm text-foreground/85">
               {confirmed.message ?? "תודה."}
@@ -76,6 +90,9 @@ export default async function ConfirmMeetingPage({
   }
 
   const preview = await getMeetingConfirmPreview(token);
+  if (!preview.ok) {
+    notFound();
+  }
 
   return (
     <main
@@ -87,14 +104,10 @@ export default async function ConfirmMeetingPage({
         אישור פגישה
       </h1>
 
-      {!preview.ok ? (
-        <p className="mt-6 text-sm text-red-600" role="alert">
-          {preview.error}
-        </p>
-      ) : preview.alreadyConfirmed ? (
+      {preview.alreadyConfirmed ? (
         <div className="mt-6 space-y-3 border border-emerald-700/40 bg-emerald-50 p-5 dark:bg-emerald-950/30">
           <p className="text-lg font-medium text-emerald-800 dark:text-emerald-200">
-            V כבר אושר
+            כבר אושר
           </p>
           <p className="text-sm text-muted">{formatWhen(preview.heldAt)}</p>
         </div>
@@ -105,13 +118,13 @@ export default async function ConfirmMeetingPage({
             <strong>{formatWhen(preview.heldAt)}</strong>
           </p>
           <p className="text-sm leading-relaxed text-muted">
-            לחץ לאישור. זה רק סימון V, בלי תשלום ובלי כניסה לחשבון.
+            לחץ לאישור. זה רק סימון אישור, בלי תשלום ובלי כניסה לחשבון.
           </p>
           <Link
             href={`/m/${encodeURIComponent(token)}?confirm=1`}
             className="inline-flex min-h-11 items-center justify-center bg-action px-5 text-sm font-semibold text-white"
           >
-            מאשר את הפגישה (V)
+            מאשר את הפגישה
           </Link>
         </div>
       )}

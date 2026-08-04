@@ -140,7 +140,88 @@ export function VideosBrowseControls({
         </div>
       </div>
 
-      <div className="mt-5 border-t border-foreground/10 pt-4">
+      <details className="group mt-5 border-t border-foreground/10 pt-4 sm:hidden">
+        <summary className="cursor-pointer text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action">
+          <span className="group-open:hidden">משך ורמת פירוק</span>
+          <span className="hidden group-open:inline">הסתרת משך ורמת פירוק</span>
+        </summary>
+        <div className="mt-3 space-y-4">
+          <div>
+            <p className="text-sm font-medium text-foreground">משך צפייה</p>
+            <ul className="mt-2 flex flex-wrap gap-2" aria-label="סינון לפי משך">
+              {DURATIONS.map((item) => {
+                const active = activeDuration === item.id;
+                return (
+                  <li key={item.id}>
+                    <Link
+                      href={videosBrowseHref({
+                        ...hrefBase,
+                        duration: item.id,
+                      })}
+                      className={cn(
+                        "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                        active
+                          ? "border-action bg-action text-background"
+                          : "border-foreground/20 text-foreground",
+                      )}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">רמת פירוק</p>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              <li>
+                <Link
+                  href={videosBrowseHref({
+                    ...hrefBase,
+                    breakdown: undefined,
+                  })}
+                  className={cn(
+                    "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                    !activeBreakdown
+                      ? "border-action bg-action/10 text-action"
+                      : "border-foreground/20 text-foreground",
+                  )}
+                  aria-current={!activeBreakdown ? "page" : undefined}
+                >
+                  כל הרמות
+                </Link>
+              </li>
+              {BREAKDOWN_LEVELS.map((level) => {
+                const active = activeBreakdown === level;
+                return (
+                  <li key={level}>
+                    <Link
+                      href={videosBrowseHref({
+                        ...hrefBase,
+                        breakdown: level,
+                      })}
+                      className={cn(
+                        "inline-flex min-h-9 items-center border px-2.5 text-xs no-underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+                        active
+                          ? "border-action bg-action text-background"
+                          : "border-foreground/20 text-foreground",
+                      )}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      {BREAKDOWN_LEVEL_NUMBERS[level]}.{" "}
+                      {BREAKDOWN_LEVEL_LABELS[level]}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      </details>
+
+      <div className="mt-5 hidden border-t border-foreground/10 pt-4 sm:block">
         <p className="text-sm font-medium text-foreground">משך צפייה</p>
         <ul className="mt-2 flex flex-wrap gap-2" aria-label="סינון לפי משך">
           {DURATIONS.map((item) => {
@@ -168,7 +249,7 @@ export function VideosBrowseControls({
         </ul>
       </div>
 
-      <div className="mt-5 border-t border-foreground/10 pt-4">
+      <div className="mt-5 hidden border-t border-foreground/10 pt-4 sm:block">
         <p className="text-sm font-medium text-foreground">רמת פירוק</p>
         <ul className="mt-2 flex flex-wrap gap-2">
           <li>

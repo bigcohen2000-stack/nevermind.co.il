@@ -107,36 +107,39 @@ export type BroadcastResult = {
   quote: DailyQuote;
 };
 
-/**
- * Send the daily reset payload to every stored PushSubscription.
- * Removes gone/expired endpoints (410 / 404).
- */
-export async function broadcastDailyReset(
-  quote?: DailyQuote,
-): Promise<BroadcastResult> {
+export type LiveBroadcastResult = {
+  sent: number;
+  failed: number;
+  removed: number;
+};
+
+type PushRow = { endpoint: string; p256dh: string; auth: string };
+
+function isMissingColumnError(message: string, column: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes(column.toLowerCase()) &&
+    (m.includes("column") ||
+      m.includes("schema cache") ||
+      m.includes("does not exist") ||
+      m.includes("could not find"))
+  );
+}
+
+async function sendToRows(
+  rows: PushRow[],
+  payload: { title: string; body: string; url: string; tag?: string },
+  options?: { TTL?: number; urgency?: "very-low" | "low" | "normal" | "high" },
+): Promise<{ sent: number; failed: number; removed: number }> {
   configureWebPush();
-  const payload = quote ?? (await pickDailyResetQuote());
   const admin = getSupabaseAdmin();
-
-  const { data: rows, error } = await admin
-    .from("subscribers")
-    .select("endpoint, p256dh, auth");
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const body = JSON.stringify({
-    title: "איפוס יומי",
-    body: payload.body,
-    url: payload.url,
-  });
+  const body = JSON.stringify(payload);
 
   let sent = 0;
   let failed = 0;
   let removed = 0;
 
-  for (const row of rows ?? []) {
+  for (const row of rows) {
     const subscription = {
       endpoint: row.endpoint,
       keys: { p256dh: row.p256dh, auth: row.auth },
@@ -144,8 +147,8 @@ export async function broadcastDailyReset(
 
     try {
       await webpush.sendNotification(subscription, body, {
-        TTL: 60 * 60 * 12,
-        urgency: "normal",
+        TTL: options?.TTL ?? 60 * 60 * 12,
+        urgency: options?.urgency ?? "normal",
       });
       sent += 1;
     } catch (err) {
@@ -161,5 +164,82 @@ export async function broadcastDailyReset(
     }
   }
 
-  return { sent, failed, removed, quote: payload };
+  return { sent, failed, removed };
+}
+
+/**
+ * Send the daily reset payload to subscribers with notify_daily.
+ * Falls back to all subscribers if migration 36 prefs columns are missing.
+ * Removes gone/expired endpoints (410 / 404).
+ */
+export async function broadcastDailyReset(
+  quote?: DailyQuote,
+): Promise<BroadcastResult> {
+  const payload = quote ?? (await pickDailyResetQuote());
+  const admin = getSupabaseAdmin();
+
+  let rows: PushRow[] | null = null;
+  const filtered = await admin
+    .from("subscribers")
+    .select("endpoint, p256dh, auth")
+    .eq("notify_daily", true);
+
+  if (filtered.error) {
+    if (!isMissingColumnError(filtered.error.message, "notify_daily")) {
+      throw new Error(filtered.error.message);
+    }
+    const fallback = await admin
+      .from("subscribers")
+      .select("endpoint, p256dh, auth");
+    if (fallback.error) throw new Error(fallback.error.message);
+    rows = fallback.data;
+  } else {
+    rows = filtered.data;
+  }
+
+  const result = await sendToRows(rows ?? [], {
+    title: "איפוס יומי",
+    body: payload.body,
+    url: payload.url,
+    tag: "daily-reset",
+  });
+
+  return { ...result, quote: payload };
+}
+
+/**
+ * Notify opt-in live subscribers that a stream just started.
+ * If notify_live column is missing (migration 36 not applied), sends to nobody.
+ */
+export async function broadcastLiveStarted(input?: {
+  topic?: string;
+}): Promise<LiveBroadcastResult> {
+  const topic = input?.topic?.trim();
+  const body = topic
+    ? `שידור חי התחיל: ${topic}`
+    : "שידור חי מהאין התחיל עכשיו.";
+
+  const admin = getSupabaseAdmin();
+  const { data: rows, error } = await admin
+    .from("subscribers")
+    .select("endpoint, p256dh, auth")
+    .eq("notify_live", true);
+
+  if (error) {
+    if (isMissingColumnError(error.message, "notify_live")) {
+      return { sent: 0, failed: 0, removed: 0 };
+    }
+    throw new Error(error.message);
+  }
+
+  return sendToRows(
+    rows ?? [],
+    {
+      title: "שידור חי",
+      body,
+      url: "/live",
+      tag: "live-stream",
+    },
+    { TTL: 60 * 30, urgency: "high" },
+  );
 }

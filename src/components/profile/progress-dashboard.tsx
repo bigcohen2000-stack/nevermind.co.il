@@ -49,7 +49,7 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
     stats.pendingConfirmPath ? "ממתין לאישור שלך (V)" : "",
   ]
     .filter(Boolean)
-    .join(" · ");
+    .join(", ");
 
   return (
     <section

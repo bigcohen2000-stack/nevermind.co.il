@@ -80,7 +80,7 @@ export function formatSearchMatchLabel(meta: SearchMatchMeta): string {
       return "למה זה עלה: בכותרת";
     case "concept":
       return meta.conceptName?.trim()
-        ? `למה זה עלה: מושג · ${meta.conceptName.trim()}`
+        ? `למה זה עלה: מושג, ${meta.conceptName.trim()}`
         : "למה זה עלה: מושג משותף";
     case "transcript":
       return "למה זה עלה: בתמלול";

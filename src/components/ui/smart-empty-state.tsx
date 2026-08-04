@@ -79,7 +79,7 @@ export async function SmartEmptyState({
         >
           לחקירה פעילה בשידור החי
         </Link>
-        {" · "}
+        {", "}
         <Link
           href="/concepts"
           className={

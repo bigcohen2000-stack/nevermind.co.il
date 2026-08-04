@@ -90,7 +90,7 @@ export function InvestigationMetrics({
                   className="inline-flex min-h-10 items-center border border-foreground/20 px-3 text-sm no-underline hover:border-action hover:text-action hover:no-underline"
                 >
                   דקה {point.minute + 1}
-                  {point.concepts[0] ? ` · ${point.concepts[0]}` : ""}
+                  {point.concepts[0] ? `: ${point.concepts[0]}` : ""}
                 </Link>
               </li>
             ))}

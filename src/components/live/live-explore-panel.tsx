@@ -11,6 +11,7 @@ import {
   UserRound,
 } from "lucide-react";
 
+import { InfoTip } from "@/components/ui/info-tip";
 import {
   LIVE_MODIIN_SEAT,
   LIVE_OPEN_MIC,
@@ -32,10 +33,12 @@ type LiveExplorePanelProps = {
 function SectionHeading({
   id,
   icon: Icon,
+  tip,
   children,
 }: {
   id: string;
   icon: LucideIcon;
+  tip?: string;
   children: string;
 }) {
   return (
@@ -44,13 +47,19 @@ function SectionHeading({
       className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted"
     >
       <Icon className="size-3.5 shrink-0" aria-hidden="true" strokeWidth={1.75} />
-      {children}
+      <span>{children}</span>
+      {tip ? (
+        <InfoTip label={`הסבר: ${children}`} className="size-6">
+          {tip}
+        </InfoTip>
+      ) : null}
     </h2>
   );
 }
 
 /**
  * Shared LIVE explainer: podcast stream, schedule, topic CTA, Modiin seat, open mic.
+ * Home density skips heavy join cards (those live on /live) for faster paint.
  */
 export function LiveExplorePanel({
   density = "home",
@@ -77,8 +86,12 @@ export function LiveExplorePanel({
             <Headphones className="size-4" strokeWidth={1.75} />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-medium tracking-tight sm:text-base">
+            <p className="inline-flex flex-wrap items-center gap-1.5 text-sm font-medium tracking-tight sm:text-base">
               שידור חי ממפגשי הפודקאסט
+              <InfoTip label="איך צופים בשידור">
+                הקישור ליוטיוב נחשף רק כשהשידור פעיל, ורק אחרי הרשמה חינם ואישור
+                גיל 18+. אין שידור ציבורי פתוח בלי שער.
+              </InfoTip>
             </p>
             <p className="mt-2 text-sm leading-relaxed text-foreground/75">
               רואים מהמפגשים שלנו בזמן אמת, מתוך האתר בלבד. אפשר לצפות אונליין
@@ -115,6 +128,7 @@ export function LiveExplorePanel({
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-secondary text-sm"
+            aria-label="הזמנת כיסא באולפן במודיעין בוואטסאפ"
           >
             <MapPin className="size-3.5" aria-hidden="true" strokeWidth={1.75} />
             הזמנת כיסא במודיעין
@@ -130,12 +144,21 @@ export function LiveExplorePanel({
         </nav>
       </div>
 
-      <div className="mt-6 grid gap-6 sm:grid-cols-2 sm:gap-8">
+      <div
+        className={cn(
+          "mt-6 grid gap-6 sm:gap-8",
+          isPage ? "sm:grid-cols-2" : "sm:grid-cols-2",
+        )}
+      >
         <section
           aria-labelledby="live-schedule-title"
           className="border border-foreground/10 p-4 sm:p-5"
         >
-          <SectionHeading id="live-schedule-title" icon={Clock3}>
+          <SectionHeading
+            id="live-schedule-title"
+            icon={Clock3}
+            tip="שעות קבועות בשעון ישראל. אפשר להוסיף ליומן כתזכורת במכשיר."
+          >
             מתי
           </SectionHeading>
           <ul className="mt-4 divide-y divide-foreground/10">
@@ -174,7 +197,11 @@ export function LiveExplorePanel({
           aria-labelledby="live-topic-title"
           className="border border-foreground/10 p-4 sm:p-5"
         >
-          <SectionHeading id="live-topic-title" icon={MessageCircleQuestion}>
+          <SectionHeading
+            id="live-topic-title"
+            icon={MessageCircleQuestion}
+            tip="שולחים נושא או שאלה בוואטסאפ. זה עוזר לבחור מה יהיה בלייב הבא."
+          >
             ללייב הבא
           </SectionHeading>
           <p className="mt-4 text-sm leading-relaxed text-foreground/80">
@@ -196,61 +223,77 @@ export function LiveExplorePanel({
         </section>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <section
-          aria-labelledby="live-modiin-title"
-          className="border border-foreground/12 p-4 sm:p-5"
-        >
-          <SectionHeading id="live-modiin-title" icon={MapPin}>
-            באולפן
-          </SectionHeading>
-          <h3 className="mt-3 text-base font-semibold tracking-tight">
-            {LIVE_MODIIN_SEAT.title}
-          </h3>
-          <p className="mt-2 text-sm leading-relaxed text-foreground/75">
-            {LIVE_MODIIN_SEAT.body}
-          </p>
-          <p className="mt-2 text-sm text-foreground/60">
-            {LIVE_MODIIN_SEAT.priceBeforeVat} לפני מע&quot;מ.
-          </p>
-          <a
-            href={modiinHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary mt-4 inline-flex w-full text-sm"
+      {isPage ? (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <section
+            aria-labelledby="live-modiin-title"
+            className="border border-foreground/12 p-4 sm:p-5"
           >
-            <MapPin className="size-3.5" aria-hidden="true" strokeWidth={1.75} />
-            {LIVE_MODIIN_SEAT.ctaLabel}
-          </a>
-        </section>
-
-        <section
-          aria-labelledby="live-open-mic-title"
-          className="border border-foreground/12 p-4 sm:p-5"
-        >
-          <SectionHeading id="live-open-mic-title" icon={Mic}>
-            מיקרופון
-          </SectionHeading>
-          <h3 className="mt-3 text-base font-semibold tracking-tight">
-            {LIVE_OPEN_MIC.title}
-          </h3>
-          <p className="mt-2 text-sm leading-relaxed text-foreground/75">
-            {LIVE_OPEN_MIC.body}
-          </p>
-          <p className="mt-2 text-sm text-foreground/60">
-            {LIVE_OPEN_MIC.priceBeforeVat} לפני מע&quot;מ. חובה הרשמה באתר.
-          </p>
-          <div className="mt-4 flex flex-col gap-2">
+            <SectionHeading
+              id="live-modiin-title"
+              icon={MapPin}
+              tip="מפגש אישי באולפן במודיעין. תיאום בשיחה. אין סליקה באתר."
+            >
+              באולפן
+            </SectionHeading>
+            <h3 className="mt-3 text-base font-semibold tracking-tight">
+              {LIVE_MODIIN_SEAT.title}
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-foreground/75">
+              {LIVE_MODIIN_SEAT.body}
+            </p>
+            <p className="mt-2 text-sm text-foreground/60">
+              {LIVE_MODIIN_SEAT.priceBeforeVat} לפני מע&quot;מ.
+            </p>
             <a
-              href={openMicHref}
+              href={modiinHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-primary inline-flex w-full text-sm"
+              className="btn btn-primary mt-4 inline-flex w-full text-sm"
             >
-              <Mic className="size-3.5" aria-hidden="true" strokeWidth={1.75} />
-              {LIVE_OPEN_MIC.ctaLabel}
+              <MapPin
+                className="size-3.5"
+                aria-hidden="true"
+                strokeWidth={1.75}
+              />
+              {LIVE_MODIIN_SEAT.ctaLabel}
             </a>
-            {isPage ? (
+          </section>
+
+          <section
+            aria-labelledby="live-open-mic-title"
+            className="border border-foreground/12 p-4 sm:p-5"
+          >
+            <SectionHeading
+              id="live-open-mic-title"
+              icon={Mic}
+              tip="הצטרפות קבוצתית עם מיקרופון בשידור. נדרשת הרשמה באתר."
+            >
+              מיקרופון
+            </SectionHeading>
+            <h3 className="mt-3 text-base font-semibold tracking-tight">
+              {LIVE_OPEN_MIC.title}
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-foreground/75">
+              {LIVE_OPEN_MIC.body}
+            </p>
+            <p className="mt-2 text-sm text-foreground/60">
+              {LIVE_OPEN_MIC.priceBeforeVat} לפני מע&quot;מ. חובה הרשמה באתר.
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <a
+                href={openMicHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary inline-flex w-full text-sm"
+              >
+                <Mic
+                  className="size-3.5"
+                  aria-hidden="true"
+                  strokeWidth={1.75}
+                />
+                {LIVE_OPEN_MIC.ctaLabel}
+              </a>
               <a
                 href="#live-auth"
                 className="btn btn-secondary inline-flex w-full text-sm"
@@ -262,22 +305,10 @@ export function LiveExplorePanel({
                 />
                 להרשמה לשידור
               </a>
-            ) : (
-              <Link
-                href="/live"
-                className="btn btn-secondary inline-flex w-full text-sm"
-              >
-                <UserRound
-                  className="size-3.5"
-                  aria-hidden="true"
-                  strokeWidth={1.75}
-                />
-                להרשמה לשידור
-              </Link>
-            )}
-          </div>
-        </section>
-      </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

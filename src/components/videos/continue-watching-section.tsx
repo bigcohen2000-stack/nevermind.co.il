@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   getLocalContinueWatchingList,
@@ -13,6 +13,8 @@ import {
   type ContinueWatchingItem,
 } from "@/lib/videos/progress-shared";
 import { cn } from "@/lib/utils";
+
+const SCROLL_STORAGE_KEY = "nm_continue_watching_scroll_v1";
 
 type ContinueWatchingSectionProps = {
   serverItem?: ContinueWatchingItem | null;
@@ -98,11 +100,71 @@ export function ContinueWatchingSection({
   const [items, setItems] = useState<ContinueWatchingItem[]>(() =>
     serverItem && serverItem.progressSeconds >= 5 ? [serverItem] : [],
   );
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const restoredRef = useRef(false);
 
   useEffect(() => {
     const local = getLocalContinueWatchingList(8);
     setItems(mergeItems(serverItem, local));
+    restoredRef.current = false;
   }, [serverItem]);
+
+  // Restore horizontal scroll after items are in the DOM (avoid hydration race).
+  useEffect(() => {
+    if (items.length === 0 || restoredRef.current) return;
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    let cancelled = false;
+    const restore = () => {
+      if (cancelled || restoredRef.current) return;
+      try {
+        const raw = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+        if (raw == null) {
+          restoredRef.current = true;
+          return;
+        }
+        const left = Number(raw);
+        if (!Number.isFinite(left)) {
+          restoredRef.current = true;
+          return;
+        }
+        el.scrollLeft = left;
+        restoredRef.current = true;
+      } catch {
+        restoredRef.current = true;
+      }
+    };
+
+    const raf1 = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(restore);
+    });
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(raf1);
+    };
+  }, [items.length]);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    let timer: number | undefined;
+    const onScroll = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        try {
+          sessionStorage.setItem(SCROLL_STORAGE_KEY, String(el.scrollLeft));
+        } catch {
+          /* ignore quota */
+        }
+      }, 120);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(timer);
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, [items.length]);
 
   if (items.length === 0) return null;
 
@@ -138,6 +200,7 @@ export function ContinueWatchingSection({
         </h2>
 
         <div
+          ref={scrollerRef}
           className={cn(
             "-mx-4 mt-5 flex gap-3 overflow-x-auto overscroll-x-contain px-4 pb-1 sm:mx-0 sm:mt-6 sm:px-0",
             !isStrip && "sm:mt-8",

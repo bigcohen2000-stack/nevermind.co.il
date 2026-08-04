@@ -121,7 +121,7 @@ export function ExploreLinks() {
         <span key={item.href} className="inline-flex items-center gap-x-2 sm:gap-x-3">
           {index > 0 ? (
             <span aria-hidden="true" className="text-white/35">
-              ·
+              ,
             </span>
           ) : null}
           <ExploreLink item={item} />

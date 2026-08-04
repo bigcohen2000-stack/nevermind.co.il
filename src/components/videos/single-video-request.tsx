@@ -59,7 +59,7 @@ export function SingleVideoRequestCta({
             className="btn btn-primary text-sm"
             onClick={onRequestClick}
           >
-            בקשה בוואטסאפ · {SINGLE_VIDEO_PRICE}
+            בקשה בוואטסאפ: {SINGLE_VIDEO_PRICE}
           </a>
           <SmsContactButton
             message={smsText}

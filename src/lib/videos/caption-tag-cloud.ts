@@ -1,14 +1,19 @@
 /**
  * Build a clickable caption keyword cloud from transcript text.
  * Prefers investigation tags, then frequent Hebrew tokens.
+ * Attaches first-hit startSeconds when timed segments are available.
  */
 
+import { firstConceptOffsetSeconds } from "@/lib/videos/heatmap";
+import type { TranscriptSegment } from "@/lib/videos/heatmap";
 import { INVESTIGATION_TAGS } from "@/lib/videos/investigation";
 
 export type CaptionTag = {
   label: string;
   count: number;
   kind: "investigation" | "transcript";
+  /** First transcript hit in seconds, when segments are known. */
+  startSeconds?: number | null;
 };
 
 const STOPWORDS = new Set([
@@ -75,6 +80,7 @@ export function buildCaptionTagCloud(
   transcriptText: string | null | undefined,
   conceptNames: string[] = [],
   limit = 24,
+  segments: TranscriptSegment[] = [],
 ): CaptionTag[] {
   const text = (transcriptText ?? "").trim();
   const counts = new Map<string, number>();
@@ -105,13 +111,20 @@ export function buildCaptionTagCloud(
 
   const tags: CaptionTag[] = [...counts.entries()]
     .filter(([, count]) => count >= 1)
-    .map(([label, count]) => ({
-      label,
-      count,
-      kind: INVESTIGATION_SET.has(label)
-        ? ("investigation" as const)
-        : ("transcript" as const),
-    }))
+    .map(([label, count]) => {
+      const startSeconds =
+        segments.length > 0
+          ? firstConceptOffsetSeconds(label, segments)
+          : null;
+      return {
+        label,
+        count,
+        kind: INVESTIGATION_SET.has(label)
+          ? ("investigation" as const)
+          : ("transcript" as const),
+        startSeconds,
+      };
+    })
     .sort((a, b) => {
       if (a.kind !== b.kind) {
         return a.kind === "investigation" ? -1 : 1;

@@ -13,6 +13,7 @@ import { DailyResetPrompt } from "@/components/push/daily-reset-prompt";
 import { PresenceBeacon } from "@/components/layout/presence-beacon";
 import { DotBackground } from "@/components/ui/dot-background";
 import { FocusModeProvider } from "@/components/videos/focus-mode-context";
+import { CommandPaletteRoot } from "@/components/search/command-palette-root";
 import { FocusModeChrome } from "./focus-mode-chrome";
 import { KeyboardShortcutsHud } from "./keyboard-shortcuts-hud";
 import { LiveUpdatesBar } from "./live-updates-bar";
@@ -57,70 +58,72 @@ export async function SiteShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <FocusModeProvider>
-      <SiteShellFrame>
-        <AccessTierMarker tier={accessTier} />
-        <a
-          href="#main-content"
-          className="absolute start-4 top-0 z-[100] -translate-y-[120%] border border-transparent bg-action px-4 py-2 text-sm font-semibold text-white transition focus:translate-y-4 focus:outline-none focus:ring-2 focus:ring-white"
-        >
-          דילוג לתוכן הראשי
-        </a>
-        <FocusModeChrome>
-          <DotBackground />
-        </FocusModeChrome>
-        <div className="sticky top-0 z-50">
-          <OfflineStatusBar />
+    <CommandPaletteRoot>
+      <FocusModeProvider>
+        <SiteShellFrame>
+          <AccessTierMarker tier={accessTier} />
+          <a
+            href="#main-content"
+            className="absolute start-4 top-0 z-[100] -translate-y-[120%] border border-transparent bg-action px-4 py-2 text-sm font-semibold text-white transition focus:translate-y-4 focus:outline-none focus:ring-2 focus:ring-white"
+          >
+            דילוג לתוכן הראשי
+          </a>
           <FocusModeChrome>
-            <LiveUpdatesBar items={liveUpdates} />
+            <DotBackground />
           </FocusModeChrome>
-          <FocusModeChrome>
-            <SiteStatusBanner session={sessionForUi} accessTier={accessTier} />
-          </FocusModeChrome>
-          <FocusModeChrome>
-            <SiteHeader
-              session={sessionForUi}
-              theme={theme}
-              accessTier={accessTier}
-            />
-          </FocusModeChrome>
-          {isClub ? (
+          <div className="sticky top-0 z-50">
+            <OfflineStatusBar />
             <FocusModeChrome>
-              <ClubMemberChrome variant="strip" />
+              <LiveUpdatesBar items={liveUpdates} />
+            </FocusModeChrome>
+            <FocusModeChrome>
+              <SiteStatusBanner session={sessionForUi} accessTier={accessTier} />
+            </FocusModeChrome>
+            <FocusModeChrome>
+              <SiteHeader
+                session={sessionForUi}
+                theme={theme}
+                accessTier={accessTier}
+              />
+            </FocusModeChrome>
+            {isClub ? (
+              <FocusModeChrome>
+                <ClubMemberChrome variant="strip" />
+              </FocusModeChrome>
+            ) : null}
+          </div>
+          <div
+            id="main-content"
+            tabIndex={-1}
+            className="relative z-0 flex flex-1 flex-col outline-none"
+          >
+            {children}
+          </div>
+          <FocusModeChrome>
+            <SiteFooter />
+          </FocusModeChrome>
+          {!isClub ? (
+            <FocusModeChrome>
+              <SiteBetaBanner />
             </FocusModeChrome>
           ) : null}
-        </div>
-        <div
-          id="main-content"
-          tabIndex={-1}
-          className="relative z-0 flex flex-1 flex-col outline-none"
-        >
-          {children}
-        </div>
-        <FocusModeChrome>
-          <SiteFooter />
-        </FocusModeChrome>
-        {!isClub ? (
           <FocusModeChrome>
-            <SiteBetaBanner />
+            <MobileCtaBar />
           </FocusModeChrome>
-        ) : null}
-        <FocusModeChrome>
-          <MobileCtaBar />
-        </FocusModeChrome>
-        <FocusModeChrome>
-          <KeyboardShortcutsHud />
-        </FocusModeChrome>
-        <FocusModeChrome>
-          <DailyResetPrompt />
-        </FocusModeChrome>
-        <PresenceBeacon session={sessionForUi} />
-        <AccessibilityToolbar />
-        <FocusModeChrome>
-          <WhatsAppFloat />
-        </FocusModeChrome>
-      </SiteShellFrame>
-    </FocusModeProvider>
+          <FocusModeChrome>
+            <KeyboardShortcutsHud />
+          </FocusModeChrome>
+          <FocusModeChrome>
+            <DailyResetPrompt />
+          </FocusModeChrome>
+          <PresenceBeacon session={sessionForUi} />
+          <AccessibilityToolbar />
+          <FocusModeChrome>
+            <WhatsAppFloat />
+          </FocusModeChrome>
+        </SiteShellFrame>
+      </FocusModeProvider>
+    </CommandPaletteRoot>
   );
 }
 

@@ -1,3 +1,4 @@
+import { SmartEmptyState } from "@/components/ui/smart-empty-state";
 import { VideoCard } from "@/components/videos/video-card";
 import { VideosBrowseControls } from "@/components/videos/videos-browse-controls";
 import { VideosPagination } from "@/components/videos/videos-pagination";
@@ -133,7 +134,15 @@ export async function VideosResults({
               </li>
             ))}
           </ul>
-        ) : null}
+        ) : (
+          <SmartEmptyState
+            message={
+              concept
+                ? `אין סרטונים להצגה בנושא "${concept}". אפשר לבחור מושג אחר מהרשימה, או לנקות סינון.`
+                : "אין סרטונים להצגה במסנן הנוכחי. אפשר להתחיל מאחד ממושגי הליבה."
+            }
+          />
+        )}
 
         <VideosPagination
           page={page}

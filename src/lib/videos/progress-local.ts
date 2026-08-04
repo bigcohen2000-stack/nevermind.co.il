@@ -8,6 +8,9 @@ import {
 
 type StoredMap = Record<string, ContinueWatchingItem>;
 
+/** Cap stored entries so localStorage does not grow unbounded. */
+const MAX_STORED_ENTRIES = 24;
+
 function readMap(): StoredMap {
   if (typeof window === "undefined") return {};
   try {
@@ -20,8 +23,24 @@ function readMap(): StoredMap {
   }
 }
 
+function pruneMap(map: StoredMap): StoredMap {
+  const entries = Object.values(map).sort(
+    (a, b) =>
+      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
+  if (entries.length <= MAX_STORED_ENTRIES) return map;
+  const next: StoredMap = {};
+  for (const item of entries.slice(0, MAX_STORED_ENTRIES)) {
+    next[item.youtubeId] = item;
+  }
+  return next;
+}
+
 function writeMap(map: StoredMap) {
-  window.localStorage.setItem(VIDEO_PROGRESS_STORAGE_KEY, JSON.stringify(map));
+  window.localStorage.setItem(
+    VIDEO_PROGRESS_STORAGE_KEY,
+    JSON.stringify(pruneMap(map)),
+  );
 }
 
 export function saveLocalVideoProgress(input: {

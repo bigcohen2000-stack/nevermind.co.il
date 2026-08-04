@@ -385,7 +385,7 @@ export function MembersStatsStrip({ preview }: MembersStatsStripProps) {
                 {stats.concepts > 0 ? (
                   <>
                     {" "}
-                    · מושגים באינדקס:{" "}
+                    , מושגים באינדקס:{" "}
                     <Link
                       href="/concepts"
                       className="font-medium tabular-nums text-foreground underline-offset-4 hover:underline"

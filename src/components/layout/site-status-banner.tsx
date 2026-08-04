@@ -100,8 +100,8 @@ export function SiteStatusBanner({
             />
             <span className="text-[#FAFAF8]/85">
               המאגר זמין במכשיר הזה
-              {clubLabel ? ` · ${clubLabel}` : ""}
-              {authLabel ? ` · חשבון ${authLabel}` : ""}
+              {clubLabel ? `, ${clubLabel}` : ""}
+              {authLabel ? `, חשבון ${authLabel}` : ""}
             </span>
           </p>
 
@@ -174,7 +174,7 @@ export function SiteStatusBanner({
             ) : null}
             <span className="text-muted">
               {" "}
-              · חשבון חופשי. מאגר המועדון נפתח בנפרד אחרי אישור.
+              חשבון חופשי. מאגר המועדון נפתח בנפרד אחרי אישור.
             </span>
           </p>
 

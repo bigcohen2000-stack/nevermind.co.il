@@ -99,7 +99,7 @@ export async function getLiveUpdateItems(): Promise<LiveUpdateItem[]> {
         id: `schedule-${row.slot.id}`,
         kind: "schedule",
         eyebrow: "לייב",
-        title: `LIVE באתר · ${formatLiveSlotLine(row.slot)}`,
+        title: `LIVE באתר: ${formatLiveSlotLine(row.slot)}`,
         href: "/live",
         dateLabel: scheduleDateLabel(row.when),
       });
