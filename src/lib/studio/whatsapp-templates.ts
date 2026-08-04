@@ -2,8 +2,10 @@
  * Hebrew WhatsApp / ops message templates for Studio (plain keyboard punctuation).
  */
 
-import { CLUB_ACCESS_BENEFITS } from "@/lib/content/access-layers";
 import { LIVE_PAGE_URL } from "@/lib/live/schedule";
+
+const PROFILE_URL = "https://nevermind.co.il/profile";
+const MEMBERS_URL = "https://nevermind.co.il/members";
 
 function formatHebrewDate(iso: string): string {
   try {
@@ -26,12 +28,16 @@ function formatHebrewDateTime(iso: string): string {
   }
 }
 
+/** Club capabilities for WhatsApp paste (Studio copy). */
 function clubBenefitsLines(): string[] {
   return [
-    "מה נפתח לך:",
-    ...CLUB_ACCESS_BENEFITS.slice(0, 6).map(
-      (b) => `- ${b.title}: ${b.body}`,
-    ),
+    "מה פתוח בחשבון:",
+    "• מאגר סרטונים לא רשומים: צפייה מלאה בסרטונים חסומים ובשיחות ללא פילטר.",
+    "• פיד פודקאסט פרטי (RSS): האזנה באודיו בלבד בדרכים (אפל פודקאסט, ספוטיפיי וכו').",
+    "• 4 רמות פירוק: סינון ממוקד לפי עומק (פירוק ראשוני, אין-הבדל, ללא פילטר, ארכיון השברים).",
+    "• חיפוש תמלילים מלא: סריקת מילים ומושגים מתוך השיחות בעברית.",
+    '• מדדי חקירה: הצגת "עומק הצלילה", "נקודות היפוך" וענן תגיות לצד הווידאו.',
+    "• החוקר המצטיין: שאלות פתוחות שעברו מסנן לוגי לצד התוכן.",
   ];
 }
 
@@ -45,44 +51,49 @@ export function clubAccessGranted(input: {
   /** Include capability list. Default true. */
   includeBenefits?: boolean;
 }): string {
-  const name = input.name.trim() || "שלום";
+  const name = input.name.trim();
   const includeBenefits = input.includeBenefits !== false;
-  const lines = [
-    `שלום ${name},`,
-    "",
-    "הגישה למועדון NeverMinde פתוחה.",
-  ];
+  const lines: string[] = [];
+
+  if (name && name !== "שלום" && name !== "חבר/ת") {
+    lines.push(`שלום ${name},`, "");
+  }
+
+  lines.push("🔑 הגישה למועדון אושרה ופעילה.");
 
   if (input.magicUrl?.trim()) {
     lines.push(
       "",
-      "כניסה מהירה (קישור אישי, לא להעברה):",
+      "כניסה מהירה (קישור אישי):",
       input.magicUrl.trim(),
       "",
-      "איך זה עובד:",
-      "1. לחץ על הקישור מהטלפון.",
-      "2. תיכנס אוטומטית למועדון.",
-      "3. אם נשאל טלפון, הזן את המספר שלך.",
+      "פותחים מהטלפון. אם נשאל טלפון, מזינים את המספר המורשה שלך.",
     );
   }
 
   if (input.password?.trim()) {
     lines.push(
       "",
-      "כניסה עם סיסמה:",
-      "1. היכנס ל: https://nevermind.co.il/members",
-      "2. הזן מספר טלפון + הסיסמה למטה.",
-      `סיסמה: ${input.password.trim()}`,
+      "שלבי כניסה:",
+      "",
+      `נכנסים לנתיב: ${MEMBERS_URL}`,
+      "",
+      "מזינים את מספר הטלפון המורשה שלך.",
+      "",
+      `מזינים את הסיסמה: ${input.password.trim()}`,
     );
   }
 
   if (!input.magicUrl?.trim() && !input.password?.trim()) {
     lines.push(
       "",
-      "איך להתחבר:",
-      "1. היכנס ל: https://nevermind.co.il/members",
-      "2. הזן את מספר הטלפון שלך.",
-      "3. אם קיבלת סיסמה או קישור בנפרד, השתמש בהם.",
+      "שלבי כניסה:",
+      "",
+      `נכנסים לנתיב: ${MEMBERS_URL}`,
+      "",
+      "מזינים את מספר הטלפון המורשה שלך.",
+      "",
+      "מזינים את הסיסמה או פותחים את הקישור האישי שנשלח בנפרד.",
     );
   }
 
@@ -92,9 +103,12 @@ export function clubAccessGranted(input: {
 
   lines.push(
     "",
-    "הגישה אישית. אל תעביר את הסיסמה או הקישור.",
+    "דגש אבטחה: הגישה היא אישית ומזוהה. אין להעביר את הסיסמה או הקישור לגורם נוסף.",
     "",
-    "שאלות? כתוב כאן.",
+    "לשאלות או בירור - אפשר להשיב ישירות להודעה זו.",
+    "",
+    "תפוגת הגישה שלך ואפשרויות מופיעות בעמוד האישי שלך",
+    PROFILE_URL,
   );
 
   return lines.join("\n");
@@ -102,19 +116,34 @@ export function clubAccessGranted(input: {
 
 /** Short login-only guide (no password/link yet). */
 export function clubLoginGuide(input: { name: string }): string {
-  const name = input.name.trim() || "שלום";
-  return [
-    `שלום ${name},`,
+  const name = input.name.trim();
+  const lines: string[] = [];
+
+  if (name && name !== "שלום" && name !== "חבר/ת") {
+    lines.push(`שלום ${name},`, "");
+  }
+
+  lines.push(
+    "📋 הדרכת כניסה למועדון NeverMinde:",
     "",
-    "הדרכה קצרה לכניסה למועדון NeverMinde:",
+    "אפשרות 1: קישור אישי (מהיר)",
+    "פתיחה ישירה של הקישור האישי שאשלח לך מיד (מומלץ בטלפון).",
     "",
-    "אפשרות א: קישור אישי שאשלח לך. פתח אותו בטלפון.",
-    "אפשרות ב: https://nevermind.co.il/members עם טלפון + סיסמה שאשלח.",
+    "אפשרות 2: כניסה ידנית",
     "",
-    "אחרי כניסה נפתחים מאגר הסרטונים, חיפוש מלא, ופיד פודקאסט פרטי.",
+    `נכנסים לנתיב: ${MEMBERS_URL}`,
     "",
-    "כתוב כאן אם משהו לא עובד.",
-  ].join("\n");
+    "מזינים את מספר הטלפון המורשה + הסיסמה שאשלח לך.",
+    "",
+    "לאחר ההתחברות נפתחים:",
+    "• מאגר הסרטונים הלא-רשומים בצפייה מלאה",
+    "• מנגנון חיפוש התמלילים המלא",
+    "• פיד פודקאסט פרטי (RSS להאזנה באודיו בלבד)",
+    "",
+    "אם משהו לא עובד או לשאלה - אפשר להשיב ישירות להודעה זו.",
+  );
+
+  return lines.join("\n");
 }
 
 export function singleVideoFollowUp(input: {
@@ -130,7 +159,7 @@ export function singleVideoFollowUp(input: {
     "",
     `קישור: https://nevermind.co.il/watch/${id}`,
     "",
-    "אם צריך עזרה בכניסה, כתוב כאן.",
+    "אם צריך עזרה בכניסה - אפשר להשיב להודעה זו.",
   ].join("\n");
 }
 
@@ -138,15 +167,28 @@ export function expiryReminder(input: {
   name: string;
   expiresAt: string;
 }): string {
-  const name = input.name.trim() || "שלום";
+  const name = input.name.trim();
   const when = formatHebrewDate(input.expiresAt);
-  return [
-    `שלום ${name},`,
+  const lines: string[] = [];
+
+  if (name && name !== "שלום" && name !== "חבר/ת") {
+    lines.push(`שלום ${name},`, "");
+  }
+
+  lines.push(
+    "⏰ תזכורת גישה למועדון",
     "",
     `תוקף הגישה למועדון מסתיים ב-${when}.`,
     "",
-    "לחידוש, כתוב כאן ונעדכן.",
-  ].join("\n");
+    "לחידוש - אפשר להשיב ישירות להודעה זו ונעדכן.",
+    "",
+    "פרטי התוקף והאפשרויות גם בעמוד האישי:",
+    PROFILE_URL,
+    "",
+    `כניסה למועדון: ${MEMBERS_URL}`,
+  );
+
+  return lines.join("\n");
 }
 
 /** Announce live to a WhatsApp group or individual. */
@@ -156,15 +198,11 @@ export function liveNowAnnounce(input: {
   individual?: boolean;
 }): string {
   const topic = input.topic?.trim();
-  const greeting = input.individual
-    ? "שלום,"
-    : "שלום לכולם,";
+  const greeting = input.individual ? "שלום," : "שלום לכולם,";
   const lines = [
     greeting,
     "",
-    input.individual
-      ? "יש עכשיו שידור חי ב-NeverMinde."
-      : "יש עכשיו שידור חי ב-NeverMinde.",
+    "🔴 יש עכשיו שידור חי ב-NeverMinde.",
   ];
   if (topic) {
     lines.push(`נושא: ${topic}`);
@@ -184,7 +222,7 @@ export function liveUpcomingAnnounce(input: {
   topic?: string;
 }): string {
   const lines = [
-    "תזכורת שידור חי - NeverMinde",
+    "📅 תזכורת שידור חי - NeverMinde",
     "",
     `מתי: ${input.whenLabel.trim()}`,
   ];
@@ -243,13 +281,13 @@ export function meetingReservationPayment(input: MeetingInviteInput): string {
   } else {
     lines.push(
       "",
-      "פרטי תשלום: אשלח בהודעה הבאה / בקישור נפרד אחרי אישור.",
+      "פרטי תשלום: אשלח בהודעה הבאה או בקישור נפרד אחרי אישור.",
     );
   }
   if (input.notes?.trim()) {
     lines.push("", `הערה: ${input.notes.trim()}`);
   }
-  lines.push("", VAT_LINE, "", "שאלות? כתוב כאן.");
+  lines.push("", VAT_LINE, "", "לשאלות - אפשר להשיב להודעה זו.");
   return lines.join("\n");
 }
 

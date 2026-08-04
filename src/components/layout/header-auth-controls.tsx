@@ -2,6 +2,7 @@
 
 import {
   Bookmark,
+  KeyRound,
   LogIn,
   LogOut,
   Moon,
@@ -22,6 +23,7 @@ import {
   formatHeaderClubLabel,
   type HeaderSession,
 } from "@/lib/auth/header-session-shared";
+import type { SiteAccessTier } from "@/lib/access/site-tier";
 import { createClient } from "@/lib/supabase/client";
 import type { SiteTheme } from "@/lib/theme/theme";
 import { cn } from "@/lib/utils";
@@ -29,6 +31,7 @@ import { cn } from "@/lib/utils";
 type HeaderAuthControlsProps = {
   session: HeaderSession;
   theme: SiteTheme;
+  accessTier?: SiteAccessTier;
   /** Stack vertically in the mobile drawer. */
   layout?: "inline" | "stack";
   onNavigate?: () => void;
@@ -40,12 +43,13 @@ const menuItemClass =
   "flex min-h-10 w-full items-center gap-2 px-2 text-start transition hover:bg-paper";
 
 /**
- * Header auth: personal account (Google / email).
- * Guest: התחברות + הרשמה. Logged-in: list, profile, settings, theme, sign out.
+ * Header auth: personal account (Google / email) or club session.
+ * Guest: התחברות + הרשמה. Connected: list, profile, theme, sign out.
  */
 export function HeaderAuthControls({
   session,
   theme,
+  accessTier = "guest",
   layout = "inline",
   onNavigate,
   compact = false,
@@ -59,6 +63,8 @@ export function HeaderAuthControls({
   const authLabel = formatHeaderAuthLabel(session.authEmail);
   const clubLabel = formatHeaderClubLabel(session.clubPhone);
   const hasAuth = Boolean(session.authUserId);
+  const isClub = accessTier === "club";
+  const isConnected = hasAuth || isClub;
 
   useEffect(() => {
     if (!open) return;
@@ -102,45 +108,69 @@ export function HeaderAuthControls({
     });
   }
 
+  const menuLinks = (
+    <>
+      {isClub ? (
+        <Link
+          role="menuitem"
+          href="/members"
+          className={layout === "stack" ? "nav-link flex min-h-11 items-center gap-2" : menuItemClass}
+          onClick={layout === "stack" ? onNavigate : close}
+        >
+          <KeyRound className="h-4 w-4 shrink-0" aria-hidden="true" />
+          המועדון
+        </Link>
+      ) : null}
+      <Link
+        role="menuitem"
+        href="/my-list"
+        className={layout === "stack" ? "nav-link flex min-h-11 items-center gap-2" : menuItemClass}
+        onClick={layout === "stack" ? onNavigate : close}
+      >
+        <Bookmark className="h-4 w-4 shrink-0" aria-hidden="true" />
+        הרשימה שלי
+      </Link>
+      <Link
+        role="menuitem"
+        href="/profile"
+        className={layout === "stack" ? "nav-link flex min-h-11 items-center gap-2" : menuItemClass}
+        onClick={layout === "stack" ? onNavigate : close}
+      >
+        <User className="h-4 w-4 shrink-0" aria-hidden="true" />
+        פרופיל אישי
+      </Link>
+      {hasAuth ? (
+        <Link
+          role="menuitem"
+          href="/profile?tab=settings"
+          className={layout === "stack" ? "nav-link flex min-h-11 items-center gap-2" : menuItemClass}
+          onClick={layout === "stack" ? onNavigate : close}
+        >
+          <Settings className="h-4 w-4 shrink-0" aria-hidden="true" />
+          הגדרות
+        </Link>
+      ) : null}
+    </>
+  );
+
   if (layout === "stack") {
     return (
       <div className="space-y-2 border-t border-foreground/10 pt-4">
         <p className="px-2 text-xs font-medium tracking-wide text-muted">
           חשבון
         </p>
-        {hasAuth ? (
+        {isConnected ? (
           <div className="space-y-1 px-2 text-sm">
             {authLabel ? (
               <p className="text-foreground/90">חשבון: {authLabel}</p>
             ) : null}
-            {clubLabel ? (
-              <p className="text-foreground/70">מועדון: {clubLabel}</p>
+            {clubLabel || isClub ? (
+              <p className="text-foreground/70">
+                מועדון: {clubLabel || "פתוח במכשיר"}
+              </p>
             ) : null}
             <div className="flex flex-col gap-1 pt-2">
-              <Link
-                href="/my-list"
-                className="nav-link flex min-h-11 items-center gap-2"
-                onClick={onNavigate}
-              >
-                <Bookmark className="h-4 w-4 shrink-0" aria-hidden="true" />
-                הרשימה שלי
-              </Link>
-              <Link
-                href="/profile"
-                className="nav-link flex min-h-11 items-center gap-2"
-                onClick={onNavigate}
-              >
-                <User className="h-4 w-4 shrink-0" aria-hidden="true" />
-                פרופיל אישי
-              </Link>
-              <Link
-                href="/profile?tab=settings"
-                className="nav-link flex min-h-11 items-center gap-2"
-                onClick={onNavigate}
-              >
-                <Settings className="h-4 w-4 shrink-0" aria-hidden="true" />
-                הגדרות
-              </Link>
+              {menuLinks}
               <div className="flex min-h-11 items-center justify-between gap-2 px-0">
                 <span className="flex items-center gap-2 text-sm text-foreground/80">
                   {theme === "dark" ? (
@@ -152,16 +182,18 @@ export function HeaderAuthControls({
                 </span>
                 <ThemeToggle session={session} initialTheme={theme} />
               </div>
-              <button
-                type="button"
-                disabled={pending}
-                className="flex min-h-11 items-center gap-2 text-start text-muted hover:text-action disabled:opacity-50"
-                onClick={signOutAccount}
-              >
-                <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
-                יציאה
-              </button>
-              {session.clubPhone ? (
+              {hasAuth ? (
+                <button
+                  type="button"
+                  disabled={pending}
+                  className="flex min-h-11 items-center gap-2 text-start text-muted hover:text-action disabled:opacity-50"
+                  onClick={signOutAccount}
+                >
+                  <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  יציאה
+                </button>
+              ) : null}
+              {isClub || session.clubPhone ? (
                 <button
                   type="button"
                   disabled={pending}
@@ -196,26 +228,13 @@ export function HeaderAuthControls({
                 הרשמה
               </Link>
             </li>
-            {session.clubPhone ? (
-              <li className="px-2 pt-2 text-xs text-muted">
-                מועדון פתוח במכשיר ({clubLabel}). יציאה מ{" "}
-                <Link
-                  href="/members#login"
-                  className="underline"
-                  onClick={onNavigate}
-                >
-                  אזור המועדון
-                </Link>
-                .
-              </li>
-            ) : null}
           </ul>
         )}
       </div>
     );
   }
 
-  if (!hasAuth) {
+  if (!isConnected) {
     return (
       <div className="flex items-center gap-1.5">
         <Link
@@ -248,6 +267,8 @@ export function HeaderAuthControls({
     );
   }
 
+  const triggerLabel = hasAuth ? "החשבון" : "מועדון";
+
   return (
     <div ref={rootRef} className="relative">
       <button
@@ -261,14 +282,18 @@ export function HeaderAuthControls({
         aria-expanded={open}
         aria-controls={menuId}
         aria-haspopup="menu"
-        aria-label="תפריט חשבון"
+        aria-label={hasAuth ? "תפריט חשבון" : "תפריט מועדון"}
         onClick={() => setOpen((v) => !v)}
       >
-        <User className="h-4 w-4 shrink-0" aria-hidden="true" />
-        {compact ? (
-          <span className="sr-only">החשבון</span>
+        {hasAuth ? (
+          <User className="h-4 w-4 shrink-0" aria-hidden="true" />
         ) : (
-          <span>החשבון</span>
+          <KeyRound className="h-4 w-4 shrink-0" aria-hidden="true" />
+        )}
+        {compact ? (
+          <span className="sr-only">{triggerLabel}</span>
+        ) : (
+          <span>{triggerLabel}</span>
         )}
       </button>
 
@@ -282,53 +307,31 @@ export function HeaderAuthControls({
             {authLabel ? (
               <p className="px-2 py-1 text-xs text-muted">חשבון: {authLabel}</p>
             ) : null}
-            {clubLabel ? (
-              <p className="px-2 py-1 text-xs text-muted">מועדון: {clubLabel}</p>
+            {clubLabel || isClub ? (
+              <p className="px-2 py-1 text-xs text-muted">
+                מועדון: {clubLabel || "פתוח במכשיר"}
+              </p>
             ) : null}
-            <Link
-              role="menuitem"
-              href="/my-list"
-              className={menuItemClass}
-              onClick={close}
-            >
-              <Bookmark className="h-4 w-4 shrink-0" aria-hidden="true" />
-              הרשימה שלי
-            </Link>
-            <Link
-              role="menuitem"
-              href="/profile"
-              className={menuItemClass}
-              onClick={close}
-            >
-              <User className="h-4 w-4 shrink-0" aria-hidden="true" />
-              פרופיל אישי
-            </Link>
-            <Link
-              role="menuitem"
-              href="/profile?tab=settings"
-              className={menuItemClass}
-              onClick={close}
-            >
-              <Settings className="h-4 w-4 shrink-0" aria-hidden="true" />
-              הגדרות
-            </Link>
+            {menuLinks}
             <div className="flex min-h-10 items-center justify-between gap-2 border-y border-foreground/10 px-2 py-1">
               <span className="flex items-center gap-2 text-xs text-muted">
                 ערכת נושא
               </span>
               <ThemeToggle session={session} initialTheme={theme} />
             </div>
-            <button
-              type="button"
-              role="menuitem"
-              disabled={pending}
-              className={cn(menuItemClass, "text-muted disabled:opacity-50")}
-              onClick={signOutAccount}
-            >
-              <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
-              יציאה
-            </button>
-            {session.clubPhone ? (
+            {hasAuth ? (
+              <button
+                type="button"
+                role="menuitem"
+                disabled={pending}
+                className={cn(menuItemClass, "text-muted disabled:opacity-50")}
+                onClick={signOutAccount}
+              >
+                <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+                יציאה
+              </button>
+            ) : null}
+            {isClub || session.clubPhone ? (
               <button
                 type="button"
                 role="menuitem"

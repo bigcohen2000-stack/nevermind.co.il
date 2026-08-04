@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Check, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import {
@@ -46,7 +46,7 @@ function isStandaloneDisplay(): boolean {
 
 /**
  * "הורדת אפליקציה" for השם לא משנה.
- * Always visible. Opens install help (iOS / Chrome) or native prompt when available.
+ * Hidden when already installed (standalone / appinstalled).
  */
 export function InstallAppButton({
   className,
@@ -93,9 +93,7 @@ export function InstallAppButton({
   }, []);
 
   const onInstallClick = useCallback(() => {
-    if (installed || isStandaloneDisplay()) {
-      setHelpKind("installed");
-    } else if (isIosDevice()) {
+    if (isIosDevice()) {
       setHelpKind("ios");
     } else if (deferred) {
       setHelpKind("android-prompt");
@@ -103,7 +101,7 @@ export function InstallAppButton({
       setHelpKind("generic");
     }
     setHelpOpen(true);
-  }, [deferred, installed]);
+  }, [deferred]);
 
   const onNativeInstall = useCallback(async () => {
     if (!deferred || busy) return;
@@ -123,19 +121,11 @@ export function InstallAppButton({
   }, [busy, deferred]);
 
   if (!ready) {
-    return (
-      <span
-        className={cn(
-          compact
-            ? "inline-flex min-h-11 min-w-[7.5rem] items-center justify-center border border-foreground/15 px-3 text-sm text-muted"
-            : "btn btn-secondary opacity-60",
-          className,
-        )}
-        aria-hidden="true"
-      >
-        ...
-      </span>
-    );
+    return null;
+  }
+
+  if (installed) {
+    return null;
   }
 
   const title =
@@ -143,9 +133,7 @@ export function InstallAppButton({
       ? "הוספה למסך הבית"
       : helpKind === "android-prompt"
         ? "התקנה למסך הבית"
-        : helpKind === "installed"
-          ? "האפליקציה במסך הבית"
-          : "איך מתקינים";
+        : "איך מתקינים";
 
   return (
     <>
@@ -160,12 +148,8 @@ export function InstallAppButton({
         )}
         aria-label="הורדת אפליקציה: השם לא משנה"
       >
-        {installed ? (
-          <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
-        ) : (
-          <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
-        )}
-        <span>{installed ? "האפליקציה" : "הורדת אפליקציה"}</span>
+        <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span>הורדת אפליקציה</span>
       </button>
 
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
@@ -199,9 +183,7 @@ export function InstallAppButton({
                 ? "ב-Safari מוסיפים את האתר למסך הבית. האייקון נשאר כמו אפליקציה מקומית, בלי חנות."
                 : helpKind === "android-prompt"
                   ? "לחיצה אחת פותחת את חלון ההתקנה של הדפדפן. האייקון יופיע במסך הבית."
-                  : helpKind === "installed"
-                    ? "האתר כבר פועל כהתקנה מקומית במכשיר הזה."
-                    : "בדפדפן תומך בוחרים התקן אפליקציה או הוסף למסך הבית. האייקון יופיע במסך הבית."}
+                  : "בדפדפן תומך בוחרים התקן אפליקציה או הוסף למסך הבית. האייקון יופיע במסך הבית."}
             </DialogDescription>
           </DialogHeader>
 
@@ -226,10 +208,6 @@ export function InstallAppButton({
               <li>גללו ובחרו הוסף למסך הבית.</li>
               <li>אשרו את השם: השם לא משנה.</li>
             </ol>
-          ) : helpKind === "installed" ? (
-            <p className="mt-4 text-sm leading-relaxed text-[#FAFAF8]/85">
-              אפשר לפתוח את השם לא משנה ישירות מהאייקון במסך הבית.
-            </p>
           ) : (
             <ol className="mt-4 list-decimal space-y-2 pe-5 text-sm leading-relaxed text-[#FAFAF8]/85">
               <li>פתחו את תפריט הדפדפן (שלוש נקודות).</li>

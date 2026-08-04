@@ -5,7 +5,6 @@ import { Suspense } from "react";
 import { RandomClubButton } from "@/components/members/random-club-button";
 import { PrivatePodcastBanner } from "@/components/members/private-podcast-banner";
 import { InvestigationFactsStrip } from "@/components/members/investigation-facts-strip";
-import { SocialOutboundLinks } from "@/components/layout/social-outbound-links";
 import { PodcastSubscribe } from "@/components/podcast/podcast-subscribe";
 import { HeroSearchSection } from "@/components/search/hero-search-section";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -231,95 +230,6 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
               <p className="mt-5 max-w-prose leading-relaxed text-foreground/70">
                 המאמרים נשארים מקור המסגרת. הווידאו מלווה אותם, לא מחליף אותם.
               </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section
-        aria-labelledby="videos-cta-title"
-        className="border-t border-foreground bg-ink text-[#FAFAF8]"
-      >
-        <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-20 lg:py-28">
-          <div className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-12">
-            <div className="lg:col-span-6">
-              <h2
-                id="videos-cta-title"
-                className="text-2xl font-semibold leading-[1.1] tracking-tight sm:text-3xl lg:text-4xl"
-              >
-                מסגרת בכתב, או מאגר מלא.
-              </h2>
-              <p className="mt-4 max-w-prose text-sm leading-relaxed text-[#FAFAF8]/70">
-                המאמרים פתוחים לכולם. המועדון נפתח אחרי שיחת התאמה. אין סליקה
-                באתר.
-              </p>
-            </div>
-
-            <div className="lg:col-span-6">
-              <ul className="divide-y divide-[#FAFAF8]/15 border-y border-[#FAFAF8]/15">
-                <li>
-                  <Link
-                    href="/articles"
-                    className="group flex min-h-14 items-center justify-between gap-4 py-4 text-[#FAFAF8] no-underline transition-opacity hover:opacity-90 hover:no-underline"
-                  >
-                    <span>
-                      <span className="block text-base font-medium tracking-tight">
-                        מאמרים
-                      </span>
-                      <span className="mt-0.5 block text-sm text-[#FAFAF8]/60">
-                        המסגרת בכתב, פתוח
-                      </span>
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="text-sm text-[#FAFAF8]/45 transition-colors group-hover:text-[#FAFAF8]/80"
-                    >
-                      ←
-                    </span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/members"
-                    className="group flex min-h-14 items-center justify-between gap-4 py-4 text-[#FAFAF8] no-underline transition-opacity hover:opacity-90 hover:no-underline"
-                  >
-                    <span>
-                      <span className="block text-base font-medium tracking-tight">
-                        מועדון
-                      </span>
-                      <span className="mt-0.5 block text-sm text-[#FAFAF8]/60">
-                        המאגר המלא, אחרי התאמה
-                      </span>
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="text-sm text-[#FAFAF8]/45 transition-colors group-hover:text-[#FAFAF8]/80"
-                    >
-                      ←
-                    </span>
-                  </Link>
-                </li>
-              </ul>
-
-              <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                <Link
-                  href="/members#membership-prices"
-                  className="inline-flex min-h-11 items-center text-[#FAFAF8]/70 no-underline transition-colors hover:text-[#FAFAF8] hover:no-underline"
-                >
-                  מסגרות מחיר
-                </Link>
-                <Link
-                  href="/contact"
-                  className="inline-flex min-h-11 items-center text-[#FAFAF8]/70 no-underline transition-colors hover:text-[#FAFAF8] hover:no-underline"
-                >
-                  יצירת קשר
-                </Link>
-              </div>
-
-              <SocialOutboundLinks
-                className="mt-8 border-t border-[#FAFAF8]/15 pt-6 [&_p]:text-[#FAFAF8]/45 [&_a]:text-[#FAFAF8]/70 [&_a:hover]:text-[#FAFAF8]"
-                label="לחקור גם ברשתות"
-              />
             </div>
           </div>
         </div>

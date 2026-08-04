@@ -7,6 +7,8 @@ import type { Database } from "@/types/supabase";
 
 function safeNextPath(raw: string | null): string {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/my-list";
+  // Allow post-signup welcome landing.
+  if (raw === "/welcome" || raw.startsWith("/welcome?")) return raw;
   return raw;
 }
 
@@ -30,8 +32,14 @@ function parseCookieHeader(header: string | null): { name: string; value: string
   return out;
 }
 
-function redirectWithError(requestUrl: URL, reason: string) {
-  const target = new URL("/my-list", requestUrl.origin);
+function redirectWithError(requestUrl: URL, reason: string, next: string) {
+  const fallback =
+    next.startsWith("/welcome") || next.includes("register")
+      ? "/profile?mode=register"
+      : next.startsWith("/profile")
+        ? "/profile"
+        : "/my-list";
+  const target = new URL(fallback, requestUrl.origin);
   target.searchParams.set("auth_error", reason);
   return NextResponse.redirect(target);
 }
@@ -49,11 +57,11 @@ export async function GET(request: Request) {
   const next = safeNextPath(url.searchParams.get("next"));
 
   if (oauthError) {
-    return redirectWithError(url, oauthError.slice(0, 180));
+    return redirectWithError(url, oauthError.slice(0, 180), next);
   }
 
   if (!code) {
-    return redirectWithError(url, "missing_code");
+    return redirectWithError(url, "missing_code", next);
   }
 
   const env = getPublicSupabaseEnv();
@@ -78,7 +86,7 @@ export async function GET(request: Request) {
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return redirectWithError(url, error.message.slice(0, 180));
+    return redirectWithError(url, error.message.slice(0, 180), next);
   }
 
   const {

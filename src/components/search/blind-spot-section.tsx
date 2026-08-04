@@ -1,4 +1,5 @@
 import { BlindSpotInfoTip } from "@/components/search/blind-spot-info-tip";
+import { SearchVideoRow } from "@/components/videos/search-video-row";
 import { VideoCard } from "@/components/videos/video-card";
 import type { Video } from "@/types/supabase";
 
@@ -8,10 +9,11 @@ type BlindSpotSectionProps = {
   tease: string;
   videos: Video[];
   savedIds?: Set<string>;
+  hasFullAccess?: boolean;
 };
 
 /**
- * Contrasting "blind spot" block above search results:
+ * Contrasting "blind spot" block after primary search results:
  * videos for the mapped opposite of the user's search premise.
  */
 export function BlindSpotSection({
@@ -20,6 +22,7 @@ export function BlindSpotSection({
   tease,
   videos,
   savedIds,
+  hasFullAccess = false,
 }: BlindSpotSectionProps) {
   if (videos.length === 0) return null;
 
@@ -49,13 +52,21 @@ export function BlindSpotSection({
         </div>
       </div>
 
-      <ul className="mt-6 grid gap-6 sm:grid-cols-2">
+      <ul className="mt-6 space-y-2 sm:hidden">
+        {videos.map((video) => (
+          <li key={video.id}>
+            <SearchVideoRow video={video} tone="dark" />
+          </li>
+        ))}
+      </ul>
+      <ul className="mt-6 hidden gap-6 sm:grid sm:grid-cols-2">
         {videos.map((video) => (
           <li key={video.id}>
             <VideoCard
               video={video}
               initialSaved={savedIds?.has(video.youtube_id) ?? false}
               tone="dark"
+              hasFullAccess={hasFullAccess}
             />
           </li>
         ))}

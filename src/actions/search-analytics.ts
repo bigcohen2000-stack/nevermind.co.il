@@ -1,9 +1,11 @@
-"use server";
+﻿"use server";
 
 import { randomUUID } from "crypto";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { z } from "zod";
 
+import { isStudioAuthenticated } from "@/lib/studio/session";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -28,7 +30,7 @@ const feedbackSchema = z.object({
 
 /**
  * Persist a search event. Safe to fire-and-forget from the client.
- * Authenticated → user_id. Anonymous → stable session cookie.
+ * Authenticated users get user_id. Anonymous users get a stable session cookie.
  * Returns the row id so the UI can attach quality feedback later.
  */
 export async function logSearchQuery(
@@ -338,4 +340,51 @@ async function getOrCreateAnonymousSessionId(): Promise<string> {
     // Cookie may be read-only in some Server Component contexts.
   }
   return sessionId;
+}
+
+export type ResetAnalyticsResult =
+  | { ok: true; deleted: number; message: string }
+  | { ok: false; error: string };
+
+/**
+ * Studio-only: wipe search_analytics so the dashboard starts from zero.
+ */
+export async function resetSearchAnalytics(): Promise<ResetAnalyticsResult> {
+  if (!(await isStudioAuthenticated())) {
+    return { ok: false, error: "Studio session required." };
+  }
+
+  try {
+    const admin = getSupabaseAdmin();
+
+    const { count: beforeCount } = await admin
+      .from("search_analytics")
+      .select("id", { count: "exact", head: true });
+
+    const { error } = await admin
+      .from("search_analytics")
+      .delete()
+      .neq("id", "00000000-0000-0000-0000-000000000000");
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    revalidatePath("/studio/analytics");
+
+    const deleted = beforeCount ?? 0;
+    return {
+      ok: true,
+      deleted,
+      message:
+        deleted > 0
+          ? `נמחקו ${deleted} רשומות. הספירה מתחילה מחדש.`
+          : "אין רשומות למחיקה. הספירה כבר מ-0.",
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "איפוס נכשל.",
+    };
+  }
 }

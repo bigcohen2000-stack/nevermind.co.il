@@ -11,8 +11,18 @@ export type SearchTermCount = {
 export type SearchAnalyticsDashboardData = {
   rows: SearchAnalytics[];
   totalToday: number;
+  totalThisWeek: number;
+  totalPrevWeek: number;
+  weekChangePct: number | null;
+  zeroResultRatePct: number;
+  avgResults: number;
+  peakHourLabel: string | null;
+  uniqueQueryCount: number;
+  uniqueQuerySharePct: number;
+  signedInSharePct: number;
   topTermsThisWeek: SearchTermCount[];
   topZeroResultTerms: SearchTermCount[];
+  topHitTerms: SearchTermCount[];
   thumbsDownThisWeek: number;
   feedbackNotes: Array<{
     query: string;
@@ -54,6 +64,30 @@ function topTerms(
     .slice(0, limit);
 }
 
+function peakHourIsrael(rows: SearchAnalytics[]): string | null {
+  if (rows.length === 0) return null;
+  const hours = new Array<number>(24).fill(0);
+  for (const row of rows) {
+    const hour = Number(
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Jerusalem",
+        hour: "numeric",
+        hour12: false,
+      }).format(new Date(row.created_at)),
+    );
+    if (Number.isFinite(hour) && hour >= 0 && hour < 24) {
+      hours[hour]! += 1;
+    }
+  }
+  let best = 0;
+  for (let h = 1; h < 24; h += 1) {
+    if ((hours[h] ?? 0) > (hours[best] ?? 0)) best = h;
+  }
+  if ((hours[best] ?? 0) === 0) return null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(best)}:00-${pad((best + 1) % 24)}:00`;
+}
+
 /**
  * Load search analytics for the Studio dashboard (service role; bypasses RLS).
  */
@@ -61,8 +95,18 @@ export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDash
   const empty: SearchAnalyticsDashboardData = {
     rows: [],
     totalToday: 0,
+    totalThisWeek: 0,
+    totalPrevWeek: 0,
+    weekChangePct: null,
+    zeroResultRatePct: 0,
+    avgResults: 0,
+    peakHourLabel: null,
+    uniqueQueryCount: 0,
+    uniqueQuerySharePct: 0,
+    signedInSharePct: 0,
     topTermsThisWeek: [],
     topZeroResultTerms: [],
+    topHitTerms: [],
     thumbsDownThisWeek: 0,
     feedbackNotes: [],
     loadError: null,
@@ -87,6 +131,7 @@ export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDash
     const rows = data as SearchAnalytics[];
     const todayStart = startOfLocalDay().getTime();
     const weekStart = daysAgo(7).getTime();
+    const prevWeekStart = daysAgo(14).getTime();
 
     const totalToday = rows.filter(
       (row) => new Date(row.created_at).getTime() >= todayStart,
@@ -95,8 +140,52 @@ export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDash
     const weekRows = rows.filter(
       (row) => new Date(row.created_at).getTime() >= weekStart,
     );
+    const prevWeekRows = rows.filter((row) => {
+      const t = new Date(row.created_at).getTime();
+      return t >= prevWeekStart && t < weekStart;
+    });
+
+    const totalThisWeek = weekRows.length;
+    const totalPrevWeek = prevWeekRows.length;
+    const weekChangePct =
+      totalPrevWeek === 0
+        ? totalThisWeek > 0
+          ? 100
+          : null
+        : Math.round(
+            ((totalThisWeek - totalPrevWeek) / totalPrevWeek) * 100,
+          );
 
     const zeroRows = rows.filter((row) => row.results_count === 0);
+    const hitRows = rows.filter((row) => row.results_count > 0);
+    const zeroResultRatePct =
+      rows.length === 0
+        ? 0
+        : Math.round((zeroRows.length / rows.length) * 1000) / 10;
+
+    const avgResults =
+      rows.length === 0
+        ? 0
+        : Math.round(
+            (rows.reduce((sum, r) => sum + (r.results_count ?? 0), 0) /
+              rows.length) *
+              10,
+          ) / 10;
+
+    const uniqueSet = new Set(
+      rows.map((r) => normalizeTerm(r.search_query)).filter(Boolean),
+    );
+    const uniqueQueryCount = uniqueSet.size;
+    const uniqueQuerySharePct =
+      rows.length === 0
+        ? 0
+        : Math.round((uniqueQueryCount / rows.length) * 1000) / 10;
+
+    const signedIn = rows.filter((r) => Boolean(r.user_id)).length;
+    const signedInSharePct =
+      rows.length === 0
+        ? 0
+        : Math.round((signedIn / rows.length) * 1000) / 10;
 
     const weekFeedbackDown = weekRows.filter(
       (row) => row.user_feedback === false,
@@ -114,8 +203,18 @@ export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDash
     return {
       rows,
       totalToday,
-      topTermsThisWeek: topTerms(weekRows, 5),
-      topZeroResultTerms: topTerms(zeroRows, 3),
+      totalThisWeek,
+      totalPrevWeek,
+      weekChangePct,
+      zeroResultRatePct,
+      avgResults,
+      peakHourLabel: peakHourIsrael(weekRows),
+      uniqueQueryCount,
+      uniqueQuerySharePct,
+      signedInSharePct,
+      topTermsThisWeek: topTerms(weekRows, 8),
+      topZeroResultTerms: topTerms(zeroRows, 8),
+      topHitTerms: topTerms(hitRows, 8),
       thumbsDownThisWeek: weekFeedbackDown,
       feedbackNotes,
       loadError: null,

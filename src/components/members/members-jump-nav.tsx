@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import {
+  BookOpen,
+  Bookmark,
+  Calendar,
   Clapperboard,
   Compass,
   Headphones,
@@ -9,6 +12,7 @@ import {
   Radio,
   Search,
   ShieldQuestion,
+  User,
   Wallet,
 } from "lucide-react";
 
@@ -34,9 +38,16 @@ const DEFAULT_JUMPS: MembersJumpItem[] = [
 const MEMBER_JUMPS: MembersJumpItem[] = [
   { href: "#member-hub", label: "התחנה שלי", icon: Library },
   { href: "/videos?filter=club", label: "מאגר", icon: Clapperboard },
+  { href: "/videos", label: "כל הסרטונים", icon: Library },
   { href: "/search", label: "חיפוש", icon: Search },
   { href: "/live", label: "לייב", icon: Radio },
   { href: "#podcast", label: "פיד פרטי", icon: Headphones },
+  { href: "/my-list", label: "רשימה", icon: Bookmark },
+  { href: "/profile", label: "פרופיל", icon: User },
+  { href: "/books", label: "ספרים", icon: BookOpen },
+  { href: "/booking", label: "תיאום", icon: Calendar },
+  { href: "/concepts", label: "מושגים", icon: Compass },
+  { href: "/articles", label: "מאמרים", icon: BookOpen },
   { href: "#membership-prices", label: "מחירים", icon: Wallet },
 ];
 

@@ -38,7 +38,7 @@ const JUMP_LINKS = [
   { href: "#password", label: "סיסמה" },
   { href: "#members", label: "חברים" },
   { href: "#tokens", label: "קישורים" },
-  { href: "#ops-help", label: "עזרה" },
+  { href: "#ops-help", label: "דגשי ניהול" },
   { href: "#feedback", label: "משוב" },
 ] as const;
 
@@ -299,7 +299,7 @@ export default async function StudioPage() {
             },
             {
               id: "ops-help",
-              title: "עזרה לניהול",
+              title: "דגשי ניהול ותפעול",
               summary: "סיסמאות, פרסומים, תבניות עדכון",
               children: <StudioOpsTipsPanel />,
             },

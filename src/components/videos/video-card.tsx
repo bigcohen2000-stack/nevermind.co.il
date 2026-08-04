@@ -22,6 +22,8 @@ type VideoCardProps = {
   tone?: "light" | "dark";
   /** First above-fold card on browse grids (LCP). */
   priority?: boolean;
+  /** Club / video access unlocked: no buy CTA, no lock overlay. */
+  hasFullAccess?: boolean;
 };
 
 function LockOverlay() {
@@ -45,6 +47,28 @@ function LockOverlay() {
   );
 }
 
+function MemberAccessStrip({ tone }: { tone: "light" | "dark" }) {
+  return (
+    <div
+      className={cn(
+        "border border-b-0 px-3 py-2.5",
+        tone === "dark"
+          ? "border-zinc-700 bg-zinc-950"
+          : "border-foreground/15 bg-paper",
+      )}
+    >
+      <p
+        className={cn(
+          "text-xs leading-snug",
+          tone === "dark" ? "text-zinc-300" : "text-foreground/85",
+        )}
+      >
+        יש לך גישה מלאה כחבר אתר
+      </p>
+    </div>
+  );
+}
+
 /**
  * Flat video teaser card (RSC). Save / request CTAs stay client islands.
  * 3D hover was removed from list grids to protect INP and client JS.
@@ -54,13 +78,15 @@ export function VideoCard({
   initialSaved = false,
   tone = "light",
   priority = false,
+  hasFullAccess = false,
 }: VideoCardProps) {
-  const gated = isMembersOnlyVideo(video);
+  const membersOnly = isMembersOnlyVideo(video);
+  const locked = membersOnly && !hasFullAccess;
   const thumb = getTeaserThumbSrc(video, {
     opaqueThumbPath: video.thumbnail_url,
   });
   const href = getWatchHref(video);
-  const canSave = Boolean(video.youtube_id?.trim()) && !gated;
+  const canSave = Boolean(video.youtube_id?.trim()) && !locked;
   const isDark = tone === "dark";
   const metaLine = formatVideoMetaLine(video);
   const showNew = videoIsNew(video);
@@ -74,7 +100,10 @@ export function VideoCard({
   return (
     <article className="h-full">
       <div className={cn(shellClass, "h-full w-full")}>
-        {gated ? (
+        {membersOnly && hasFullAccess ? (
+          <MemberAccessStrip tone={tone} />
+        ) : null}
+        {locked ? (
           <SingleVideoRequestCta title={video.title} videoId={video.id} />
         ) : null}
         <div className="relative flex h-full flex-col">
@@ -104,14 +133,14 @@ export function VideoCard({
                 className="object-cover"
                 priority={priority}
               />
-              {gated ? <ClubBadge /> : null}
-              {gated ? <LockOverlay /> : null}
+              {membersOnly ? <ClubBadge /> : null}
+              {locked ? <LockOverlay /> : null}
               {showNew ? (
                 <span className="absolute start-2 top-2 z-[2] border border-background/40 bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-background">
                   חדש
                 </span>
               ) : null}
-              {!gated ? (
+              {!locked ? (
                 <span
                   className="absolute inset-0 flex items-center justify-center bg-transparent opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
                   aria-hidden="true"

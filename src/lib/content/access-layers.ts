@@ -246,7 +246,7 @@ export const MEMBERSHIP_COMPARE_ROWS: MembershipCompareRow[] = [
   },
 ];
 
-/** Quick links after club entry. */
+/** Quick links after club entry. Everything open for an entitled member. */
 export const MEMBER_POST_LOGIN_OFFERS = [
   {
     id: "club-videos",
@@ -254,6 +254,13 @@ export const MEMBER_POST_LOGIN_OFFERS = [
     body: "המאגר הלא רשום. סינון לפי עומק או מושג.",
     href: "/videos?filter=club",
     cta: "למאגר",
+  },
+  {
+    id: "all-videos",
+    title: "כל הסרטונים",
+    body: "פתוחים ומועדון יחד. אפשר לסנן לפי סוג.",
+    href: "/videos",
+    cta: "לסרטונים",
   },
   {
     id: "search",
@@ -282,6 +289,41 @@ export const MEMBER_POST_LOGIN_OFFERS = [
     body: "שמירות והמשך צפייה בחשבון האתר.",
     href: "/my-list",
     cta: "לרשימה",
+  },
+  {
+    id: "profile",
+    title: "פרופיל והטבות",
+    body: "פרטי חשבון, היסטוריה, והטבות מועדון.",
+    href: "/profile",
+    cta: "לפרופיל",
+  },
+  {
+    id: "books",
+    title: "ספרים",
+    body: "ספרים וחומרים נלווים באתר.",
+    href: "/books",
+    cta: "לספרים",
+  },
+  {
+    id: "booking",
+    title: "תיאום שיחה",
+    body: "תיאום עם יקיר. נושא קצר עוזר.",
+    href: "/booking",
+    cta: "לתיאום",
+  },
+  {
+    id: "concepts",
+    title: "מושגים",
+    body: "מדריך מושגים לחקירה מסודרת.",
+    href: "/concepts",
+    cta: "למושגים",
+  },
+  {
+    id: "articles",
+    title: "מאמרים",
+    body: "המסגרת בכתב. פתוח לכולם.",
+    href: "/articles",
+    cta: "למאמרים",
   },
   {
     id: "paths",

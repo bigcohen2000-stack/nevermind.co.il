@@ -111,8 +111,6 @@ export function ClubPasswordPanel({ status }: ClubPasswordPanelProps) {
         </li>
       </ol>
 
-      <StudioOpsTipsPanel mode="password" />
-
       <p className="text-xs text-zinc-500">
         גרסה {status.version}
         {updatedLabel ? `, עודכן ${updatedLabel}` : ""}. אחרי שמירה, עוגיות
@@ -225,7 +223,7 @@ export function ClubPasswordPanel({ status }: ClubPasswordPanelProps) {
           </button>
           <StudioCopyButton
             text={clubAccessGranted({
-              name: "חבר/ת",
+              name: "",
               password: password.trim() || "___",
               includeBenefits: true,
             })}
@@ -247,6 +245,8 @@ export function ClubPasswordPanel({ status }: ClubPasswordPanelProps) {
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
       {message ? <p className="text-sm text-emerald-300">{message}</p> : null}
+
+      <StudioOpsTipsPanel mode="password" />
     </section>
   );
 }

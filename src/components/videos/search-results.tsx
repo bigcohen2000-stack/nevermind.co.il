@@ -5,11 +5,14 @@ import { getSavedYoutubeIds } from "@/actions/saved-videos";
 import { BlindSpotSection } from "@/components/search/blind-spot-section";
 import { SearchJumpLinks } from "@/components/search/search-browse-nav";
 import { SearchFilterControls } from "@/components/search/search-filter-controls";
+import { SearchMissedHelp } from "@/components/search/search-missed-help";
 import { SearchQualityFeedback } from "@/components/search/search-quality-feedback";
 import { SearchVideosPagination } from "@/components/search/search-videos-pagination";
 import { SmartEmptyState } from "@/components/ui/smart-empty-state";
 import { LearningJourney } from "@/components/videos/learning-journey";
+import { SearchVideoRow } from "@/components/videos/search-video-row";
 import { VideoCard } from "@/components/videos/video-card";
+import { resolveVideoEntitlement } from "@/lib/club/access";
 import { CATEGORY_LABELS } from "@/lib/content/articles";
 import { getBlindSpotRecommendation } from "@/lib/search/blind-spot";
 import { coreMechanismForConcept } from "@/lib/profile/core-mechanisms";
@@ -53,19 +56,27 @@ export async function SearchResults({
   let journey: Awaited<ReturnType<typeof getLearningJourney>> = [];
   let savedIds = new Set<string>();
   let blindSpot: Awaited<ReturnType<typeof getBlindSpotRecommendation>> = null;
+  let hasFullAccess = false;
 
   try {
     const trimmed = query.trim();
-    const [searchResult, saved, journeyVideos, blind] = await Promise.all([
-      searchAll(query),
-      getSavedYoutubeIds(),
-      trimmed ? getLearningJourney(trimmed, 5) : Promise.resolve([]),
-      trimmed ? getBlindSpotRecommendation(trimmed, 2) : Promise.resolve(null),
-    ]);
+    const [searchResult, saved, journeyVideos, blind, access] =
+      await Promise.all([
+        searchAll(query),
+        getSavedYoutubeIds(),
+        trimmed ? getLearningJourney(trimmed, 5) : Promise.resolve([]),
+        trimmed
+          ? getBlindSpotRecommendation(trimmed, 2)
+          : Promise.resolve(null),
+        resolveVideoEntitlement().catch(() => null),
+      ]);
     results = searchResult;
     savedIds = new Set(saved);
     journey = journeyVideos;
     blindSpot = blind;
+    hasFullAccess = Boolean(
+      access && (access.entitled || access.hasVideoAccess),
+    );
   } catch {
     results = { videos: [], concepts: [], articles: [] };
   }
@@ -120,13 +131,13 @@ export async function SearchResults({
         tease={blindSpot.tease}
         videos={blindSpot.videos}
         savedIds={savedIds}
+        hasFullAccess={hasFullAccess}
       />
     ) : null;
 
   if (visibleTotal === 0) {
     return (
       <div id="search-results" className="mt-8 scroll-mt-24 space-y-10">
-        {blindSpotBlock}
         <SmartEmptyState
           message={
             trimmedQuery
@@ -134,11 +145,15 @@ export async function SearchResults({
               : "בחר מושג, מנגנון, או התחל לכתוב בשדה החיפוש."
           }
         />
+        {blindSpotBlock}
         {trimmedQuery ? (
-          <SearchQualityFeedback
-            searchQuery={trimmedQuery}
-            analyticsId={analyticsId}
-          />
+          <>
+            <SearchMissedHelp key={trimmedQuery} searchQuery={trimmedQuery} />
+            <SearchQualityFeedback
+              searchQuery={trimmedQuery}
+              analyticsId={analyticsId}
+            />
+          </>
         ) : null}
       </div>
     );
@@ -183,8 +198,6 @@ export async function SearchResults({
         concepts={jumpConcepts}
         videos={jumpVideos}
       />
-
-      {blindSpotBlock}
 
       {showVideos && journey.length >= 3 ? (
         <LearningJourney
@@ -300,13 +313,21 @@ export async function SearchResults({
 
           {videoTotal > 0 ? (
             <>
-              <ul className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="mt-5 space-y-2 sm:hidden">
+                {pageVideos.map((v) => (
+                  <li key={v.id}>
+                    <SearchVideoRow video={v} />
+                  </li>
+                ))}
+              </ul>
+              <ul className="mt-5 hidden gap-6 sm:grid sm:grid-cols-2 lg:grid-cols-3">
                 {pageVideos.map((v, index) => (
                   <li key={v.id}>
                     <VideoCard
                       video={v}
                       initialSaved={savedIds.has(v.youtube_id)}
                       priority={index === 0}
+                      hasFullAccess={hasFullAccess}
                     />
                   </li>
                 ))}
@@ -329,11 +350,16 @@ export async function SearchResults({
         </section>
       ) : null}
 
+      {blindSpotBlock}
+
       {trimmedQuery ? (
-        <SearchQualityFeedback
-          searchQuery={trimmedQuery}
-          analyticsId={analyticsId}
-        />
+        <>
+          <SearchMissedHelp key={trimmedQuery} searchQuery={trimmedQuery} />
+          <SearchQualityFeedback
+            searchQuery={trimmedQuery}
+            analyticsId={analyticsId}
+          />
+        </>
       ) : null}
     </div>
   );

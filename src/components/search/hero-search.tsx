@@ -25,12 +25,6 @@ import {
   type SuggestItem,
 } from "@/lib/search/types";
 import { searchUrlWithQuery } from "@/lib/search/search-params";
-import {
-  BREAKDOWN_LEVELS,
-  BREAKDOWN_LEVEL_LABELS,
-  BREAKDOWN_LEVEL_NUMBERS,
-  type BreakdownLevel,
-} from "@/lib/videos/investigation";
 import { formatTimestampLabel } from "@/lib/videos/timestamp";
 import { cn } from "@/lib/utils";
 
@@ -118,7 +112,6 @@ export function HeroSearch({
   const [recent, setRecent] = useState<string[]>([]);
   const [focused, setFocused] = useState(false);
   const [hasFetchedEmpty, setHasFetchedEmpty] = useState(false);
-  const [breakdown, setBreakdown] = useState<BreakdownLevel | null>(null);
 
   const isDark = variant === "dark";
   // Global ⌘K / / handled by CommandPalette.
@@ -190,11 +183,10 @@ export function HeroSearch({
       setLoading(true);
       setHasFetchedEmpty(false);
       try {
-        const params = new URLSearchParams({ q });
-        if (breakdown) params.set("breakdown", breakdown);
-        const res = await fetch(`/api/search/suggest?${params.toString()}`, {
-          signal: controller.signal,
-        });
+        const res = await fetch(
+          `/api/search/suggest?q=${encodeURIComponent(q)}`,
+          { signal: controller.signal },
+        );
         const data = (await res.json()) as { items?: SuggestItem[] };
         const nextItems = data.items ?? [];
         setItems(nextItems);
@@ -215,7 +207,7 @@ export function HeroSearch({
     return () => {
       window.clearTimeout(handle);
     };
-  }, [query, pathname, syncUrl, breakdown]);
+  }, [query, pathname, syncUrl]);
 
   // Focus trap while the suggest / zero-state panel is open.
   useEffect(() => {
@@ -445,52 +437,6 @@ export function HeroSearch({
                 !panelOpen && "pointer-events-none",
               )}
             >
-              {(showSuggest || showEmpty || loading) && trimmed.length >= 2 ? (
-                <div
-                  className="sticky top-0 z-[1] border-b border-foreground/10 bg-background/95 px-3 py-2 backdrop-blur-sm"
-                  role="group"
-                  aria-label="סינון לפי רמת פירוק"
-                >
-                  <ul className="flex flex-wrap gap-1.5">
-                    <li>
-                      <button
-                        type="button"
-                        className={cn(
-                          "inline-flex min-h-8 items-center border px-2 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
-                          breakdown === null
-                            ? "border-action bg-action/10 text-action"
-                            : "border-foreground/20 text-foreground/80 hover:border-foreground/40",
-                        )}
-                        aria-pressed={breakdown === null}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => setBreakdown(null)}
-                      >
-                        כל הרמות
-                      </button>
-                    </li>
-                    {BREAKDOWN_LEVELS.map((level) => (
-                      <li key={level}>
-                        <button
-                          type="button"
-                          className={cn(
-                            "inline-flex min-h-8 items-center border px-2 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
-                            breakdown === level
-                              ? "border-action bg-action text-background"
-                              : "border-foreground/20 text-foreground/80 hover:border-foreground/40",
-                          )}
-                          aria-pressed={breakdown === level}
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => setBreakdown(level)}
-                        >
-                          {BREAKDOWN_LEVEL_NUMBERS[level]}.{" "}
-                          {BREAKDOWN_LEVEL_LABELS[level]}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-
               {loading ? (
                 <div className="space-y-3 p-4" aria-hidden="true">
                   {[0, 1, 2].map((row) => (

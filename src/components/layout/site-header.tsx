@@ -237,7 +237,11 @@ export function SiteHeader({
 
           <div className="hidden shrink-0 items-center gap-2 lg:flex">
             {isClub ? <ClubMemberChrome variant="chip" /> : null}
-            <HeaderAuthControls session={session} theme={theme} />
+            <HeaderAuthControls
+              session={session}
+              theme={theme}
+              accessTier={accessTier}
+            />
             <InstallAppButton compact />
           </div>
 
@@ -250,7 +254,12 @@ export function SiteHeader({
             >
               <Search className="h-4 w-4" aria-hidden="true" />
             </IconButton>
-            <HeaderAuthControls session={session} theme={theme} compact />
+            <HeaderAuthControls
+              session={session}
+              theme={theme}
+              accessTier={accessTier}
+              compact
+            />
             <IconButton
               label={menuOpen ? "סגירת תפריט" : "פתיחת תפריט"}
               expanded={menuOpen}
@@ -379,6 +388,7 @@ export function SiteHeader({
             <HeaderAuthControls
               session={session}
               theme={theme}
+              accessTier={accessTier}
               layout="stack"
               onNavigate={() => setMenuOpen(false)}
             />

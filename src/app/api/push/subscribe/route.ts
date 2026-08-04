@@ -57,10 +57,12 @@ export async function POST(req: Request) {
   const userAgent = req.headers.get("user-agent")?.slice(0, 400) ?? null;
 
   try {
-    const supabase = await createClient();
+    // Service role: reliable upsert even when anon grants/policies lag behind.
+    // Input is validated above. No secrets returned to the client.
+    const admin = getSupabaseAdmin();
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await (await createClient()).auth.getUser();
 
     const row: {
       endpoint: string;
@@ -75,40 +77,34 @@ export async function POST(req: Request) {
       p256dh: keys.p256dh,
       auth: keys.auth,
       user_agent: userAgent,
+      notify_daily: typeof notify_daily === "boolean" ? notify_daily : true,
+      notify_live: typeof notify_live === "boolean" ? notify_live : false,
     };
 
     if (user?.id) row.user_id = user.id;
-    if (typeof notify_live === "boolean") row.notify_live = notify_live;
-    if (typeof notify_daily === "boolean") row.notify_daily = notify_daily;
 
-    const { error } = await supabase.from("subscribers").upsert(row, {
+    const { error } = await admin.from("subscribers").upsert(row, {
       onConflict: "endpoint",
     });
 
     if (error) {
-      // Prefs columns may be missing until migration 36. Retry without them.
-      if (
-        typeof notify_live === "boolean" ||
-        typeof notify_daily === "boolean" ||
-        user?.id
-      ) {
-        const { error: bareError } = await supabase.from("subscribers").upsert(
-          {
-            endpoint,
-            p256dh: keys.p256dh,
-            auth: keys.auth,
-            user_agent: userAgent,
-          },
-          { onConflict: "endpoint" },
-        );
-        if (!bareError) {
-          return NextResponse.json({
-            ok: true,
-            warning: "prefs_columns_missing",
-          });
-        }
+      // Prefs / user_id columns may be missing until migration 36.
+      const { error: bareError } = await admin.from("subscribers").upsert(
+        {
+          endpoint,
+          p256dh: keys.p256dh,
+          auth: keys.auth,
+          user_agent: userAgent,
+        },
+        { onConflict: "endpoint" },
+      );
+      if (!bareError) {
+        return NextResponse.json({
+          ok: true,
+          warning: "prefs_columns_missing",
+        });
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: bareError.message }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });

@@ -64,8 +64,15 @@ function AnimatedNumber({ value }: { value: number }) {
   );
 }
 
-function SampleCard({ video }: { video: MembersSampleVideo }) {
-  const gated = isMembersOnlyVideo(video);
+function SampleCard({
+  video,
+  hasFullAccess = false,
+}: {
+  video: MembersSampleVideo;
+  hasFullAccess?: boolean;
+}) {
+  const membersOnly = isMembersOnlyVideo(video);
+  const locked = membersOnly && !hasFullAccess;
   const thumb = getTeaserThumbSrc(video, {
     opaqueThumbPath: video.thumbnail_url,
   });
@@ -73,7 +80,14 @@ function SampleCard({ video }: { video: MembersSampleVideo }) {
 
   return (
     <li>
-      {gated ? (
+      {membersOnly && hasFullAccess ? (
+        <div className="border border-b-0 border-foreground/15 bg-paper px-3 py-2">
+          <p className="text-xs leading-snug text-foreground/85">
+            יש לך גישה מלאה כחבר אתר
+          </p>
+        </div>
+      ) : null}
+      {locked ? (
         <SingleVideoRequestCta title={video.title} videoId={video.id} />
       ) : null}
       <Link
@@ -88,20 +102,32 @@ function SampleCard({ video }: { video: MembersSampleVideo }) {
             sizes="128px"
             className="object-cover"
           />
-          {gated ? <ClubBadge /> : null}
+          {membersOnly ? <ClubBadge /> : null}
         </span>
         <span className="min-w-0 flex-1 self-center text-start">
           <span className="block text-sm font-medium leading-snug text-foreground group-hover:text-action">
             {video.title}
           </span>
           <span className="mt-1 inline-flex items-center gap-1 text-xs text-muted">
-            {gated ? "נפתח אחרי כניסה למועדון" : "פתוח לכולם"}
+            {locked
+              ? "נפתח אחרי כניסה למועדון"
+              : membersOnly
+                ? "יש לך גישה מלאה כחבר אתר"
+                : "פתוח לכולם"}
             <InfoTip
-              label={gated ? "הסבר על סרטון מועדון" : "הסבר על סרטון פתוח"}
+              label={
+                locked
+                  ? "הסבר על סרטון מועדון"
+                  : membersOnly
+                    ? "הסבר על גישת חבר"
+                    : "הסבר על סרטון פתוח"
+              }
             >
-              {gated
+              {locked
                 ? "הכותרת גלויה. הצפייה המלאה רק אחרי כניסה למועדון במכשיר."
-                : "אפשר לצפות בלי סיסמה ובלי חברות במועדון."}
+                : membersOnly
+                  ? "אתם מחוברים כחברי מועדון. הצפייה במאגר פתוחה במכשיר הזה."
+                  : "אפשר לצפות בלי סיסמה ובלי חברות במועדון."}
             </InfoTip>
           </span>
         </span>
@@ -197,6 +223,7 @@ function AccordionItem({
 
 type MembersStatsStripProps = {
   preview: MembersLibraryPreview;
+  hasFullAccess?: boolean;
 };
 
 const proof = MEMBERS_STATIC_PROOF;
@@ -205,7 +232,10 @@ const proof = MEMBERS_STATIC_PROOF;
  * Depth proof (static) + live club/open split + sample titles.
  * Primary numbers stay visible. Details open in accordion panels.
  */
-export function MembersStatsStrip({ preview }: MembersStatsStripProps) {
+export function MembersStatsStrip({
+  preview,
+  hasFullAccess = false,
+}: MembersStatsStripProps) {
   const { stats, clubSamples, publicSamples } = preview;
 
   return (
@@ -434,7 +464,11 @@ export function MembersStatsStrip({ preview }: MembersStatsStripProps) {
                   {clubSamples.length > 0 ? (
                     <ul className="mt-4 space-y-3">
                       {clubSamples.map((video) => (
-                        <SampleCard key={video.id} video={video} />
+                        <SampleCard
+                          key={video.id}
+                          video={video}
+                          hasFullAccess={hasFullAccess}
+                        />
                       ))}
                     </ul>
                   ) : (
@@ -453,7 +487,11 @@ export function MembersStatsStrip({ preview }: MembersStatsStripProps) {
                   {publicSamples.length > 0 ? (
                     <ul className="mt-4 space-y-3">
                       {publicSamples.map((video) => (
-                        <SampleCard key={video.id} video={video} />
+                        <SampleCard
+                          key={video.id}
+                          video={video}
+                          hasFullAccess={hasFullAccess}
+                        />
                       ))}
                     </ul>
                   ) : (

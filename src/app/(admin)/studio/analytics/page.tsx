@@ -21,8 +21,8 @@ export default async function StudioAnalyticsPage() {
   return (
     <StudioPageShell
       active="analytics"
-      title="חיפושים"
-      description="מה אנשים מחפשים, ואיפה יש חורים במאגר (0 תוצאות)."
+      title="מה מחפשים הגולשים"
+      description="סיכום חיפושים באתר: מונחים חזקים, חורים במאגר, ומתי מחפשים."
       actions={<StudioLockButton />}
       summary={
         <div className="flex flex-wrap gap-4 text-sm text-zinc-400">
@@ -31,14 +31,20 @@ export default async function StudioAnalyticsPage() {
             <strong className="text-zinc-100">{data.totalToday}</strong>
           </span>
           <span>
-            דיסלייק השבוע:{" "}
+            השבוע:{" "}
+            <strong className="text-zinc-100">{data.totalThisWeek}</strong>
+          </span>
+          <span>
+            0 תוצאות:{" "}
             <strong className="text-zinc-100">
-              {data.thumbsDownThisWeek}
+              {data.zeroResultRatePct}%
             </strong>
           </span>
           <span>
-            אירועים בטעינה:{" "}
-            <strong className="text-zinc-100">{data.rows.length}</strong>
+            דיסלייק:{" "}
+            <strong className="text-zinc-100">
+              {data.thumbsDownThisWeek}
+            </strong>
           </span>
           {data.loadError ? (
             <Link

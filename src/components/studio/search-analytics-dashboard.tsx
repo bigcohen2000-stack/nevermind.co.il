@@ -1,6 +1,10 @@
-import Link from "next/link";
-import type { ReactNode } from "react";
+"use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition, type ReactNode } from "react";
+
+import { resetSearchAnalytics } from "@/actions/search-analytics";
 import { StudioCsvExportButton } from "@/components/studio/studio-csv-export-button";
 import type {
   SearchAnalyticsDashboardData,
@@ -11,6 +15,8 @@ import type { SearchAnalytics } from "@/types/supabase";
 type SearchAnalyticsDashboardProps = {
   data: SearchAnalyticsDashboardData;
 };
+
+type RowFilter = "all" | "zero" | "feedback";
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("he-IL", {
@@ -80,6 +86,23 @@ function SummaryCard({
   );
 }
 
+function Metric({
+  value,
+  hint,
+}: {
+  value: string | number;
+  hint: string;
+}) {
+  return (
+    <>
+      <p className="mt-4 text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl">
+        {value}
+      </p>
+      <p className="mt-2 text-xs text-zinc-500">{hint}</p>
+    </>
+  );
+}
+
 function AnalyticsTable({ rows }: { rows: SearchAnalytics[] }) {
   if (rows.length === 0) {
     return (
@@ -96,7 +119,7 @@ function AnalyticsTable({ rows }: { rows: SearchAnalytics[] }) {
           <tr className="border-b border-zinc-800 text-zinc-500">
             <th className="px-2 py-3 font-medium">שאילתה</th>
             <th className="px-2 py-3 font-medium">תאריך ושעה</th>
-            <th className="px-2 py-3 font-medium">משתמש</th>
+            <th className="px-2 py-3 font-medium">גולש</th>
             <th className="px-2 py-3 font-medium">תוצאות</th>
             <th className="px-2 py-3 font-medium">משוב</th>
             <th className="px-2 py-3 font-medium">הערה</th>
@@ -172,9 +195,74 @@ function AnalyticsTable({ rows }: { rows: SearchAnalytics[] }) {
   );
 }
 
+function ResetAnalyticsButton() {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        disabled={pending}
+        className="border border-red-900/60 px-3 py-2 text-xs text-red-300 hover:border-red-500 disabled:opacity-50"
+        onClick={() => {
+          setError(null);
+          setMessage(null);
+          const ok = window.confirm(
+            "למחוק את כל היסטוריית החיפושים באנליטיקס ולהתחיל מ-0? לא ניתן לשחזר.",
+          );
+          if (!ok) return;
+          const ok2 = window.confirm(
+            "אישור שני: למחוק לצמיתות את כל רשומות search_analytics?",
+          );
+          if (!ok2) return;
+          startTransition(async () => {
+            const result = await resetSearchAnalytics();
+            if (!result.ok) {
+              setError(result.error);
+              return;
+            }
+            setMessage(result.message);
+            router.refresh();
+          });
+        }}
+      >
+        {pending ? "מוחק..." : "אפס נתונים (מ-0)"}
+      </button>
+      {error ? <p className="text-xs text-red-400">{error}</p> : null}
+      {message ? <p className="text-xs text-emerald-300">{message}</p> : null}
+    </div>
+  );
+}
+
 export function SearchAnalyticsDashboard({
   data,
 }: SearchAnalyticsDashboardProps) {
+  const [filter, setFilter] = useState<RowFilter>("all");
+
+  const filteredRows = useMemo(() => {
+    if (filter === "zero") {
+      return data.rows.filter((r) => r.results_count === 0);
+    }
+    if (filter === "feedback") {
+      return data.rows.filter(
+        (r) => r.user_feedback != null || Boolean(r.feedback_note?.trim()),
+      );
+    }
+    return data.rows;
+  }, [data.rows, filter]);
+
+  const weekChangeLabel =
+    data.weekChangePct == null
+      ? "אין בסיס להשוואה"
+      : data.weekChangePct > 0
+        ? `+${data.weekChangePct}% מול שבוע קודם`
+        : data.weekChangePct < 0
+          ? `${data.weekChangePct}% מול שבוע קודם`
+          : "בלי שינוי מול שבוע קודם";
+
   return (
     <div className="space-y-10">
       {data.loadError ? (
@@ -186,21 +274,73 @@ export function SearchAnalyticsDashboard({
         </p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard title="חיפושים היום">
-          <p className="mt-4 text-4xl font-semibold tracking-tight text-zinc-50">
-            {data.totalToday}
+      <div className="flex flex-wrap items-start justify-between gap-4 border border-zinc-800 bg-zinc-950/40 p-4">
+        <div>
+          <p className="text-sm font-medium text-zinc-200">
+            מה מחפשים הגולשים
           </p>
-          <p className="mt-2 text-xs text-zinc-500">מחצות מקומית</p>
-        </SummaryCard>
+          <p className="mt-1 max-w-xl text-xs leading-relaxed text-zinc-500">
+            סיכום חיפושים באתר: מה עובד, איפה יש חורים, ומתי מחפשים. בלי ז'רגון.
+          </p>
+        </div>
+        <ResetAnalyticsButton />
+      </div>
 
-        <SummaryCard title="טופ 5 השבוע">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryCard title="היום">
+          <Metric value={data.totalToday} hint="חיפושים מחצות מקומית" />
+        </SummaryCard>
+        <SummaryCard title="השבוע">
+          <Metric
+            value={data.totalThisWeek}
+            hint={weekChangeLabel}
+          />
+        </SummaryCard>
+        <SummaryCard title="שיעור 0 תוצאות">
+          <Metric
+            value={`${data.zeroResultRatePct}%`}
+            hint="מכל החיפושים שנטענו"
+          />
+        </SummaryCard>
+        <SummaryCard title="דיסלייק (7 ימים)">
+          <Metric
+            value={data.thumbsDownThisWeek}
+            hint="משוב שלילי על תוצאות"
+          />
+        </SummaryCard>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryCard title="ממוצע תוצאות">
+          <Metric value={data.avgResults} hint="לכל חיפוש" />
+        </SummaryCard>
+        <SummaryCard title="שעת שיא (7 ימים)">
+          <Metric
+            value={data.peakHourLabel ?? "-"}
+            hint="שעון ישראל"
+          />
+        </SummaryCard>
+        <SummaryCard title="שאילתות ייחודיות">
+          <Metric
+            value={data.uniqueQueryCount}
+            hint={`${data.uniqueQuerySharePct}% מכלל החיפושים`}
+          />
+        </SummaryCard>
+        <SummaryCard title="מחוברים">
+          <Metric
+            value={`${data.signedInSharePct}%`}
+            hint="חיפושים עם user_id"
+          />
+        </SummaryCard>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <SummaryCard title="טופ מונחים השבוע">
           <TermList
             items={data.topTermsThisWeek}
             emptyLabel="אין חיפושים ב-7 הימים האחרונים."
           />
         </SummaryCard>
-
         <SummaryCard title="חורים (0 תוצאות)">
           <TermList
             items={data.topZeroResultTerms}
@@ -208,15 +348,14 @@ export function SearchAnalyticsDashboard({
             emphasizeZero
           />
           <p className="mt-4 text-xs leading-relaxed text-zinc-500">
-            מועמדים טובים לסרטון הבא.
+            מועמדים טובים לסרטון או למושג הבא.
           </p>
         </SummaryCard>
-
-        <SummaryCard title="דיסלייק (7 ימים)">
-          <p className="mt-4 text-4xl font-semibold tracking-tight text-zinc-50">
-            {data.thumbsDownThisWeek}
-          </p>
-          <p className="mt-2 text-xs text-zinc-500">משוב איכות</p>
+        <SummaryCard title="מה כן עובד (עם תוצאות)">
+          <TermList
+            items={data.topHitTerms}
+            emptyLabel="אין עדיין חיפושים עם תוצאות."
+          />
         </SummaryCard>
       </div>
 
@@ -249,8 +388,30 @@ export function SearchAnalyticsDashboard({
               כל החיפושים
             </h2>
             <p className="mt-1 text-xs text-zinc-500">
-              {data.rows.length} אירועים (חדש למעלה)
+              {filteredRows.length} מתוך {data.rows.length} (חדש למעלה)
             </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(
+                [
+                  ["all", "הכל"],
+                  ["zero", "0 תוצאות"],
+                  ["feedback", "עם משוב"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setFilter(id)}
+                  className={`border px-2.5 py-1 text-xs ${
+                    filter === id
+                      ? "border-zinc-300 text-zinc-100"
+                      : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
           <StudioCsvExportButton
             filename={`search-analytics-${new Date().toISOString().slice(0, 10)}.csv`}
@@ -262,7 +423,7 @@ export function SearchAnalyticsDashboard({
               "feedback_note",
               "user_id",
             ]}
-            rows={data.rows.map((row) => [
+            rows={filteredRows.map((row) => [
               row.search_query,
               row.created_at,
               row.results_count,
@@ -276,7 +437,7 @@ export function SearchAnalyticsDashboard({
             ])}
           />
         </div>
-        <AnalyticsTable rows={data.rows} />
+        <AnalyticsTable rows={filteredRows} />
       </section>
     </div>
   );

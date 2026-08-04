@@ -34,11 +34,13 @@ function formatWatchedAt(iso: string): string {
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ mode?: string; tab?: string }>;
+  searchParams: Promise<{ mode?: string; tab?: string; auth_error?: string }>;
 }) {
   const params = await searchParams;
   const isRegister = params.mode === "register";
   const showSettings = params.tab === "settings";
+  const authError =
+    typeof params.auth_error === "string" ? params.auth_error : "";
 
   const supabase = await createClient();
   const {
@@ -59,17 +61,21 @@ export default async function ProfilePage({
       <main className="min-h-full w-full bg-[#000000] text-[#FAFAF8]">
         <div className="mx-auto flex w-full max-w-lg flex-col px-6 py-16 sm:py-24">
           <p className="text-xs font-medium tracking-[0.2em] text-[#9CA3AF]">
-            {isRegister ? "הרשמה" : "התחברות"}
+            {isRegister ? "הרשמה · שלב 1" : "התחברות"}
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-            {isRegister ? "הרשמה לחשבון" : "התחברות לפרופיל"}
+            {isRegister ? "יצירת חשבון" : "התחברות לפרופיל"}
           </h1>
           <p className="mt-4 text-sm leading-relaxed text-[#9CA3AF]">
             {isRegister
-              ? "יוצרים חשבון עם Google או קישור לאימייל. בלי סיסמה. אחרי האימות נפתחים רשימה והיסטוריית צפייה."
-              : "היסטוריית צפייה ופרטי חשבון זמינים אחרי התחברות. נשלח קישור לאימייל. בלי סיסמה."}
+              ? "לוחצים פעם אחת על Google (או מקבלים קישור לאימייל). אחרי האישור תעברו למסך ברוך הבא עם הצעדים הבאים. זה לא עמוד התחברות נפרד."
+              : "היסטוריית צפייה ופרטי חשבון זמינים אחרי התחברות. Google או קישור לאימייל. בלי סיסמה."}
           </p>
-          <MyListSignInForm nextPath="/profile" />
+          <MyListSignInForm
+            nextPath="/profile"
+            intent={isRegister ? "register" : "login"}
+            initialError={authError}
+          />
           <p className="mt-6 text-sm text-[#9CA3AF]">
             {isRegister ? (
               <>

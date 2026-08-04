@@ -36,7 +36,7 @@ export function LearningJourney({
         id="learning-journey-title"
         className="mt-2 text-2xl font-semibold tracking-tight"
       >
-        Your Journey: {term}
+        המסלול שלך: {term}
       </h3>
       <p className="mt-2 max-w-prose text-sm leading-relaxed text-foreground/70">
         {videos.length} סרטונים בסדר מומלץ. התחילו בראשון והתקדמו צעד אחרי צעד.
@@ -77,7 +77,7 @@ export function LearningJourney({
               <div className={`min-w-0 flex-1 pb-10 ${isLast ? "pb-0" : ""}`}>
                 {isFirst ? (
                   <p className="mb-2 inline-flex bg-action px-2 py-0.5 text-xs font-medium tracking-wide text-background">
-                    Start Here
+                    התחילו כאן
                   </p>
                 ) : (
                   <p className="mb-2 text-xs font-medium tracking-wide text-muted">

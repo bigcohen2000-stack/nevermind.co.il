@@ -21,6 +21,8 @@ type MyListSignInFormProps = {
   variant?: "full" | "compact";
   /** From /auth/callback failure redirect (?auth_error=...). */
   initialError?: string;
+  /** Register copy + post-auth welcome path. */
+  intent?: "login" | "register";
 };
 
 function GoogleMark() {
@@ -59,8 +61,11 @@ export function MyListSignInForm({
   nextPath = "/my-list",
   variant = "full",
   initialError = "",
+  intent = "login",
 }: MyListSignInFormProps) {
   const compact = variant === "compact";
+  const isRegister = intent === "register";
+  const resolvedNext = isRegister ? "/welcome" : nextPath;
   const [mode, setMode] = useState<AuthMode>("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -105,7 +110,11 @@ export function MyListSignInForm({
   function onGoogleSignIn() {
     if (pending) return;
     setError("");
-    setMessage("מעביר ל-Google...");
+    setMessage(
+      isRegister
+        ? "מעביר ל-Google להשלמת הרשמה..."
+        : "מעביר ל-Google...",
+    );
 
     startTransition(async () => {
       try {
@@ -114,11 +123,8 @@ export function MyListSignInForm({
         const { data, error: signError } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+            redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(resolvedNext)}`,
             skipBrowserRedirect: true,
-            queryParams: {
-              prompt: "select_account",
-            },
           },
         });
 
@@ -131,7 +137,7 @@ export function MyListSignInForm({
         if (!data?.url) {
           setMessage("");
           setError(
-            "Google לא החזיר קישור התחברות. בדקו שהספק מופעל ב-Supabase.",
+            "Google לא החזיר קישור. בדקו שהספק מופעל ב-Supabase, ונסו פעם אחת.",
           );
           return;
         }
@@ -168,7 +174,7 @@ export function MyListSignInForm({
       const { error: signError } = await supabase.auth.signInWithOtp({
         email: trimmed,
         options: {
-          emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+          emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(resolvedNext)}`,
         },
       });
 
@@ -177,7 +183,11 @@ export function MyListSignInForm({
         return;
       }
 
-      setMessage("נשלח קישור התחברות לאימייל. בדקו את תיבת הדואר.");
+      setMessage(
+        isRegister
+          ? "נשלח קישור להשלמת הרשמה. בדקו את תיבת הדואר."
+          : "נשלח קישור התחברות לאימייל. בדקו את תיבת הדואר.",
+      );
     });
   }
 
@@ -250,7 +260,7 @@ export function MyListSignInForm({
         return;
       }
 
-      window.location.assign(nextPath);
+      window.location.assign(resolvedNext);
     });
   }
 
@@ -265,7 +275,11 @@ export function MyListSignInForm({
           className="btn btn-secondary inline-flex w-full items-center justify-center gap-2 text-sm"
         >
           <GoogleMark />
-          {pending ? "מעביר ל-Google..." : "התחברות עם Google (חינם)"}
+          {pending
+            ? "מעביר ל-Google..."
+            : isRegister
+              ? "המשך הרשמה עם Google"
+              : "התחברות עם Google (חינם)"}
         </button>
         <form onSubmit={onEmailSubmit} className="space-y-3" noValidate>
           <ValidatedInput
@@ -301,6 +315,23 @@ export function MyListSignInForm({
 
   return (
     <div className="mt-8 space-y-4">
+      {isRegister ? (
+        <ol className="space-y-2 border border-zinc-800 bg-zinc-950/80 p-4 text-sm text-zinc-300">
+          <li>
+            <span className="font-semibold text-zinc-100">1.</span> בחרו Google
+            או אימייל (עכשיו)
+          </li>
+          <li>
+            <span className="font-semibold text-zinc-100">2.</span> אחרי האישור
+            תעברו למסך &quot;ברוך הבא&quot; עם הצעדים הבאים
+          </li>
+          <li>
+            <span className="font-semibold text-zinc-100">3.</span> משם לרשימה,
+            לחיפוש, או להתקנת אפליקציה
+          </li>
+        </ol>
+      ) : null}
+
       <button
         type="button"
         onClick={onGoogleSignIn}
@@ -309,7 +340,11 @@ export function MyListSignInForm({
         className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-zinc-600 bg-zinc-950 px-4 text-sm font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <GoogleMark />
-        {pending ? "מעביר ל-Google..." : "התחברות עם Google"}
+        {pending
+          ? "מעביר ל-Google..."
+          : isRegister
+            ? "המשך הרשמה עם Google"
+            : "התחברות עם Google"}
       </button>
 
       <div className="flex items-center gap-3" aria-hidden="true">
@@ -360,7 +395,11 @@ export function MyListSignInForm({
           <ValidatedInput
             id="my-list-email"
             label="אימייל"
-            help="נשלח קישור התחברות. בדקו גם ספאם."
+            help={
+              isRegister
+                ? "נשלח קישור להשלמת הרשמה. בדקו גם ספאם."
+                : "נשלח קישור התחברות. בדקו גם ספאם."
+            }
             value={email}
             onChange={setEmail}
             validate={(v) => validateEmail(v, { required: true })}
@@ -389,7 +428,7 @@ export function MyListSignInForm({
             disabled={pending}
             className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {pending ? "שולח..." : "שלח קישור התחברות"}
+            {pending ? "שולח..." : isRegister ? "שלח קישור להרשמה" : "שלח קישור התחברות"}
           </button>
         </form>
       ) : (

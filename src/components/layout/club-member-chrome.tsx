@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { Clapperboard, KeyRound, Library, Radio } from "lucide-react";
+import {
+  Bookmark,
+  Clapperboard,
+  KeyRound,
+  Library,
+  Radio,
+  Search,
+} from "lucide-react";
 
 type ClubMemberChromeProps = {
   /** Compact chip in the header. */
@@ -8,7 +15,9 @@ type ClubMemberChromeProps = {
 
 const LINKS = [
   { href: "/videos?filter=club", label: "מאגר מועדון", icon: Library },
+  { href: "/search", label: "חיפוש", icon: Search },
   { href: "/live", label: "שידור חי", icon: Radio },
+  { href: "/my-list", label: "הרשימה שלי", icon: Bookmark },
   { href: "/members", label: "המועדון", icon: KeyRound },
   { href: "/videos", label: "כל הסרטונים", icon: Clapperboard },
 ] as const;

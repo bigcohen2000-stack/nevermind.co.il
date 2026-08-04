@@ -23,6 +23,7 @@ import { MembersStatsStrip } from "@/components/members/members-stats-strip";
 import { MembershipBenefitsBoard } from "@/components/members/membership-benefits-board";
 import { MembersSyllabusSection } from "@/components/members/members-syllabus-section";
 import { PrivatePodcastBanner } from "@/components/members/private-podcast-banner";
+import { RandomClubButton } from "@/components/members/random-club-button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
 import { InfoTip } from "@/components/ui/info-tip";
@@ -156,9 +157,16 @@ export default async function MembersPage() {
                 <Link href="/search" className="btn btn-secondary">
                   חיפוש
                 </Link>
+                <Link href="/live" className="btn btn-secondary">
+                  לייב
+                </Link>
                 <a href="#podcast" className="btn btn-secondary">
                   פיד פרטי
                 </a>
+                <Link href="/my-list" className="btn btn-secondary">
+                  הרשימה שלי
+                </Link>
+                <RandomClubButton variant="secondary" />
               </>
             ) : (
               <>
@@ -189,7 +197,7 @@ export default async function MembersPage() {
         moreLabel="מה כלול במועדון"
       />
 
-      <MembersStatsStrip preview={preview} />
+      <MembersStatsStrip preview={preview} hasFullAccess={isMember} />
 
       {!isMember ? (
         <section
@@ -231,14 +239,22 @@ export default async function MembersPage() {
                 התחנה שלכם
               </h2>
               <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
-                הכל במקום אחד: מאגר, חיפוש, לייב, פיד, ורשימה.
+                מה פתוח לכם עכשיו: מאגר, חיפוש, לייב, פיד, רשימה, פרופיל, ספרים,
+                תיאום, מושגים ומאמרים.
               </p>
             </div>
             <MemberOffersStrip
               isMember
               tone="light"
-              title="קיצורי דרך במאגר"
+              title="מה פתוח לכם עכשיו"
             />
+            <div className="border border-foreground/15 bg-paper p-5">
+              <p className="text-sm font-medium text-foreground">סרטון אקראי</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                קפיצה ישירה לסרטון מועדון. בלי לבחור מראש.
+              </p>
+              <RandomClubButton className="mt-4" variant="secondary" />
+            </div>
             <ClubWhatsNewSection videos={whatsNew} />
             <PrivatePodcastBanner memberMode />
           </div>

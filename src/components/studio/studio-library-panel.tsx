@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
 import { runStudioLibrarySync } from "@/actions/studio-library-sync";
+import { StudioOpsTipsPanel } from "@/components/studio/studio-ops-tips";
 import { getWatchHref } from "@/lib/videos/watch-path";
 import type { StudioLibraryStatus } from "@/lib/studio/library-status";
 
@@ -151,28 +152,38 @@ export function StudioLibraryPanel({ status }: StudioLibraryPanelProps) {
           חסרות טעימות ({status.gatedWithoutTeaser.length})
         </h3>
         <p className="mt-1 text-xs text-zinc-500">
-          סרטוני מועדון / לא רשום בלי teaser_youtube_id.{" "}
-          <a href="#teasers" className="text-zinc-300 underline-offset-2 hover:underline">
+          סרטוני מועדון / לא רשום בלי טעימה.{" "}
+          <a
+            href="#teasers"
+            className="text-zinc-300 underline-offset-2 hover:underline"
+          >
             לפאנל טעימות
           </a>
         </p>
         {filteredGaps.length === 0 ? (
           <p className="mt-3 text-sm text-zinc-400">אין פערים או אין תוצאות.</p>
         ) : (
-          <ul className="mt-3 space-y-2 text-sm text-zinc-300">
-            {filteredGaps.map((video) => (
-              <li key={video.id} className="border-b border-zinc-800 py-2">
-                <Link
-                  href={getWatchHref(video)}
-                  className="underline-offset-2 hover:underline"
-                >
-                  {video.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <details className="mt-3 border border-zinc-800 bg-zinc-950/40">
+            <summary className="cursor-pointer px-3 py-2.5 text-sm text-zinc-300 hover:text-zinc-100">
+              הצג רשימה ({filteredGaps.length})
+            </summary>
+            <ul className="max-h-72 space-y-2 overflow-y-auto border-t border-zinc-800 px-3 py-2 text-sm text-zinc-300">
+              {filteredGaps.map((video) => (
+                <li key={video.id} className="border-b border-zinc-800/80 py-2 last:border-0">
+                  <Link
+                    href={getWatchHref(video)}
+                    className="underline-offset-2 hover:underline"
+                  >
+                    {video.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
       </div>
+
+      <StudioOpsTipsPanel mode="library" />
     </div>
   );
 }

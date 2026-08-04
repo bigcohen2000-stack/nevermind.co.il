@@ -3,6 +3,7 @@ import { VideoCard } from "@/components/videos/video-card";
 import { VideosBrowseControls } from "@/components/videos/videos-browse-controls";
 import { VideosPagination } from "@/components/videos/videos-pagination";
 import { getSavedYoutubeIds } from "@/actions/saved-videos";
+import { resolveVideoEntitlement } from "@/lib/club/access";
 import {
   VIDEOS_PAGE_SIZE,
   isVideoBrowseDuration,
@@ -73,9 +74,10 @@ export async function VideosResults({
   let page = 1;
   let totalPages = 1;
   let savedIds = new Set<string>();
+  let hasFullAccess = false;
 
   try {
-    const [listed, saved] = await Promise.all([
+    const [listed, saved, access] = await Promise.all([
       listBrowseVideosPage({
         page: requestedPage,
         pageSize: VIDEOS_PAGE_SIZE,
@@ -86,12 +88,16 @@ export async function VideosResults({
         duration,
       }),
       getSavedYoutubeIds(),
+      resolveVideoEntitlement().catch(() => null),
     ]);
     videos = listed.videos;
     total = listed.total;
     page = listed.page;
     totalPages = listed.totalPages;
     savedIds = new Set(saved);
+    hasFullAccess = Boolean(
+      access && (access.entitled || access.hasVideoAccess),
+    );
   } catch {
     videos = [];
     total = 0;
@@ -107,9 +113,13 @@ export async function VideosResults({
             ? concept
               ? `אין סרטונים להצגה בנושא "${concept}". אפשר לבחור מושג אחר או לנקות את הסינון.`
               : "אין סרטונים להצגה במסנן הנוכחי. אפשר לשנות סינון או לחזור לכאן בהמשך."
-            : concept
-              ? `מציגים סרטונים בנושא "${concept}" (${total}). סרטוני מועדון מסומנים ומציעים בקשת צפייה בודדת.`
-              : `בחרו סרטון. מוצגים עד ${VIDEOS_PAGE_SIZE} בכל עמוד (${total} בסך הכול). סרטוני מועדון מסומנים ומציעים בקשת צפייה בודדת.`}
+            : hasFullAccess
+              ? concept
+                ? `מציגים סרטונים בנושא "${concept}" (${total}). יש לך גישה מלאה כחבר אתר.`
+                : `בחרו סרטון. מוצגים עד ${VIDEOS_PAGE_SIZE} בכל עמוד (${total} בסך הכול). יש לך גישה מלאה כחבר אתר.`
+              : concept
+                ? `מציגים סרטונים בנושא "${concept}" (${total}). סרטוני מועדון מסומנים ומציעים בקשת צפייה בודדת.`
+                : `בחרו סרטון. מוצגים עד ${VIDEOS_PAGE_SIZE} בכל עמוד (${total} בסך הכול). סרטוני מועדון מסומנים ומציעים בקשת צפייה בודדת.`}
         </p>
       </div>
 
@@ -130,6 +140,7 @@ export async function VideosResults({
                   video={v}
                   initialSaved={savedIds.has(v.youtube_id)}
                   priority={index === 0}
+                  hasFullAccess={hasFullAccess}
                 />
               </li>
             ))}
