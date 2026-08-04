@@ -347,6 +347,26 @@ export async function listPublicVideos(limit = 24): Promise<Video[]> {
 }
 
 /**
+ * Head count of videos eligible for random investigation
+ * (public: not gated, not unlisted). Cached per request.
+ */
+export const countPublicRandomVideos = cache(async (): Promise<number> => {
+  try {
+    const supabase = await tryCreateClient();
+    if (!supabase) return 0;
+    const { count, error } = await supabase
+      .from("videos")
+      .select("*", { count: "exact", head: true })
+      .eq("is_gated", false)
+      .eq("is_unlisted", false);
+    if (error) return 0;
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+});
+
+/**
  * Resolve video ids linked to a concept.
  * Prefers exact name match. Falls back to a single curated/ilike hit only when
  * exactly one quality concept matches (avoids weakly related noise).

@@ -7,6 +7,9 @@ export const A11Y_STORAGE_KEY = "nm_a11y_prefs";
 
 export type A11yFontScale = "normal" | "large" | "xlarge";
 
+/** Horizontal dock: start keeps clear of WhatsApp (end). */
+export type A11yCorner = "start" | "end";
+
 export type A11yPrefs = {
   fontScale: A11yFontScale;
   highContrast: boolean;
@@ -14,6 +17,8 @@ export type A11yPrefs = {
   stopAnimations: boolean;
   relaxedSpacing: boolean;
   grayscale: boolean;
+  /** Floating button dock. Default start (RTL: right). */
+  corner: A11yCorner;
 };
 
 export const DEFAULT_A11Y_PREFS: A11yPrefs = {
@@ -23,6 +28,7 @@ export const DEFAULT_A11Y_PREFS: A11yPrefs = {
   stopAnimations: false,
   relaxedSpacing: false,
   grayscale: false,
+  corner: "start",
 };
 
 export function parseA11yPrefs(raw: string | null): A11yPrefs {
@@ -33,6 +39,8 @@ export function parseA11yPrefs(raw: string | null): A11yPrefs {
       parsed.fontScale === "large" || parsed.fontScale === "xlarge"
         ? parsed.fontScale
         : "normal";
+    const corner: A11yCorner =
+      parsed.corner === "end" ? "end" : "start";
     return {
       fontScale,
       highContrast: Boolean(parsed.highContrast),
@@ -40,6 +48,7 @@ export function parseA11yPrefs(raw: string | null): A11yPrefs {
       stopAnimations: Boolean(parsed.stopAnimations),
       relaxedSpacing: Boolean(parsed.relaxedSpacing),
       grayscale: Boolean(parsed.grayscale),
+      corner,
     };
   } catch {
     return { ...DEFAULT_A11Y_PREFS };

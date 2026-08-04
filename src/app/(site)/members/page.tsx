@@ -100,33 +100,37 @@ export default async function MembersPage() {
           </h1>
           <p className="mt-6 max-w-prose text-lg leading-relaxed text-foreground/80">
             {isMember
-              ? "המאגר פתוח במכשיר הזה. למטה: קיצורי דרך, מה חדש, פיד פרטי, ומחירים לחידוש."
+              ? "המאגר פתוח במכשיר הזה. אפשר לחקור, לחפש, ולחזור לסרטונים."
               : "חלק מהסרטונים פתוחים לכולם. מאגר המועדון נפתח עם קישור אישי או סיסמה בוואטסאפ. אין סליקה באתר."}
           </p>
 
-          <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {MEMBERSHIP_HIGHLIGHTS.map((item) => {
-              const Icon = HIGHLIGHT_ICONS[item.icon];
-              return (
-                <li
-                  key={item.id}
-                  className="border border-foreground/15 bg-foreground/[0.03] p-4"
-                >
-                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Icon className="size-4 text-action" aria-hidden />
-                    {item.title}
-                  </p>
-                  <p className="mt-2 text-sm leading-relaxed text-foreground/70">
-                    {item.body}
-                  </p>
-                </li>
-              );
-            })}
-          </ul>
+          {!isMember ? (
+            <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {MEMBERSHIP_HIGHLIGHTS.map((item) => {
+                const Icon = HIGHLIGHT_ICONS[item.icon];
+                return (
+                  <li
+                    key={item.id}
+                    className="border border-foreground/15 bg-foreground/[0.03] p-4"
+                  >
+                    <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <Icon className="size-4 text-action" aria-hidden />
+                      {item.title}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-foreground/70">
+                      {item.body}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
 
           <MembersJumpNav isMember={isMember} className="mt-8" />
 
-          <ClubJoinDisclaimer tone="dark" className="mt-8" />
+          {!isMember ? (
+            <ClubJoinDisclaimer tone="dark" className="mt-8" />
+          ) : null}
 
           <div className="mt-8 max-w-xl">
             <SiteBanner slot="members_hero" density="compact" />
@@ -191,11 +195,13 @@ export default async function MembersPage() {
         </div>
       </section>
 
-      <InvestigationFactsStrip
-        tone="paper"
-        moreHref="#membership-benefits"
-        moreLabel="מה כלול במועדון"
-      />
+      {!isMember ? (
+        <InvestigationFactsStrip
+          tone="paper"
+          moreHref="#membership-benefits"
+          moreLabel="מה כלול במועדון"
+        />
+      ) : null}
 
       <MembersStatsStrip preview={preview} hasFullAccess={isMember} />
 
@@ -236,11 +242,10 @@ export default async function MembersPage() {
                 id="member-hub-title"
                 className="text-2xl font-semibold tracking-tight sm:text-3xl"
               >
-                התחנה שלכם
+                אתם בפנים
               </h2>
               <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
-                מה פתוח לכם עכשיו: מאגר, חיפוש, לייב, פיד, רשימה, פרופיל, ספרים,
-                תיאום, מושגים ומאמרים.
+                קיצורי דרך למאגר, חיפוש, לייב, רשימה ופיד. בלי הפרעות.
               </p>
             </div>
             <MemberOffersStrip
@@ -293,6 +298,7 @@ export default async function MembersPage() {
           <ClubLoginForm
             alreadyIn={isMember}
             initialPhone={access.phone}
+            variant={isMember ? "gate" : "page"}
           />
         </div>
       </section>
@@ -305,57 +311,53 @@ export default async function MembersPage() {
         </section>
       ) : null}
 
-      <MembershipBenefitsBoard
-        surface="members"
-        isMember={isMember}
-        showOffers={false}
-        showPricing={false}
-      />
+      {!isMember ? (
+        <MembershipBenefitsBoard
+          surface="members"
+          isMember={false}
+          showOffers={false}
+          showPricing={false}
+        />
+      ) : null}
 
-      <MembersPricing />
+      {!isMember ? <MembersPricing /> : null}
 
       <MembersSyllabusSection />
 
-      <MembersCredibilityFaq />
+      {!isMember ? <MembersCredibilityFaq /> : null}
 
-      <MembersAccessSteps />
+      {!isMember ? <MembersAccessSteps /> : null}
 
-      <section className="border-t border-foreground/10 bg-paper text-foreground">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-14">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              מוכנים להתחיל?
-            </h2>
-            <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-              כניסה עם סיסמה, בקשת גישה, או חזרה למאגר אם כבר בפנים.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {isMember ? (
-              <Link href="/videos?filter=club" className="btn btn-primary">
-                למאגר
+      {!isMember ? (
+        <section className="border-t border-foreground/10 bg-paper text-foreground">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-14">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                מוכנים להתחיל?
+              </h2>
+              <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+                כניסה עם סיסמה, בקשת גישה, או חזרה למאגר אם כבר בפנים.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <a href="#login" className="btn btn-primary">
+                לטופס הכניסה
+              </a>
+              <a
+                href={buildWhatsAppHref(ACCESS_TEXT)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary"
+              >
+                וואטסאפ
+              </a>
+              <Link href="/contact?from=members" className="btn btn-secondary">
+                צור קשר
               </Link>
-            ) : (
-              <>
-                <a href="#login" className="btn btn-primary">
-                  לטופס הכניסה
-                </a>
-                <a
-                  href={buildWhatsAppHref(ACCESS_TEXT)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-secondary"
-                >
-                  וואטסאפ
-                </a>
-              </>
-            )}
-            <Link href="/contact?from=members" className="btn btn-secondary">
-              צור קשר
-            </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
     </main>
   );
 }

@@ -33,6 +33,26 @@
 
   --font-sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue",
     "Arial Hebrew", Arial, sans-serif;
+
+  /*
+   * Bottom FAB stack: bars publish --nm-fab-bar (px). Floats sit above.
+   * max(bar, safe-area) avoids double-counting when the bar already pads safe-area.
+   */
+  --nm-fab-bar: 0px;
+  --nm-fab-gap: 0.75rem;
+  --nm-fab-stack: 3.75rem;
+  --nm-fab-offset-bottom: calc(
+    max(var(--nm-fab-bar), env(safe-area-inset-bottom, 0px)) + var(--nm-fab-gap)
+  );
+  --nm-fab-offset-stacked: calc(
+    var(--nm-fab-offset-bottom) + var(--nm-fab-stack)
+  );
+}
+
+@media (min-width: 768px) {
+  :root {
+    --nm-fab-gap: 1.5rem;
+  }
 }
 
 /* Club / entitled archive: subtle premium chrome without drama. */
@@ -257,6 +277,11 @@ p {
     background-color: var(--ink);
     color: var(--foreground);
   }
+  /* Home hero search: let suggest dropdown escape without killing watermark clip on x. */
+  .band-dark.band-dark-search {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
   .band-dark::before {
     content: "";
     position: absolute;
@@ -274,6 +299,14 @@ p {
   .band-paper {
     background-color: var(--paper);
     color: var(--foreground);
+  }
+
+  /* Shared bottom FAB clearance (WhatsApp, a11y). Bars publish --nm-fab-bar. */
+  .nm-fab-bottom {
+    bottom: var(--nm-fab-offset-bottom);
+  }
+  .nm-fab-bottom-stacked {
+    bottom: var(--nm-fab-offset-stacked);
   }
 
   /* Editorial card — sharp 1px border, no shadow. */

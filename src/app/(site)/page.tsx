@@ -116,7 +116,10 @@ export default async function Home() {
       />
 
       {/* 1 — HERO --------------------------------------------------------- */}
-      <section aria-labelledby="hero-title" className="band-dark">
+      <section
+        aria-labelledby="hero-title"
+        className="band-dark band-dark-search"
+      >
         <Watermark className="bottom-[-1.5rem] start-[-0.5rem] text-[6rem] text-foreground/[0.045] sm:text-[9rem] lg:text-[13rem]">
           NeverMinde
         </Watermark>

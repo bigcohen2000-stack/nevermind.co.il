@@ -3,17 +3,15 @@
 import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 
-import { useBetaBannerVisible } from "@/components/layout/site-beta-banner";
 import { getContextualWhatsAppHref } from "@/lib/whatsapp-context";
 import { cn } from "@/lib/utils";
 
 /**
- * Floating WhatsApp CTA (end side). Keeps clear of a11y toolbar (start)
- * and bottom bars via safe-area offset.
+ * Floating WhatsApp CTA (end side). Clears a11y on start via corner convention.
+ * Bottom offset from shared --nm-fab-offset-bottom (bars + safe-area).
  */
 export function WhatsAppFloat() {
   const pathname = usePathname() || "/";
-  const betaOpen = useBetaBannerVisible();
 
   if (
     pathname === "/contact" ||
@@ -31,10 +29,7 @@ export function WhatsAppFloat() {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "fixed end-3 z-[90] inline-flex min-h-12 items-center gap-2 border border-[#25D366]/40 bg-[#25D366] px-3.5 py-2.5 text-sm font-medium text-white shadow-float transition hover:bg-[#1ebe57] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:end-4",
-        betaOpen
-          ? "bottom-[calc(6.5rem+env(safe-area-inset-bottom))] sm:bottom-[calc(5.5rem+env(safe-area-inset-bottom))]"
-          : "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
+        "nm-fab-bottom fixed end-3 z-[90] inline-flex min-h-12 items-center gap-2 border border-[#25D366]/40 bg-[#25D366] px-3.5 py-2.5 text-sm font-medium text-white shadow-float transition hover:bg-[#1ebe57] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:end-4",
       )}
       aria-label="שלח הודעה בוואטסאפ"
     >

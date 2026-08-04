@@ -83,6 +83,8 @@ type HeroSearchProps = {
   syncUrl?: boolean;
   /** Accessible label for the chip row under the input. */
   chipsAriaLabel?: string;
+  /** Public video count for random-investigation label. */
+  videoCount?: number;
 };
 
 /**
@@ -97,6 +99,7 @@ export function HeroSearch({
   placeholders: placeholdersProp,
   syncUrl = false,
   chipsAriaLabel = "מושגים נפוצים",
+  videoCount,
 }: HeroSearchProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -598,6 +601,12 @@ export function HeroSearch({
         </div>
       </div>
 
+      <RandomInvestigationButton
+        variant={variant}
+        videoCount={videoCount}
+        className="mt-5"
+      />
+
       {popularConcepts.length > 0 ? (
         <div
           className={cn(
@@ -633,11 +642,6 @@ export function HeroSearch({
           </div>
         </div>
       ) : null}
-
-      <RandomInvestigationButton
-        variant={variant}
-        className="mt-6"
-      />
     </div>
   );
 }

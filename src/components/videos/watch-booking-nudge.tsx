@@ -3,14 +3,20 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { useFabBarContribution } from "@/components/layout/use-fab-bar-contribution";
+
 const STORAGE_KEY = "nm_watch_booking_nudge_seen";
 
 /**
  * One-shot bottom banner after first watch visit in the session.
- * Stored in sessionStorage so it does not repeat in the same browser visit.
+ * On mobile publishes height into --nm-fab-bar so WhatsApp / a11y sit above it.
+ * MobileCta is hidden on /watch to avoid a second full-width bar.
  */
 export function WatchBookingNudge() {
   const [visible, setVisible] = useState(false);
+  const [isMdUp, setIsMdUp] = useState(false);
+  const contribute = visible && !isMdUp;
+  const barRef = useFabBarContribution<HTMLDivElement>("nudge", contribute);
 
   useEffect(() => {
     try {
@@ -22,11 +28,20 @@ export function WatchBookingNudge() {
     }
   }, []);
 
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const sync = () => setIsMdUp(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
   if (!visible) return null;
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-foreground/15 bg-background/95 px-4 py-3 shadow-float backdrop-blur-sm md:bottom-4 md:inset-x-auto md:start-4 md:max-w-md md:border"
+      ref={barRef}
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-foreground/15 bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-float backdrop-blur-sm md:bottom-4 md:inset-x-auto md:start-4 md:max-w-md md:border md:pb-3"
       role="status"
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 md:mx-0">

@@ -48,7 +48,6 @@ const MEMBER_JUMPS: MembersJumpItem[] = [
   { href: "/booking", label: "תיאום", icon: Calendar },
   { href: "/concepts", label: "מושגים", icon: Compass },
   { href: "/articles", label: "מאמרים", icon: BookOpen },
-  { href: "#membership-prices", label: "מחירים", icon: Wallet },
 ];
 
 type MembersJumpNavProps = {

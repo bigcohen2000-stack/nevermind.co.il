@@ -1,7 +1,10 @@
 import { HeroSearch, type ConceptChip } from "@/components/search/hero-search";
 import { CURATED_CONCEPTS } from "@/lib/concepts/quality";
 import { getTrendingSearches } from "@/lib/search/trending-searches";
-import { listConceptsWithVideoCounts } from "@/lib/videos/queries";
+import {
+  countPublicRandomVideos,
+  listConceptsWithVideoCounts,
+} from "@/lib/videos/queries";
 
 /** Fallback chips when Supabase has no concepts / trending data yet. */
 const DEFAULT_POPULAR: ConceptChip[] = CURATED_CONCEPTS.slice(0, 8).map(
@@ -11,8 +14,8 @@ const DEFAULT_POPULAR: ConceptChip[] = CURATED_CONCEPTS.slice(0, 8).map(
   }),
 );
 
-/** How many concept chips to show under the search (only concepts with videos). */
-const CONCEPT_CHIP_LIMIT = 28;
+/** Cap chips so mobile CTA stays above the fold (single scroll row). */
+const CONCEPT_CHIP_LIMIT = 12;
 const TRENDING_CHIP_LIMIT = 8;
 
 type HeroSearchSectionProps = {
@@ -28,12 +31,12 @@ type HeroSearchSectionProps = {
    * `concepts` = concepts that actually have videos (default).
    */
   chipSource?: "concepts" | "trending";
-  /** Cap chip count. Defaults: concepts 28, trending 8. */
+  /** Cap chip count. Defaults: concepts 12, trending 8. */
   maxChips?: number;
 };
 
 /**
- * Server wrapper for the Hero Search: loads chips, renders client input.
+ * Server wrapper for the Hero Search: loads chips + public video count.
  */
 export async function HeroSearchSection({
   variant = "light",
@@ -47,6 +50,8 @@ export async function HeroSearchSection({
 }: HeroSearchSectionProps) {
   let chips: ConceptChip[] = popularConcepts ?? [];
   let chipsAriaLabel = "מושגים עם סרטונים";
+
+  const videoCountPromise = countPublicRandomVideos().catch(() => 0);
 
   if (!popularConcepts && chipSource === "trending") {
     chipsAriaLabel = "חיפושים פופולריים";
@@ -78,10 +83,17 @@ export async function HeroSearchSection({
     } catch {
       chips = DEFAULT_POPULAR;
     }
+  } else if (maxChips != null && chips.length > maxChips) {
+    chips = chips.slice(0, maxChips);
   }
 
+  const videoCount = await videoCountPromise;
+
   return (
-    <section aria-label="חיפוש ראשי" className="w-full">
+    <section
+      aria-label="חיפוש ראשי"
+      className="relative w-full overflow-x-clip overflow-y-visible"
+    >
       <HeroSearch
         variant={variant}
         className={className}
@@ -90,6 +102,7 @@ export async function HeroSearchSection({
         placeholders={placeholders}
         syncUrl={syncUrl}
         chipsAriaLabel={chipsAriaLabel}
+        videoCount={videoCount}
       />
     </section>
   );

@@ -216,7 +216,7 @@ export function SiteFooter() {
         </p>
 
         <div className="mt-6 flex flex-col gap-4 border-t border-foreground/15 pt-6 text-sm text-foreground/60 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {currentYear} השם לא משנה. NeverMinde: יקיר כהן</p>
+          <p>© {currentYear} השם לא משנה. NeverMind.co.il</p>
           <nav
             aria-label="מידע משפטי"
             className="flex flex-wrap gap-x-4 gap-y-2"

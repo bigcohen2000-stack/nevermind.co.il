@@ -15,7 +15,7 @@ import {
 } from "@/lib/a11y/toolbar-prefs";
 import { cn } from "@/lib/utils";
 
-type ToggleKey = Exclude<keyof A11yPrefs, "fontScale">;
+type ToggleKey = Exclude<keyof A11yPrefs, "fontScale" | "corner">;
 
 const TOGGLES: { key: ToggleKey; label: string }[] = [
   { key: "highContrast", label: "ניגודיות גבוהה" },
@@ -28,11 +28,13 @@ const TOGGLES: { key: ToggleKey; label: string }[] = [
 /**
  * Floating accessibility toolbar (סרגל נגישות).
  * Preferences persist in localStorage and apply to <html> via data attributes.
+ * Dock: start by default (clear of WhatsApp on end). Corner flip only, no drag.
  */
 export function AccessibilityToolbar() {
   const panelId = useId();
   const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState<A11yPrefs>(DEFAULT_A11Y_PREFS);
+  const onEnd = prefs.corner === "end";
 
   useEffect(() => {
     const initial = parseA11yPrefs(localStorage.getItem(A11Y_STORAGE_KEY));
@@ -63,6 +65,13 @@ export function AccessibilityToolbar() {
     persist({ ...prefs, [key]: !prefs[key] });
   }
 
+  function flipCorner() {
+    persist({
+      ...prefs,
+      corner: prefs.corner === "start" ? "end" : "start",
+    });
+  }
+
   function reset() {
     persist({ ...DEFAULT_A11Y_PREFS });
     clearA11yAttrs();
@@ -70,8 +79,18 @@ export function AccessibilityToolbar() {
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] start-3 z-[90] sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))] sm:start-4">
-      <div className="pointer-events-auto flex flex-col items-stretch gap-2">
+    <div
+      className={cn(
+        "pointer-events-none fixed z-[95]",
+        onEnd ? "nm-fab-bottom-stacked end-3 sm:end-4" : "nm-fab-bottom start-3 sm:start-4",
+      )}
+    >
+      <div
+        className={cn(
+          "pointer-events-auto flex flex-col gap-2",
+          onEnd ? "items-end" : "items-start",
+        )}
+      >
         {open ? (
           <div
             id={panelId}
@@ -99,7 +118,7 @@ export function AccessibilityToolbar() {
 
             <div className="space-y-4 px-3 py-3">
               <fieldset>
-                  <legend className="text-xs font-medium text-muted">
+                <legend className="text-xs font-medium text-muted">
                   גודל טקסט
                 </legend>
                 <div className="mt-2 grid grid-cols-3 gap-1">
@@ -152,6 +171,13 @@ export function AccessibilityToolbar() {
               </ul>
 
               <div className="flex flex-col gap-2 border-t border-foreground/20 pt-3">
+                <button
+                  type="button"
+                  onClick={flipCorner}
+                  className="inline-flex min-h-10 items-center justify-center border border-foreground/30 px-3 text-sm font-medium hover:border-foreground hover:bg-foreground/5"
+                >
+                  העבר לצד השני
+                </button>
                 <button
                   type="button"
                   onClick={reset}

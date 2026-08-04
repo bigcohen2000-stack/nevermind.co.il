@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MessageCircleWarning, X } from "lucide-react";
 
+import { useFabBarContribution } from "@/components/layout/use-fab-bar-contribution";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 
@@ -12,14 +13,19 @@ export const BETA_BANNER_DISMISS_KEY = "nm-beta-banner-dismissed-v1";
 const REPORT_WHATSAPP_TEXT =
   "היי יקיר. דיווח מהאתר בהרצה:\n\nנתקלתי בטעות / תקלה בעמוד:\n(כתבו מה ראיתם)\n\n";
 
+const BETA_VISIBLE_EVENT = "nm-beta-banner-visibility";
+
 /**
  * Bottom soft-launch strip: invite bug / mistake reports.
  * Fixed above the fold bottom so mobile users can report without digging.
+ * Publishes height into --nm-fab-bar for WhatsApp / a11y clearance.
  */
 export function SiteBetaBanner() {
   const [dismissed, setDismissed] = useState(true);
   const [ready, setReady] = useState(false);
   const reportHref = buildWhatsAppHref(REPORT_WHATSAPP_TEXT);
+  const showing = ready && !dismissed;
+  const barRef = useFabBarContribution<HTMLDivElement>("beta", showing);
 
   useEffect(() => {
     try {
@@ -29,6 +35,20 @@ export function SiteBetaBanner() {
     }
     setReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!showing) {
+      delete document.documentElement.dataset.nmBetaBar;
+      window.dispatchEvent(new Event(BETA_VISIBLE_EVENT));
+      return;
+    }
+    document.documentElement.dataset.nmBetaBar = "1";
+    window.dispatchEvent(new Event(BETA_VISIBLE_EVENT));
+    return () => {
+      delete document.documentElement.dataset.nmBetaBar;
+      window.dispatchEvent(new Event(BETA_VISIBLE_EVENT));
+    };
+  }, [showing]);
 
   function dismiss() {
     try {
@@ -40,13 +60,14 @@ export function SiteBetaBanner() {
     setDismissed(true);
   }
 
-  if (!ready || dismissed) return null;
+  if (!showing) return null;
 
   return (
     <>
       {/* Reserve space so footer / last content stay above the fixed bar. */}
       <div className="h-20 sm:h-16" aria-hidden="true" />
       <div
+        ref={barRef}
         role="region"
         aria-label="האתר בהרצה. דיווח על טעות"
         className={cn(
@@ -106,24 +127,23 @@ export function SiteBetaBanner() {
   );
 }
 
-/** True when the beta bottom bar is still visible (for stacking other bottom UI). */
+/**
+ * True when the beta bottom bar is actually mounted (not merely undismissed in storage).
+ * Club members never mount the banner, so this stays false for them.
+ */
 export function useBetaBannerVisible(): boolean {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const sync = () => {
-      try {
-        setVisible(window.localStorage.getItem(BETA_BANNER_DISMISS_KEY) !== "1");
-      } catch {
-        setVisible(true);
-      }
+      setVisible(document.documentElement.dataset.nmBetaBar === "1");
     };
     sync();
+    window.addEventListener(BETA_VISIBLE_EVENT, sync);
     window.addEventListener("nm-beta-banner-dismiss", sync);
-    window.addEventListener("storage", sync);
     return () => {
+      window.removeEventListener(BETA_VISIBLE_EVENT, sync);
       window.removeEventListener("nm-beta-banner-dismiss", sync);
-      window.removeEventListener("storage", sync);
     };
   }, []);
 

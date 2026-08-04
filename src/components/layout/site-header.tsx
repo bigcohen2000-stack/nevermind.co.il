@@ -260,8 +260,10 @@ export function SiteHeader({
   return (
     <header
       className={cn(
-        "border-b bg-background/90 backdrop-blur-lg supports-[backdrop-filter]:bg-background/65",
-        isClub ? "border-action/25" : "border-foreground/10",
+        "border-b",
+        isClub
+          ? "border-action/25 bg-background"
+          : "border-foreground/10 bg-background/90 backdrop-blur-lg supports-[backdrop-filter]:bg-background/65",
       )}
     >
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">

@@ -5,9 +5,11 @@ import { Mic, X } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
+  type CSSProperties,
   type FocusEvent,
   type FormEvent,
   type KeyboardEvent,
@@ -326,6 +328,31 @@ export function PlaceholdersAndVanishInput({
 
   const showClear = Boolean(value) && !animating;
   const endActions = 1 + (voiceSupported ? 1 : 0) + (showClear ? 1 : 0);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  /** Fallback until ResizeObserver measures the real end-actions width. */
+  const [endPadPx, setEndPadPx] = useState(
+    () => 8 + endActions * 36 + Math.max(0, endActions - 1) * 4 + 8,
+  );
+
+  useLayoutEffect(() => {
+    const el = actionsRef.current;
+    if (!el || typeof ResizeObserver === "undefined") {
+      setEndPadPx(8 + endActions * 36 + Math.max(0, endActions - 1) * 4 + 8);
+      return;
+    }
+    const measure = () => {
+      // end-2 (8px) + actions width + small breathing room
+      setEndPadPx(Math.ceil(el.offsetWidth + 16));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [endActions, showClear, voiceSupported]);
+
+  const fieldEndPadStyle: CSSProperties = {
+    paddingInlineEnd: `${endPadPx}px`,
+  };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -410,13 +437,10 @@ export function PlaceholdersAndVanishInput({
         aria-expanded={ariaExpanded ?? false}
         aria-haspopup="listbox"
         aria-activedescendant={ariaActiveDescendant}
+        style={fieldEndPadStyle}
         className={cn(
           "relative z-50 h-full w-full rounded-full border-none bg-transparent text-sm text-white outline-none sm:text-base",
-          endActions >= 3
-            ? "ps-5 pe-32 sm:ps-6"
-            : endActions === 2
-              ? "ps-5 pe-24 sm:ps-6"
-              : "ps-5 pe-14 sm:ps-6",
+          "ps-5 sm:ps-6",
           "text-end",
           (value || animating) && "caret-white",
           animating && !reducedMotion && "text-transparent",
@@ -424,6 +448,7 @@ export function PlaceholdersAndVanishInput({
       />
 
       <div
+        ref={actionsRef}
         className={cn(
           "absolute top-1/2 z-50 flex -translate-y-1/2 items-center gap-1",
           "end-2",
@@ -510,7 +535,10 @@ export function PlaceholdersAndVanishInput({
       <div className="pointer-events-none absolute inset-0 flex items-center rounded-full">
         {!value ? (
           reducedMotion ? (
-            <p className="w-[calc(100%-5rem)] truncate ps-5 text-end text-sm font-normal text-white/70 sm:ps-6 sm:text-base">
+            <p
+              style={fieldEndPadStyle}
+              className="w-full truncate ps-5 text-end text-sm font-normal text-white/70 sm:ps-6 sm:text-base"
+            >
               {placeholderText}
             </p>
           ) : (
@@ -521,7 +549,8 @@ export function PlaceholdersAndVanishInput({
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -15, opacity: 0 }}
                 transition={{ duration: 0.3, ease: "linear" }}
-                className="w-[calc(100%-5rem)] truncate ps-5 text-end text-sm font-normal text-white/70 sm:ps-6 sm:text-base"
+                style={fieldEndPadStyle}
+                className="w-full truncate ps-5 text-end text-sm font-normal text-white/70 sm:ps-6 sm:text-base"
               >
                 {placeholderText}
               </motion.p>

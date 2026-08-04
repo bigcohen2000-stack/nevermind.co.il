@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { InfoTip } from "@/components/ui/info-tip";
 import { ClubBadge } from "@/components/videos/club-badge";
 import { SaveVideoButton } from "@/components/videos/save-video-button";
 import { SingleVideoRequestCta } from "@/components/videos/single-video-request";
@@ -90,6 +91,7 @@ export function VideoCard({
   const isDark = tone === "dark";
   const metaLine = formatVideoMetaLine(video);
   const showNew = videoIsNew(video);
+  const showBadges = showNew || membersOnly;
   const shellClass = cn(
     "group relative flex h-auto min-h-full w-full flex-col overflow-hidden",
     isDark
@@ -115,7 +117,7 @@ export function VideoCard({
           ) : null}
           <Link
             href={href}
-            className="flex h-full flex-col focus-visible:outline-none"
+            className="relative block focus-visible:outline-none"
           >
             <div
               className={cn(
@@ -133,13 +135,7 @@ export function VideoCard({
                 className="object-cover"
                 priority={priority}
               />
-              {membersOnly ? <ClubBadge /> : null}
               {locked ? <LockOverlay /> : null}
-              {showNew ? (
-                <span className="absolute start-2 top-2 z-[2] border border-background/40 bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-background">
-                  חדש
-                </span>
-              ) : null}
               {!locked ? (
                 <span
                   className="absolute inset-0 flex items-center justify-center bg-transparent opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
@@ -151,7 +147,37 @@ export function VideoCard({
                 </span>
               ) : null}
             </div>
-            <div className="flex w-full flex-1 flex-col p-4 sm:p-5">
+          </Link>
+          <div className="flex w-full flex-1 flex-col p-4 sm:p-5">
+            {showBadges ? (
+              <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                {showNew ? (
+                  <>
+                    <span
+                      className={cn(
+                        "inline-flex items-center border px-1.5 py-0.5 text-[11px] font-medium tracking-wide",
+                        isDark
+                          ? "border-action/40 bg-action/15 text-action"
+                          : "border-action/25 bg-action/10 text-action",
+                      )}
+                    >
+                      חדש
+                    </span>
+                    <InfoTip
+                      label="מה זה חדש"
+                      tone={isDark ? "dark" : "light"}
+                    >
+                      פורסם ב-7 הימים האחרונים.
+                    </InfoTip>
+                  </>
+                ) : null}
+                {membersOnly ? <ClubBadge placement="inline" /> : null}
+              </div>
+            ) : null}
+            <Link
+              href={href}
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+            >
               <h3
                 className={cn(
                   "line-clamp-2 text-base font-semibold leading-snug tracking-tight transition-colors",
@@ -161,18 +187,18 @@ export function VideoCard({
               >
                 {video.title}
               </h3>
-              {metaLine ? (
-                <p
-                  className={cn(
-                    "mt-1.5 text-xs tabular-nums",
-                    isDark ? "text-zinc-500" : "text-muted",
-                  )}
-                >
-                  {metaLine}
-                </p>
-              ) : null}
-            </div>
-          </Link>
+            </Link>
+            {metaLine ? (
+              <p
+                className={cn(
+                  "mt-1.5 text-xs tabular-nums",
+                  isDark ? "text-zinc-500" : "text-muted",
+                )}
+              >
+                {metaLine}
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
     </article>

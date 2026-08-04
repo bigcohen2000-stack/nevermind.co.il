@@ -43,7 +43,7 @@ export function ClubMemberChrome({ variant = "chip" }: ClubMemberChromeProps) {
   return (
     <nav
       aria-label="קיצורי מועדון"
-      className="border-b border-action/25 bg-action/[0.06]"
+      className="border-b border-foreground/15 bg-background text-foreground"
     >
       <ul className="mx-auto flex w-full max-w-7xl gap-1 overflow-x-auto px-4 py-2 sm:px-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {LINKS.map((item) => {
@@ -52,7 +52,7 @@ export function ClubMemberChrome({ variant = "chip" }: ClubMemberChromeProps) {
             <li key={item.href} className="shrink-0">
               <Link
                 href={item.href}
-                className="inline-flex min-h-9 items-center gap-1.5 border border-transparent px-2.5 text-xs font-medium text-foreground/85 no-underline transition hover:border-action/40 hover:text-action hover:no-underline"
+                className="inline-flex min-h-9 items-center gap-1.5 border border-transparent px-2.5 text-xs font-medium text-foreground no-underline transition hover:border-action/40 hover:text-action hover:no-underline"
               >
                 <Icon className="size-3.5 text-action" aria-hidden="true" />
                 {item.label}

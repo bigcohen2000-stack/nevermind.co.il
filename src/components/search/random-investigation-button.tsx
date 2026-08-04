@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 type RandomInvestigationButtonProps = {
   className?: string;
   variant?: "light" | "dark";
+  /** Public videos eligible for random pick. Omit or 0 hides the count. */
+  videoCount?: number;
 };
 
 /**
@@ -19,6 +21,7 @@ type RandomInvestigationButtonProps = {
 export function RandomInvestigationButton({
   className,
   variant = "light",
+  videoCount,
 }: RandomInvestigationButtonProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -36,19 +39,34 @@ export function RandomInvestigationButton({
     });
   };
 
+  const showCount = typeof videoCount === "number" && videoCount > 0;
+  const countLabel = showCount
+    ? `חקירות אקראיות · ${videoCount.toLocaleString("he-IL")} סרטונים`
+    : "חקירות אקראיות";
+
   return (
     <div className={cn("flex flex-col items-center gap-2", className)}>
-      <ShimmerButton
-        onClick={onClick}
-        disabled={pending}
-        aria-busy={pending}
-        className={cn(
-          variant === "dark" &&
-            "border-white/30 bg-white text-black hover:border-action focus-visible:ring-offset-black",
-        )}
-      >
-        {pending ? "בוחר חקירה..." : "חקירה אקראית"}
-      </ShimmerButton>
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
+        <ShimmerButton
+          onClick={onClick}
+          disabled={pending}
+          aria-busy={pending}
+          className={cn(
+            variant === "dark" &&
+              "border-white/30 bg-white text-black hover:border-action focus-visible:ring-offset-black",
+          )}
+        >
+          {pending ? "בוחר חקירה..." : "חקירה אקראית"}
+        </ShimmerButton>
+        <p
+          className={cn(
+            "text-xs leading-snug sm:text-sm",
+            variant === "dark" ? "text-white/70" : "text-muted",
+          )}
+        >
+          {countLabel}
+        </p>
+      </div>
       {error ? (
         <p
           role="status"
