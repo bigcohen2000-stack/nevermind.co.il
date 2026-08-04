@@ -16,6 +16,9 @@ const HELP_TEXT =
 const NON_TRANSFER =
   "הגישה אישית. הסיסמה והקישור אינם להעברה.";
 
+const SESSION_NOTICE =
+  "שמרו את האתר (nevermind.co.il), לא את קישור הכניסה החד-פעמי. קישור קסם נגמר אחרי כחצי שעה. הכניסה עצמה נשמרת במכשיר.";
+
 type ClubLoginFormProps = {
   initialPhone?: string | null;
   alreadyIn?: boolean;
@@ -101,9 +104,14 @@ export function ClubLoginForm({
             הגישה למאגר התכנים פתוחה לחברי המועדון. ממלאים שם, טלפון וסיסמה
             שקיבלתם בוואטסאפ, או לוחצים על הקישור האישי. {NON_TRANSFER}
           </p>
+          <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
+            {SESSION_NOTICE}
+          </p>
         </>
       ) : (
-        <p className="text-xs leading-relaxed text-muted">{NON_TRANSFER}</p>
+        <p className="text-xs leading-relaxed text-muted">
+          {NON_TRANSFER} {SESSION_NOTICE}
+        </p>
       )}
 
       <ClubJoinDisclaimer

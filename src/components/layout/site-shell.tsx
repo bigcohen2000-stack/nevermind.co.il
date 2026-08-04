@@ -24,6 +24,7 @@ import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
 import { SiteShellFrame } from "./site-shell-frame";
 import { SiteStatusBanner } from "./site-status-banner";
+import { StickySiteChrome } from "./sticky-site-chrome";
 
 /**
  * SiteShell — page frame.
@@ -71,7 +72,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
           <FocusModeChrome>
             <DotBackground />
           </FocusModeChrome>
-          <div className="sticky top-0 z-50">
+          <StickySiteChrome>
             <OfflineStatusBar />
             <FocusModeChrome>
               <LiveUpdatesBar items={liveUpdates} />
@@ -91,7 +92,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
                 <ClubMemberChrome variant="strip" />
               </FocusModeChrome>
             ) : null}
-          </div>
+          </StickySiteChrome>
           <div
             id="main-content"
             tabIndex={-1}

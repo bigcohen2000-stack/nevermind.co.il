@@ -20,6 +20,9 @@ import { getSpotifyShowUrl } from "@/lib/podcast/links";
 import { shareImageMetadata } from "@/lib/og/share-image";
 import { getSocialSameAsUrls } from "@/lib/social";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
+import { buildInfoTipsFaqLd } from "@/lib/content/info-tips";
+import { CORE_EXTRACTABLE_SENTENCE } from "@/lib/seo/concept-anchors";
+import { buildYakirCohenPersonLd } from "@/lib/seo/person";
 
 const HOME_OG_TITLE = "להפריד עובדה מסיפור.";
 
@@ -33,10 +36,10 @@ const HOME_METHOD_VIDEO =
 
 export const metadata: Metadata = {
   title: {
-    absolute: "NeverMinde",
+    absolute: "NeverMind | השם לא משנה",
   },
   description:
-    "חקירה לפי נושא. ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור.",
+    "ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור. חקירה לפי נושא, סרטונים ומושגים בעברית.",
   alternates: {
     canonical: "https://nevermind.co.il",
   },
@@ -54,10 +57,11 @@ const HOME_PLACEHOLDERS = [
 function HomeSearchFallback() {
   return (
     <div
-      className="mx-auto h-[12rem] w-full max-w-2xl sm:h-[14rem]"
+      className="mx-auto min-h-[180px] w-full max-w-2xl sm:min-h-[220px]"
       aria-hidden="true"
     >
       <div className="h-14 w-full rounded-full border border-white/30 bg-black" />
+      <div className="mx-auto mt-5 h-11 w-40 border border-white/25 bg-white/90" />
     </div>
   );
 }
@@ -79,9 +83,13 @@ export default async function Home() {
   );
   const continueWatching = await getLatestContinueWatching().catch(() => null);
 
+  const randomTipsFaq = buildInfoTipsFaqLd(["random"]);
+  const personLd = buildYakirCohenPersonLd();
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
+      personLd,
       {
         "@type": "Organization",
         "@id": "https://nevermind.co.il/#organization",
@@ -89,13 +97,14 @@ export default async function Home() {
         alternateName: ["NeverMinde", "NeverMind"],
         url: "https://nevermind.co.il",
         logo: "https://nevermind.co.il/icons/icon-512.png",
+        founder: { "@id": personLd["@id"] },
         sameAs: [...getSocialSameAsUrls(), spotifyUrl].filter(Boolean),
       },
       {
         "@type": "WebSite",
         "@id": "https://nevermind.co.il/#website",
-        name: "NeverMinde",
-        alternateName: "השם לא משנה",
+        name: "NeverMind",
+        alternateName: ["NeverMinde", "השם לא משנה"],
         url: "https://nevermind.co.il",
         inLanguage: "he-IL",
         publisher: { "@id": "https://nevermind.co.il/#organization" },
@@ -104,6 +113,11 @@ export default async function Home() {
           target: "https://nevermind.co.il/search?q={search_term_string}",
           "query-input": "required name=search_term_string",
         },
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://nevermind.co.il/#random-investigation-faq",
+        mainEntity: randomTipsFaq.mainEntity,
       },
     ],
   };
@@ -135,11 +149,11 @@ export default async function Home() {
             מסיפור.
           </h1>
           <p className="mx-auto mt-6 max-w-prose text-base leading-relaxed text-foreground/80 sm:mt-7 sm:text-lg">
-            ניתוח לוגי וחקירה לפי נושא. לא טיפול, לא מוטיבציה, לא רוחניות. רק מה
+            {CORE_EXTRACTABLE_SENTENCE} לא טיפול. לא מוטיבציה. לא רוחניות. רק מה
             שקרה, ומה שמספרים על מה שקרה.
           </p>
 
-          <div className="mx-auto mt-8 min-h-[12rem] w-full max-w-2xl sm:mt-10 sm:min-h-[14rem]">
+          <div className="mx-auto mt-8 min-h-[180px] w-full max-w-2xl sm:mt-10 sm:min-h-[220px]">
             <Suspense fallback={<HomeSearchFallback />}>
               <HeroSearchSection
                 variant="dark"

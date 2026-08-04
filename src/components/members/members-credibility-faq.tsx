@@ -1,11 +1,12 @@
 import { ShieldQuestion } from "lucide-react";
 
+import { JsonLd } from "@/components/seo/json-ld";
 import { cn } from "@/lib/utils";
 
-const CREDIBILITY_FAQ = [
+export const CREDIBILITY_FAQ = [
   {
     q: "למה יש אומדן וגם ספירה חיה?",
-    a: "האומדן מתאר את עומק הארכיון ההיסטורי. הספירה החיה מתארת מה מסונכרן ופתוח/חסום באתר עכשיו.",
+    a: "האומדן מתאר את עומק הארכיון ההיסטורי. הספירה החיה מתארת מה מסונכרן ופתוח או חסום באתר עכשיו.",
   },
   {
     q: "למה אין מספר מנויים?",
@@ -21,6 +22,19 @@ type MembersCredibilityFaqProps = {
  * Short credibility FAQ for /members. Always visible, no dig.
  */
 export function MembersCredibilityFaq({ className }: MembersCredibilityFaqProps) {
+  const faqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: CREDIBILITY_FAQ.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
+
   return (
     <section
       id="members-credibility"
@@ -30,6 +44,7 @@ export function MembersCredibilityFaq({ className }: MembersCredibilityFaqProps)
         className,
       )}
     >
+      <JsonLd data={faqLd} />
       <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-14">
         <p className="flex items-center gap-2 text-xs font-medium tracking-[0.16em] text-action uppercase">
           <ShieldQuestion className="size-3.5" aria-hidden />

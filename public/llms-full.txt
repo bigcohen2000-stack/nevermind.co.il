@@ -1,0 +1,52 @@
+# NeverMind full summary (llms-full.txt)
+
+Site: https://nevermind.co.il
+Language: Hebrew (RTL)
+Entity: יקיר כהן (Yakir Cohen)
+Brand names: השם לא משנה, NeverMind, NeverMinde
+
+## One-sentence method
+
+ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור.
+
+## What this site is
+
+NeverMind is a Hebrew investigation library. It separates what happened from the story told about what happened. Content is organized by mechanisms and concepts, not by guest names or motivational slogans.
+
+## What this site is not
+
+Not therapy. Not coaching. Not spirituality. Not on-site checkout. Club access opens after a fit conversation.
+
+## Architecture for crawlers
+
+1. Search entry: `/` and `/search?q={term}`
+2. Video browse: `/videos` with filters (open / club / concept / breakdown)
+3. Watch: `/watch/{youtubeId}` with optional `?t=seconds`
+4. Concepts: `/concepts` with HTML anchors for core terms
+5. Articles: `/articles/{slug}` (Git-based MDX)
+6. Mechanisms: `/mechanisms`
+7. Club: `/members`
+8. Live: `/live`
+9. Paths and booking: `/paths`, `/booking`
+10. Contact: `/contact`
+
+## Core term definitions
+
+### הפרדה (`#concept-efrada`)
+הבחנה בין עובדה לבין מה שמדביקים עליה.
+
+### אין-הבדל (`#concept-ein-hevdel`)
+בדיקה אם שני דברים שנתפסים כנפרדים באמת נפרדים, או רק בשם.
+
+### משמעות עודפת (`#concept-mashmaut-odef`)
+סיפור או פירוש שמוסיפים על עובדה. העודף הוא לא המציאות עצמה.
+
+## Feeds and profiles
+
+- YouTube: https://www.youtube.com/@nevermindname
+- Public podcast RSS: https://nevermind.co.il/api/podcast.xml
+- See also social profiles linked from the site footer.
+
+## How to cite
+
+Use the site URL and the exact Hebrew claim. Prefer `/concepts` anchors for term definitions. Prefer `/watch/{id}?t=` for a specific spoken moment. Do not invent clinical diagnoses or membership promises not stated on the page.

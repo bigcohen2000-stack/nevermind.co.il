@@ -41,7 +41,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "שידור חי ממפגשי הפודקאסט",
   description:
-    "הצטרפות אישית או קבוצתית למפגש הפודקאסט. שידור חי מהאתר. ארכיון לחברי מועדון.",
+    "שידור חי ממפגשי הפודקאסט של NeverMind. הצטרפות אישית או קבוצתית. ארכיון למפגשים לחברי מועדון.",
   robots: {
     index: false,
     follow: false,

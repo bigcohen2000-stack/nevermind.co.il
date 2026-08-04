@@ -12,6 +12,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { SetBreadcrumbCurrent } from "@/components/layout/site-breadcrumbs";
 import { SiteBanner } from "@/components/site/site-banner";
 import { Eyebrow } from "@/components/ui/editorial";
+import { InfoTip } from "@/components/ui/info-tip";
 import { BookingCta } from "@/components/videos/booking-cta";
 import { CaptionTagCloud } from "@/components/videos/caption-tag-cloud";
 import { ContinueExplorationTeaser } from "@/components/videos/continue-exploration-teaser";
@@ -42,10 +43,20 @@ import {
   WATCH_MEMBER_HIGHLIGHTS,
   WATCH_PUBLIC_HIGHLIGHTS,
 } from "@/lib/content/watch-page";
+import {
+  buildInfoTipsFaqLd,
+  INFO_TIPS,
+  type InfoTipKey,
+} from "@/lib/content/info-tips";
 import { extractCuratedConcepts } from "@/lib/concepts/quality";
+import { isBreakdownLevel } from "@/lib/videos/investigation";
 import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
 import { getRelatedArticlesForTerms } from "@/lib/search/related-content";
 import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
+import {
+  buildYakirCohenPersonLd,
+  yakirCohenAuthorRef,
+} from "@/lib/seo/person";
 import { isMembersOnlyVideo } from "@/lib/videos/access";
 import { buildCaptionTagCloud } from "@/lib/videos/caption-tag-cloud";
 import {
@@ -407,16 +418,33 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
         "@context": "https://schema.org",
         "@type": "VideoObject",
         name: video.title,
-        description: video.description,
+        description:
+          video.description?.trim() ||
+          `${video.title}. ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור.`,
         thumbnailUrl: video.thumbnail_url
           ? [video.thumbnail_url]
           : [`https://i.ytimg.com/vi/${video.youtube_id}/hqdefault.jpg`],
-        uploadDate: video.created_at,
+        uploadDate: video.published_at || video.created_at,
         embedUrl: `https://www.youtube.com/embed/${video.youtube_id}${
           startSeconds > 0 ? `?start=${startSeconds}` : ""
         }`,
         contentUrl: `https://www.youtube.com/watch?v=${video.youtube_id}`,
         inLanguage: "he",
+        ...(typeof video.duration_seconds === "number" &&
+        video.duration_seconds > 0
+          ? {
+              duration: `PT${Math.floor(video.duration_seconds / 60)}M${
+                video.duration_seconds % 60
+              }S`,
+            }
+          : {}),
+        author: yakirCohenAuthorRef(),
+        creator: yakirCohenAuthorRef(),
+        publisher: {
+          "@type": "Organization",
+          name: "השם לא משנה",
+          url: "https://nevermind.co.il",
+        },
       }
     : null;
 
@@ -426,11 +454,19 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
     { name: video.title, path: watchHref },
   ]);
 
+  const tipKeys: InfoTipKey[] = [];
+  if (concepts.length > 0) tipKeys.push("concepts");
+  if (isBreakdownLevel(video.breakdown_level)) tipKeys.push("breakdown");
+  const tipsFaqLd =
+    tipKeys.length > 0 ? buildInfoTipsFaqLd(tipKeys) : null;
+
   return (
     <>
       <SetBreadcrumbCurrent title={video.title} />
       <JsonLd data={breadcrumbLd} />
+      {jsonLd ? <JsonLd data={buildYakirCohenPersonLd()} /> : null}
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
+      {tipsFaqLd ? <JsonLd data={tipsFaqLd} /> : null}
 
       <WatchSeekProvider>
         <WatchFocusLayout
@@ -486,10 +522,13 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
                 <section aria-labelledby="concepts-title">
                   <h2
                     id="concepts-title"
-                    className="flex items-center gap-2 text-sm font-semibold sm:text-base"
+                    className="flex flex-wrap items-center gap-1.5 text-sm font-semibold sm:text-base"
                   >
                     <Tag className="size-4 text-action" aria-hidden />
-                    מושגים. לחיצה קופצת לזמן.
+                    <span>מושגים</span>
+                    <InfoTip label={INFO_TIPS.concepts.label}>
+                      {INFO_TIPS.concepts.text}
+                    </InfoTip>
                   </h2>
                   <ul className="mt-3 flex flex-wrap gap-2">
                     {concepts.map((c) => {

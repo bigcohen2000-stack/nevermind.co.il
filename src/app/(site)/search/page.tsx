@@ -80,8 +80,8 @@ export async function generateMetadata({
   return {
     title,
     description: query
-      ? `תוצאות חיפוש עבור ${query}. מאמרים, מושגים וסרטונים ב-NeverMinde.`
-      : "חקירה לפי נושא: מאמרים, מושגים וסרטונים. חיפוש לפי מנגנון או מושג.",
+      ? `תוצאות חיפוש עבור ${query}. מאמרים, מושגים וסרטונים ב-NeverMind. ניתוח לוגי: הפרדה בין עובדה לסיפור.`
+      : "חיפוש מאמרים, מושגים וסרטונים ב-NeverMind. ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור.",
     alternates: {
       canonical: `https://nevermind.co.il${canonicalPath}`,
     },
@@ -103,7 +103,8 @@ export default async function SearchPage({ searchParams }: PageProps) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "NeverMinde",
+    name: "NeverMind",
+    alternateName: ["NeverMinde", "השם לא משנה"],
     url: "https://nevermind.co.il",
     inLanguage: "he-IL",
     potentialAction: {

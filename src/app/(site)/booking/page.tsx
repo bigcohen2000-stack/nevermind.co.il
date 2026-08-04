@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ThoughtDeconstructor } from "@/components/booking/thought-deconstructor";
+import { JsonLd } from "@/components/seo/json-ld";
 import { Eyebrow } from "@/components/ui/editorial";
 import { shareImageMetadata } from "@/lib/og/share-image";
+import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
 
 export const metadata: Metadata = {
   title: "מפרק מחשבות",
   description:
-    "כותבים מחשבה, מפרידים עובדה מסיפור, ושולחים בקשה לתיאום שיחה. הכנה לפני הפגישה.",
+    "כותבים מחשבה, מפרידים עובדה מסיפור, ושולחים בקשה לתיאום שיחה ב-NeverMind. הכנה לפני הפגישה. אין סליקה באתר.",
   alternates: {
     canonical: "https://nevermind.co.il/booking",
   },
@@ -22,9 +24,14 @@ type PageProps = {
 export default async function BookingPage({ searchParams }: PageProps) {
   const { from } = await searchParams;
   const source = from?.trim() || "thought-deconstructor";
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "בית", path: "/" },
+    { name: "מפרק מחשבות", path: "/booking" },
+  ]);
 
   return (
     <main className="w-full text-start">
+      <JsonLd data={breadcrumbLd} />
       <section
         aria-labelledby="booking-hero-title"
         className="bg-background text-foreground"

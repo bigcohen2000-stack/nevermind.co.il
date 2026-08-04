@@ -10,6 +10,7 @@ import { MECHANISM_DEFINITIONS } from "@/lib/content/mechanisms";
 import { getConceptKnowledgeGraph } from "@/lib/concepts/knowledge-graph";
 import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
 import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
+import { CORE_CONCEPT_ANCHORS } from "@/lib/seo/concept-anchors";
 import { listConceptsWithVideoCounts } from "@/lib/videos/queries";
 
 export const dynamic = "force-dynamic";
@@ -19,14 +20,14 @@ const CONCEPTS_OG_TITLE = "מדריך המושגים";
 export const metadata: Metadata = {
   title: "מושגים",
   description:
-    "מדריך מושגים: מפת קשרים בין נושאים, ורשימה עם מספר הסרטונים לכל מושג. לחצו לחיפוש.",
+    "מדריך מושגים ב-NeverMind: הפרדה, אין-הבדל, משמעות עודפת ועוד. מפת קשרים ורשימה עם מספר סרטונים לכל מושג.",
   alternates: {
     canonical: "https://nevermind.co.il/concepts",
   },
   openGraph: {
-    title: "מדריך המושגים | NeverMinde",
+    title: "מדריך המושגים | NeverMind",
     description:
-      "מפת מושגים ורשימה מסרטוני NeverMinde, עם קישור לחיפוש לכל מושג.",
+      "מפת מושגים ורשימה מסרטוני NeverMind, עם קישור לחיפוש ולעוגן HTML לכל מושג ליבה.",
     url: "https://nevermind.co.il/concepts",
     type: "website",
     images: shareOgImage(CONCEPTS_OG_TITLE),
@@ -45,7 +46,7 @@ export default async function ConceptsPage() {
     "@type": "CollectionPage",
     name: "מושגים",
     description:
-      "מדריך מושגים מתוך סרטוני NeverMinde, עם קישור לחיפוש לכל מושג.",
+      "מדריך מושגים מתוך סרטוני NeverMind, עם קישור לחיפוש ולעוגן HTML לכל מושג ליבה.",
     url: "https://nevermind.co.il/concepts",
     inLanguage: "he-IL",
     numberOfItems: concepts.length,
@@ -54,17 +55,25 @@ export default async function ConceptsPage() {
   const definedTermsLd = {
     "@context": "https://schema.org",
     "@type": "DefinedTermSet",
-    name: "מושגי NeverMinde",
+    name: "מושגי NeverMind",
     url: "https://nevermind.co.il/concepts",
     inLanguage: "he-IL",
-    hasDefinedTerm: concepts.slice(0, 100).map((c) => ({
-      "@type": "DefinedTerm",
-      name: c.name,
-      url: `https://nevermind.co.il/search?q=${encodeURIComponent(c.name)}`,
-      description: c.category
-        ? `מושג בקטגוריה ${c.category}. מופיע ב-${c.videoCount} סרטונים.`
-        : `מושג לחקירה. מופיע ב-${c.videoCount} סרטונים.`,
-    })),
+    hasDefinedTerm: [
+      ...CORE_CONCEPT_ANCHORS.map((item) => ({
+        "@type": "DefinedTerm",
+        name: item.term,
+        url: `https://nevermind.co.il/concepts#${item.id}`,
+        description: item.definition,
+      })),
+      ...concepts.slice(0, 100).map((c) => ({
+        "@type": "DefinedTerm",
+        name: c.name,
+        url: `https://nevermind.co.il/search?q=${encodeURIComponent(c.name)}`,
+        description: c.category
+          ? `מושג בקטגוריה ${c.category}. מופיע ב-${c.videoCount} סרטונים.`
+          : `מושג לחקירה. מופיע ב-${c.videoCount} סרטונים.`,
+      })),
+    ],
   };
 
   const faqLd = {
@@ -123,9 +132,32 @@ export default async function ConceptsPage() {
             מדריך המושגים
           </h1>
           <p className="mt-7 max-w-prose text-lg leading-relaxed text-foreground/80">
-            נושאים חוזרים מתוך הסרטונים. מפה מראה מי מופיע עם מי. הרשימה מתחת
-            פותחת חיפוש לכל מושג.
+            ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור. נושאים חוזרים
+            מתוך הסרטונים. מפה מראה מי מופיע עם מי. הרשימה מתחת פותחת חיפוש לכל
+            מושג.
           </p>
+
+          <section
+            aria-labelledby="core-terms-title"
+            className="mt-10 max-w-prose text-start"
+          >
+            <h2
+              id="core-terms-title"
+              className="text-sm font-semibold tracking-tight text-foreground"
+            >
+              מושגי ליבה
+            </h2>
+            <dl className="mt-4 space-y-4 text-sm leading-relaxed text-foreground/80">
+              {CORE_CONCEPT_ANCHORS.map((item) => (
+                <div key={item.id} className="scroll-mt-28" id={item.id}>
+                  <dt className="font-semibold text-foreground">
+                    <dfn id={`${item.id}-dfn`}>{item.term}</dfn>
+                  </dt>
+                  <dd className="mt-1">{item.definition}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
 
           <ul className="mt-10 flex flex-wrap gap-2">
             {MECHANISM_DEFINITIONS.map((mech) => (

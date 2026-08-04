@@ -131,9 +131,10 @@ export function VideoCard({
                 src={thumb || GATED_LOCK_IMAGE}
                 alt={video.title}
                 fill
-                sizes="(max-width: 768px) 100vw, 33vw"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="object-cover"
                 priority={priority}
+                loading={priority ? "eager" : "lazy"}
               />
               {locked ? <LockOverlay /> : null}
               {!locked ? (

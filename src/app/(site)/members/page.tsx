@@ -40,7 +40,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "כניסה למועדון",
   description:
-    "מאגר המועדון: כניסה, מה כלול, מחירים, נושאים ופיד פרטי. קישור או סיסמה בוואטסאפ אחרי שיחת התאמה. אין סליקה באתר.",
+    "מאגר המועדון של NeverMind: כניסה בקישור או סיסמה, מה כלול, ופיד פרטי. אין סליקה באתר. גישה אחרי שיחת התאמה.",
   alternates: {
     canonical: "https://nevermind.co.il/members",
   },

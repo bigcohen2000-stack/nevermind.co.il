@@ -1,9 +1,11 @@
 import { SmartEmptyState } from "@/components/ui/smart-empty-state";
+import { InfoTip } from "@/components/ui/info-tip";
 import { VideoCard } from "@/components/videos/video-card";
 import { VideosBrowseControls } from "@/components/videos/videos-browse-controls";
 import { VideosPagination } from "@/components/videos/videos-pagination";
 import { getSavedYoutubeIds } from "@/actions/saved-videos";
 import { resolveVideoEntitlement } from "@/lib/club/access";
+import { INFO_TIPS } from "@/lib/content/info-tips";
 import {
   VIDEOS_PAGE_SIZE,
   isVideoBrowseDuration,
@@ -41,6 +43,20 @@ function parseSort(value: string | undefined): VideoBrowseSort {
     return value;
   }
   return "newest";
+}
+
+function summaryLine(total: number, concept: string | undefined): string {
+  const n = total.toLocaleString("he-IL");
+  if (concept) {
+    return `מציגים ${n} סרטונים בנושא ${concept}.`;
+  }
+  return `מציגים ${n} סרטונים.`;
+}
+
+function filterLine(filter: VideoBrowseFilter): string {
+  if (filter === "open") return "מוצגים סרטונים פתוחים.";
+  if (filter === "club") return "מוצגים סרטוני מועדון.";
+  return "מוצגים סרטוני מועדון וסרטונים פתוחים.";
 }
 
 export async function VideosResults({
@@ -108,18 +124,24 @@ export async function VideosResults({
   return (
     <>
       <div className="lg:max-w-2xl">
-        <p className="mt-4 max-w-prose leading-relaxed">
+        <p
+          className="mt-4 max-w-prose leading-relaxed"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {total === 0
             ? concept
-              ? `אין סרטונים להצגה בנושא "${concept}". אפשר לבחור מושג אחר או לנקות את הסינון.`
+              ? `אין סרטונים להצגה בנושא ${concept}. אפשר לבחור מושג אחר או לנקות את הסינון.`
               : "אין סרטונים להצגה במסנן הנוכחי. אפשר לשנות סינון או לחזור לכאן בהמשך."
-            : hasFullAccess
-              ? concept
-                ? `מציגים סרטונים בנושא "${concept}" (${total}). יש לך גישה מלאה כחבר אתר.`
-                : `בחרו סרטון. מוצגים עד ${VIDEOS_PAGE_SIZE} בכל עמוד (${total} בסך הכול). יש לך גישה מלאה כחבר אתר.`
-              : concept
-                ? `מציגים סרטונים בנושא "${concept}" (${total}). סרטוני מועדון מסומנים ומציעים בקשת צפייה בודדת.`
-                : `בחרו סרטון. מוצגים עד ${VIDEOS_PAGE_SIZE} בכל עמוד (${total} בסך הכול). סרטוני מועדון מסומנים ומציעים בקשת צפייה בודדת.`}
+            : summaryLine(total, concept)}
+        </p>
+        <p className="mt-2 inline-flex max-w-prose flex-wrap items-center gap-1.5 text-sm leading-relaxed text-muted">
+          <span>{filterLine(filter)}</span>
+          {filter !== "open" ? (
+            <InfoTip label={INFO_TIPS.clubVideo.label}>
+              {INFO_TIPS.clubVideo.text}
+            </InfoTip>
+          ) : null}
         </p>
       </div>
 

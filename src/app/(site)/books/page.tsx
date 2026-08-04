@@ -14,8 +14,11 @@ import { getAllArticles } from "@/lib/content/articles";
 import { BOOKS_HERO, BOOKS_LOVE_CONCEPT } from "@/lib/content/books-page";
 import { BOOK_IN_PROGRESS } from "@/lib/content/offers";
 import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
+import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
+import { buildYakirCohenPersonLd } from "@/lib/seo/person";
 import { isMembersOnlyVideo } from "@/lib/videos/access";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
+import { JsonLd } from "@/components/seo/json-ld";
 
 const BOOKS_OG_TITLE = BOOK_IN_PROGRESS.title;
 /** Brand OG for JSON-LD only. No cover image in the page UI. */
@@ -24,12 +27,12 @@ const BOOKS_SCHEMA_IMAGE = "https://nevermind.co.il/og-books.png";
 export const metadata: Metadata = {
   title: "ספריית כתבים ואהבה",
   description:
-    "ספר אהבה ב-20 עמודים, ולידו ארכיון סרטונים ומאמרים על אהבה כמנגנון. מדדים יבשים, בלי חנות.",
+    "ספר אהבה ב-20 עמודים ב-NeverMind, ולידו ארכיון סרטונים ומאמרים על אהבה כמנגנון. מדדים יבשים. בלי חנות.",
   alternates: {
     canonical: "https://nevermind.co.il/books",
   },
   openGraph: {
-    title: "ספריית כתבים ואהבה | NeverMinde",
+    title: "ספריית כתבים ואהבה | NeverMind",
     description:
       "ספר אהבה ב-20 עמודים, ולידו ארכיון סרטונים ומאמרים על אהבה כמנגנון.",
     url: "https://nevermind.co.il/books",
@@ -70,6 +73,11 @@ export default async function BooksPage() {
     ]),
   );
 
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "בית", path: "/" },
+    { name: "ספרים", path: "/books" },
+  ]);
+
   const pageLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -79,7 +87,7 @@ export default async function BooksPage() {
     url: "https://nevermind.co.il/books",
     isPartOf: {
       "@type": "WebSite",
-      name: "NeverMinde",
+      name: "NeverMind",
       url: "https://nevermind.co.il",
     },
     hasPart: {
@@ -87,10 +95,7 @@ export default async function BooksPage() {
       name: BOOK_IN_PROGRESS.title,
       inLanguage: "he",
       image: BOOKS_SCHEMA_IMAGE,
-      author: {
-        "@type": "Person",
-        name: "יקיר כהן",
-      },
+      author: buildYakirCohenPersonLd(),
       offers: {
         "@type": "Offer",
         price: BOOK_IN_PROGRESS.meetingAddonIls,
@@ -103,6 +108,8 @@ export default async function BooksPage() {
 
   return (
     <main className="w-full text-start">
+      <JsonLd data={breadcrumbLd} />
+      <JsonLd data={buildYakirCohenPersonLd()} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(pageLd) }}

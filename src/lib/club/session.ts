@@ -131,7 +131,8 @@ export async function setClubSessionCookie(
   jar.set(COOKIE_NAME, signPayload(full), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    // lax: cookie is sent on top-level navigations from WhatsApp and similar apps
+    sameSite: "lax",
     path: "/",
     maxAge: MAX_AGE_SEC,
   });

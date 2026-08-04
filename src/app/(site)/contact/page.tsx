@@ -13,11 +13,12 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
 import { CONTACT_FAQ, RESPONSE_SLA_NOTE } from "@/lib/content/offers";
 import { shareImageMetadata } from "@/lib/og/share-image";
+import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
 
 export const metadata: Metadata = {
   title: "יצירת קשר",
   description:
-    "וואטסאפ, SMS או מייל. שיחת התאמה קצרה. אין סליקה באתר. מענה תוך 24 שעות עסקים.",
+    "יצירת קשר עם NeverMind: וואטסאפ, SMS או מייל. שיחת התאמה קצרה. מענה תוך 24 שעות עסקים. אין סליקה באתר.",
   alternates: {
     canonical: "https://nevermind.co.il/contact",
   },
@@ -77,6 +78,11 @@ export default async function ContactPage({ searchParams }: PageProps) {
   const { from } = await searchParams;
   const source = from?.trim() || undefined;
 
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "בית", path: "/" },
+    { name: "יצירת קשר", path: "/contact" },
+  ]);
+
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -92,6 +98,7 @@ export default async function ContactPage({ searchParams }: PageProps) {
 
   return (
     <main className="w-full text-start">
+      <JsonLd data={breadcrumbLd} />
       <JsonLd data={faqJsonLd} />
 
       <section aria-labelledby="contact-hero-title" className="band-dark">

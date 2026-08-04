@@ -6,7 +6,7 @@ export function KeyboardShortcutsHud() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-x-0 z-[45] hidden justify-center px-3 min-[400px]:flex bottom-[calc(3.5rem+env(safe-area-inset-bottom))] md:bottom-3"
+      className="pointer-events-none fixed inset-x-0 bottom-3 z-[45] hidden justify-center px-3 md:flex"
     >
       <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-md border border-foreground/15 bg-black/70 px-3 py-1.5 text-[11px] leading-none text-foreground/70 backdrop-blur-sm sm:text-xs">
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">

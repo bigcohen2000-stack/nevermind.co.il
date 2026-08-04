@@ -11,11 +11,13 @@ import {
   PATHS_FAQ,
 } from "@/lib/content/offers";
 import { shareImageMetadata } from "@/lib/og/share-image";
+import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = {
   title: "מסלולים ומחירים",
   description:
-    "בחרו מסלול ייעוץ או מסגרת גישה למאגר הסרטונים. כל בקשה בוואטסאפ או SMS כוללת מסלול, מחיר לפני מע\"מ, ובדיקת התאמה. אין סליקה באתר.",
+    "מסלולי ייעוץ ומסגרות גישה למאגר NeverMind. בקשה בוואטסאפ עם מסלול ומחיר לפני מע\"מ. בדיקת התאמה. אין סליקה באתר.",
   alternates: {
     canonical: "https://nevermind.co.il/paths",
   },
@@ -26,9 +28,14 @@ export default async function PathsPage() {
   const premium = await getPremiumStatus().catch(() => ({
     hasVideoAccess: false,
   }));
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "בית", path: "/" },
+    { name: "מסלולים", path: "/paths" },
+  ]);
 
   return (
     <main className="w-full text-start">
+      <JsonLd data={breadcrumbLd} />
       <InvestigationFactsStrip
         tone="paper"
         factIds={["hours", "concepts", "levels", "views", "since"]}

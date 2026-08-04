@@ -62,11 +62,11 @@ export function WatchFocusLayout({
           aria-hidden={focusMode}
         >
           <div className="hidden sm:block">{eyebrow}</div>
-          <h1 className="mt-0 text-lg font-semibold leading-snug tracking-tight break-words sm:mt-3 sm:text-3xl lg:text-4xl">
+          <h1 className="mt-0 scroll-mt-16 break-words pt-2 text-lg font-semibold leading-snug tracking-tight sm:mt-3 sm:scroll-mt-24 sm:pt-0 sm:text-3xl lg:text-4xl">
             {title}
           </h1>
           {description ? (
-            <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-relaxed text-muted sm:mt-3 sm:line-clamp-3 sm:text-base">
+            <p className="mt-2 line-clamp-2 max-w-3xl break-words text-sm leading-relaxed text-muted sm:mt-3 sm:line-clamp-3 sm:text-base">
               {description}
             </p>
           ) : null}
@@ -82,13 +82,13 @@ export function WatchFocusLayout({
         >
           <div
             className={cn(
-              "min-w-0 transition-all duration-300 ease-out",
+              "flex min-w-0 flex-col transition-all duration-300 ease-out",
               focusMode ? "w-full" : "lg:col-span-8",
             )}
           >
             <div
               className={cn(
-                "transition-all duration-300 ease-out",
+                "order-1 transition-all duration-300 ease-out",
                 focusMode && "mx-auto w-full max-w-[min(100%,1600px)]",
               )}
             >
@@ -96,19 +96,19 @@ export function WatchFocusLayout({
             </div>
 
             {!locked && !focusMode && actions ? (
-              <div className="mt-3 sm:mt-4">{actions}</div>
+              <div className="order-1 mt-3 sm:mt-4">{actions}</div>
             ) : null}
 
-            {/* Related right after player on mobile / tablet */}
+            {/* Related right after player on mobile / tablet (before deep content). */}
             {sidebar && !focusMode ? (
-              <div className="mt-5 border border-foreground/10 bg-paper/50 p-4 lg:hidden">
+              <div className="order-2 mt-5 border border-foreground/10 bg-paper/50 p-4 lg:hidden">
                 {sidebar}
               </div>
             ) : null}
 
             <div
               className={cn(
-                "overflow-hidden transition-all duration-300 ease-out",
+                "order-3 overflow-hidden transition-all duration-300 ease-out",
                 focusMode
                   ? "pointer-events-none max-h-0 translate-y-2 opacity-0"
                   : "mt-5 max-h-[200rem] translate-y-0 opacity-100 sm:mt-6",
@@ -140,7 +140,11 @@ export function WatchFocusLayout({
         <button
           type="button"
           onClick={() => setFocusMode(false)}
-          className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-[100] inline-flex max-w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 items-center justify-center gap-2 border border-white/30 bg-black/90 px-4 py-3 text-sm font-medium text-[#FAFAF8] shadow-lg transition hover:border-[#D42B2B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42B2B]"
+          className="fixed start-1/2 z-[100] inline-flex max-w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 items-center justify-center gap-2 border border-white/30 bg-black/90 px-4 py-3 text-sm font-medium text-[#FAFAF8] shadow-lg transition hover:border-[#D42B2B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42B2B] rtl:translate-x-1/2"
+          style={{
+            bottom:
+              "calc(var(--nm-fab-offset-bottom, 1rem) + 0.75rem)",
+          }}
         >
           <Maximize2 className="size-4 shrink-0" aria-hidden />
           <span className="whitespace-nowrap">יציאה ממצב ממוקד</span>

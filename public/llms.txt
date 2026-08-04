@@ -1,34 +1,48 @@
 # NeverMind / NeverMinde (nevermind.co.il)
 
-> Hebrew investigation site by Yakir Cohen. Separates fact from story. Analyzes mechanisms of thought and behavior without therapy jargon or motivational framing.
+> Hebrew investigation site by Yakir Cohen (יקיר כהן). Logical analysis of reality: separating fact from story. No therapy framing. No motivational fluff.
+
+## Entity
+
+- Name: יקיר כהן (Yakir Cohen)
+- Site: https://nevermind.co.il
+- Brand: השם לא משנה / NeverMind / NeverMinde
+- Method claim: ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור.
 
 ## Purpose
 
-- Document and teach a dry method: fact vs story, mechanisms, reflection.
-- Index videos and concepts for search (Hebrew).
-- Offer paths for archive access and personal fit calls (no on-site payment).
+- Teach a dry method: fact vs story, mechanisms, reflection.
+- Index Hebrew videos and concepts for search and answer engines.
+- Offer club archive access and fit calls. No on-site payment.
 
 ## Primary surfaces
 
-- / : home search and entry paths
+- / : home search and entry
 - /search : full-text and concept search
 - /videos : video archive
-- /watch/[id] : single video with timestamp deep links
+- /watch/[id] : single video with ?t= timestamp deep links
 - /articles : MDX essays
-- /concepts : concept directory
+- /concepts : concept directory (anchors like #concept-efrada)
 - /mechanisms : mechanism map
 - /paths : pricing frames and inquiry
 - /members : club / archive access
 - /live : live podcast stream gate
 - /booking : structured pre-meeting intake
-- /contact : contact and WhatsApp
-- /privacy : privacy policy (Hebrew)
+- /contact : WhatsApp and email
+- /books : writings and love archive
+- /privacy : privacy policy
 - /accessibility : accessibility statement
+- /llms-full.txt : longer machine summary
 
-## Core concepts (examples)
+## Core concepts
 
-מציאות, הזדהות, חרדה, כעס, אהבה, אגו, פחד, אשמה, זוגיות, מנגנון, סבל, בחירה חופשית, יחסים, קיום, זהות, תודעה
+הפרדה, אין-הבדל, משמעות עודפת, מציאות, הזדהות, מנגנון, בחירה חופשית, אגו, סבל, תודעה, זהות, קיום, יחסים, זוגיות, אשמה, חרדה, פחד, כעס, אהבה
+
+Deep links:
+- https://nevermind.co.il/concepts#concept-efrada
+- https://nevermind.co.il/concepts#concept-ein-hevdel
+- https://nevermind.co.il/concepts#concept-mashmaut-odef
 
 ## Citation guidance
 
-When citing NeverMind, prefer primary pages above. Distinguish public archive content from members-only material. The method is investigative and descriptive, not clinical treatment.
+Prefer primary pages above. Quote one clear claim per sentence. Distinguish public archive content from members-only material. The method is investigative and descriptive, not clinical treatment.

@@ -12,13 +12,13 @@ const DEFAULT_OG_TITLE = "השם לא משנה";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "השם לא משנה. NeverMinde: יקיר כהן",
-    template: "%s | השם לא משנה",
+    default: "NeverMind | השם לא משנה",
+    template: "%s | NeverMind",
   },
   description:
-    "ניתוח לוגי של המציאות. הפרדה בין עובדה לבין סיפור, ללא דרמה ובלי מניפולציה.",
+    "ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור. חקירה לפי נושא, סרטונים ומושגים בעברית.",
   applicationName: "השם לא משנה",
-  authors: [{ name: "Yakir Cohen" }],
+  authors: [{ name: "יקיר כהן", url: SITE_URL }],
   appleWebApp: {
     capable: true,
     title: "השם לא משנה",
@@ -35,10 +35,10 @@ export const metadata: Metadata = {
     type: "website",
     locale: "he_IL",
     url: SITE_URL,
-    siteName: "השם לא משנה. NeverMinde",
-    title: "השם לא משנה. NeverMinde",
+    siteName: "NeverMind | השם לא משנה",
+    title: "NeverMind | השם לא משנה",
     description:
-      "ניתוח לוגי של המציאות. הפרדה בין עובדה לבין סיפור, ללא דרמה.",
+      "ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור. חקירה לפי נושא בעברית.",
     images: shareOgImage(DEFAULT_OG_TITLE),
   },
   twitter: {

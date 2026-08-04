@@ -1,6 +1,8 @@
 import Link from "next/link";
 
+import { InfoTip } from "@/components/ui/info-tip";
 import { CURATED_CONCEPTS } from "@/lib/concepts/quality";
+import { INFO_TIPS } from "@/lib/content/info-tips";
 import {
   videosBrowseHref,
   type VideoBrowseDuration,
@@ -174,7 +176,12 @@ export function VideosBrowseControls({
             </ul>
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">רמת פירוק</p>
+            <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-foreground">
+              <span>רמת פירוק</span>
+              <InfoTip label={INFO_TIPS.breakdown.label}>
+                {INFO_TIPS.breakdown.text}
+              </InfoTip>
+            </p>
             <ul className="mt-2 flex flex-wrap gap-2">
               <li>
                 <Link
@@ -250,7 +257,12 @@ export function VideosBrowseControls({
       </div>
 
       <div className="mt-5 hidden border-t border-foreground/10 pt-4 sm:block">
-        <p className="text-sm font-medium text-foreground">רמת פירוק</p>
+        <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-foreground">
+          <span>רמת פירוק</span>
+          <InfoTip label={INFO_TIPS.breakdown.label}>
+            {INFO_TIPS.breakdown.text}
+          </InfoTip>
+        </p>
         <ul className="mt-2 flex flex-wrap gap-2">
           <li>
             <Link

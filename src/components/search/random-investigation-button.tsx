@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { getRandomInvestigation } from "@/actions/random-investigation";
+import { InfoTip } from "@/components/ui/info-tip";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { INFO_TIPS } from "@/lib/content/info-tips";
 import { cn } from "@/lib/utils";
 
 type RandomInvestigationButtonProps = {
@@ -43,6 +45,7 @@ export function RandomInvestigationButton({
   const countLabel = showCount
     ? `חקירות אקראיות · ${videoCount.toLocaleString("he-IL")} סרטונים`
     : "חקירות אקראיות";
+  const tipTone = variant === "dark" ? "dark" : "light";
 
   return (
     <div className={cn("flex flex-col items-center gap-2", className)}>
@@ -60,11 +63,14 @@ export function RandomInvestigationButton({
         </ShimmerButton>
         <p
           className={cn(
-            "text-xs leading-snug sm:text-sm",
+            "inline-flex items-center gap-1 text-xs leading-snug sm:text-sm",
             variant === "dark" ? "text-white/70" : "text-muted",
           )}
         >
-          {countLabel}
+          <span>{countLabel}</span>
+          <InfoTip label={INFO_TIPS.random.label} tone={tipTone}>
+            {INFO_TIPS.random.text}
+          </InfoTip>
         </p>
       </div>
       {error ? (

@@ -92,7 +92,7 @@ export async function HeroSearchSection({
   return (
     <section
       aria-label="חיפוש ראשי"
-      className="relative w-full overflow-x-clip overflow-y-visible"
+      className="relative min-h-[180px] w-full overflow-x-clip overflow-y-visible sm:min-h-[220px]"
     >
       <HeroSearch
         variant={variant}

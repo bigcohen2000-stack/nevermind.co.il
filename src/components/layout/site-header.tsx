@@ -28,6 +28,7 @@ import { HeaderAuthControls } from "@/components/layout/header-auth-controls";
 import { HeaderSearch } from "@/components/layout/header-search";
 import { InstallAppButton } from "@/components/layout/install-app-button";
 import { SiteLogo } from "@/components/layout/site-logo";
+import { useStickyChromeLock } from "@/components/layout/sticky-site-chrome";
 import { useCommandPaletteOptional } from "@/components/search/command-palette-context";
 import type { HeaderSession } from "@/lib/auth/header-session-shared";
 import type { SiteAccessTier } from "@/lib/access/site-tier";
@@ -221,6 +222,8 @@ export function SiteHeader({
   const panelId = useId();
   const isClub = accessTier === "club";
   const commandPalette = useCommandPaletteOptional();
+
+  useStickyChromeLock(menuOpen || mobileSearchOpen);
 
   useEffect(() => {
     setMenuOpen(false);

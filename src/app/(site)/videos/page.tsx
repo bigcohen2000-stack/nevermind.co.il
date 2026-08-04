@@ -13,6 +13,7 @@ import { ContinueWatchingSection } from "@/components/videos/continue-watching-s
 import { VideoGridSkeleton } from "@/components/videos/video-grid-skeleton";
 import { VideosResults } from "@/components/videos/videos-results";
 import { resolveVideoEntitlement } from "@/lib/club/access";
+import { buildInfoTipsFaqLd } from "@/lib/content/info-tips";
 import { shareImageMetadata } from "@/lib/og/share-image";
 import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
 import { parseVideosBrowseParams } from "@/lib/videos/browse-params";
@@ -40,8 +41,8 @@ export async function generateMetadata({
   if (params.page > 1) parts.push(`עמוד ${params.page}`);
 
   const description = params.concept
-    ? `סרטונים בנושא ${params.concept}. חפש סרטונים ומושגים ב-NeverMinde.`
-    : "אותם מנגנונים, בקול. חפש סרטונים ומושגים. המאמרים נשארים מקור המסגרת.";
+    ? `סרטונים בנושא ${params.concept}. ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור. חיפוש וסינון במאגר NeverMind.`
+    : "סרטונים ומושגים בעברית. ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור. סינון לפי נושא ורמת פירוק.";
 
   const canonicalQs = new URLSearchParams();
   if (params.filter !== "all") canonicalQs.set("filter", params.filter);
@@ -95,10 +96,12 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
     { name: "בית", path: "/" },
     { name: "סרטונים", path: "/videos" },
   ]);
+  const tipsFaqLd = buildInfoTipsFaqLd(["clubVideo", "breakdown"]);
 
   return (
     <main className="w-full text-start">
       <JsonLd data={breadcrumbLd} />
+      <JsonLd data={tipsFaqLd} />
       <section aria-labelledby="videos-hero-title" className="band-dark">
         <Watermark className="bottom-[-1.5rem] start-[-0.5rem] text-[6rem] text-foreground/[0.045] sm:text-[9rem] lg:text-[13rem]">
           הרצאות
@@ -117,8 +120,8 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
                 בקול.
               </h1>
               <p className="mt-7 max-w-prose text-lg leading-relaxed text-foreground/80">
-                חפש לפי מושג או כותרת. סרטוני מועדון מסומנים בתג. אפשר לסנן
-                ולמיין. הצפייה במאגר נפתחת אחרי כניסה.
+                ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור. חפשו לפי מושג
+                או כותרת. סרטוני מועדון מסומנים בתג. הסינון והמיון פתוחים לכולם.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <a href="#videos-browse" className="btn btn-secondary">

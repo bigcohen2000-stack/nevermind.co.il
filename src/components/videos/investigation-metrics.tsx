@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { InfoTip } from "@/components/ui/info-tip";
+import { INFO_TIPS } from "@/lib/content/info-tips";
 import type { HeatmapBucket } from "@/lib/videos/heatmap";
 import {
   diveDepthCopy,
@@ -56,8 +58,11 @@ export function InvestigationMetrics({
 
       {level ? (
         <div className="mt-4">
-          <p className="text-sm font-medium text-foreground">
-            {BREAKDOWN_LEVEL_LABELS[level]}
+          <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-foreground">
+            <span>{BREAKDOWN_LEVEL_LABELS[level]}</span>
+            <InfoTip label={INFO_TIPS.breakdown.label}>
+              {INFO_TIPS.breakdown.text}
+            </InfoTip>
           </p>
           <p className="mt-1 max-w-prose text-sm leading-relaxed text-foreground/70">
             {BREAKDOWN_LEVEL_BLURBS[level]}

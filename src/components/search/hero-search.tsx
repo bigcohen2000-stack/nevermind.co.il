@@ -360,7 +360,12 @@ export function HeroSearch({
     }
   };
 
-  const fieldShell = ["relative mx-auto w-full max-w-2xl", className].join(" ");
+  const fieldShell = [
+    "relative mx-auto min-h-[180px] w-full max-w-2xl sm:min-h-[220px]",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div ref={shellRef} dir="rtl" className={fieldShell}>

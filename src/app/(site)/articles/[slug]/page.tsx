@@ -22,6 +22,10 @@ import {
 } from "@/lib/search/related-content";
 import { shareImageMetadata, shareOgImage } from "@/lib/og/share-image";
 import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
+import {
+  buildYakirCohenPersonLd,
+  yakirCohenAuthorRef,
+} from "@/lib/seo/person";
 
 // Only the known articles are valid routes; everything else is a 404.
 export const dynamicParams = false;
@@ -40,14 +44,19 @@ export async function generateMetadata({
   if (!article) return {};
 
   const share = shareImageMetadata(article.meta.title);
+  const canonical = `https://nevermind.co.il/articles/${article.meta.slug}`;
 
   return {
     title: article.meta.title,
     description: article.meta.description,
+    alternates: {
+      canonical,
+    },
     openGraph: {
       title: article.meta.title,
       description: article.meta.description,
       type: "article",
+      url: canonical,
       images: shareOgImage(article.meta.title),
     },
     twitter: share.twitter,
@@ -74,6 +83,7 @@ export default async function ArticlePage({
     () => [],
   );
   const relatedConcepts = bridgeTerms.slice(0, 6).map((name) => ({ name }));
+  const canonical = `https://nevermind.co.il/articles/${meta.slug}`;
 
   const breadcrumbLd = buildBreadcrumbList([
     { name: "בית", path: "/" },
@@ -81,9 +91,32 @@ export default async function ArticlePage({
     { name: meta.title, path: `/articles/${meta.slug}` },
   ]);
 
+  const articleLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: meta.title,
+    description: meta.description,
+    inLanguage: "he-IL",
+    url: canonical,
+    mainEntityOfPage: canonical,
+    author: yakirCohenAuthorRef(),
+    creator: yakirCohenAuthorRef(),
+    publisher: {
+      "@type": "Organization",
+      name: "השם לא משנה",
+      url: "https://nevermind.co.il",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://nevermind.co.il/icons/icon-512.png",
+      },
+    },
+  };
+
   return (
     <main className="w-full text-start">
       <JsonLd data={breadcrumbLd} />
+      <JsonLd data={buildYakirCohenPersonLd()} />
+      <JsonLd data={articleLd} />
       <ArticleHeader
         title={meta.title}
         description={meta.description}
