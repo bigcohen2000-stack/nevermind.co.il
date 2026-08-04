@@ -1,8 +1,10 @@
 import Link from "next/link";
 
+import { StudioLockButton } from "@/components/studio/studio-lock-button";
 import { StudioPageShell } from "@/components/studio/studio-page-shell";
 import { StudioSessionRequired } from "@/components/studio/studio-session-required";
 import { StudioUsersDashboard } from "@/components/studio/studio-users-dashboard";
+import { getStudioPlatformSnapshot } from "@/lib/studio/platform-snapshot";
 import { isStudioAuthenticated } from "@/lib/studio/session";
 import { getStudioUsersDashboard } from "@/lib/studio/users-dashboard";
 
@@ -15,20 +17,26 @@ export default async function StudioUsersPage() {
     return <StudioSessionRequired />;
   }
 
-  const data = await getStudioUsersDashboard();
+  const [data, platform] = await Promise.all([
+    getStudioUsersDashboard(),
+    Promise.resolve(getStudioPlatformSnapshot()),
+  ]);
 
   return (
     <StudioPageShell
       active="users"
       title="משתמשים ומחוברים"
-      description="מי מחובר עכשיו, מי נכנס לאחרונה, ומי מקבל גישה לספרייה."
+      description="טבלאות: מחוברים, משתמשים (הרשמה / תפוגה / פגישה / V), כניסות. פעולות לכל משתמש מתחת לשורה."
       actions={
-        <Link
-          href="/studio/leads"
-          className="border border-zinc-700 px-3 py-2 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
-        >
-          לידים
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/studio/leads"
+            className="border border-zinc-700 px-3 py-2 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
+          >
+            לידים
+          </Link>
+          <StudioLockButton />
+        </div>
       }
       summary={
         <div className="flex flex-wrap gap-4 text-sm text-zinc-400">
@@ -41,13 +49,19 @@ export default async function StudioUsersPage() {
             <strong className="text-zinc-100">{data.totalUsers}</strong>
           </span>
           <span>
-            כניסות היום:{" "}
-            <strong className="text-zinc-100">{data.loginsToday}</strong>
+            תפוגה בקרוב:{" "}
+            <strong className="text-zinc-100">{data.expiringSoonCount}</strong>
+          </span>
+          <span>
+            ממתינים ל-V:{" "}
+            <strong className="text-zinc-100">
+              {data.pendingMeetingConfirmCount}
+            </strong>
           </span>
         </div>
       }
     >
-      <StudioUsersDashboard data={data} />
+      <StudioUsersDashboard data={data} platform={platform} />
     </StudioPageShell>
   );
 }

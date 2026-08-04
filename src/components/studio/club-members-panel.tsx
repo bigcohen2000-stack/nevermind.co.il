@@ -1,9 +1,13 @@
 "use client";
 
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
 
-import { deleteClubMember, mintClubFeedToken, upsertClubMember } from "@/actions/club-login";
+import {
+  deleteClubMember,
+  mintClubFeedToken,
+  upsertClubMember,
+} from "@/actions/club-login";
 import { StudioCopyButton } from "@/components/studio/studio-copy-button";
 import { maskClubPhone } from "@/lib/club/phone";
 import { buildLeadWhatsAppHref } from "@/lib/studio/lead-contact";
@@ -34,6 +38,7 @@ export type ClubLoginEventRow = {
 type ClubMembersPanelProps = {
   members: ClubMemberRow[];
   recentLogins: ClubLoginEventRow[];
+  loadError?: string | null;
 };
 
 function formatWhen(iso: string | null): string {
@@ -47,20 +52,30 @@ function formatWhen(iso: string | null): string {
 export function ClubMembersPanel({
   members,
   recentLogins,
+  loadError = null,
 }: ClubMembersPanelProps) {
   const router = useRouter();
+  const [rows, setRows] = useState(members);
   const [phone, setPhone] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [notes, setNotes] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [status, setStatus] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(loadError);
   const [feedUrl, setFeedUrl] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [lastSaved, setLastSaved] = useState<{
     name: string;
     phone: string;
   } | null>(null);
+
+  useEffect(() => {
+    setRows(members);
+  }, [members]);
+
+  useEffect(() => {
+    if (loadError) setError(loadError);
+  }, [loadError]);
 
   return (
     <section
@@ -72,10 +87,19 @@ export function ClubMembersPanel({
           חברי מועדון (רשימה מורשית)
         </h2>
         <p className="mt-2 text-sm text-zinc-400">
-          רק טלפון ברשימה יכול להיכנס עם הסיסמה המשותפת. אפשר גם להנפיק פיד
-          פודקאסט פרטי לכל חבר להאזנה באפליקציות.
+          רק טלפון ברשימה יכול להיכנס עם הסיסמה המשותפת. טלפון בפורמט
+          05XXXXXXXX או 9725XXXXXXXX.
         </p>
       </div>
+
+      {error ? (
+        <p
+          role="alert"
+          className="border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200"
+        >
+          {error}
+        </p>
+      ) : null}
 
       <form
         className="flex flex-wrap items-end gap-3"
@@ -94,11 +118,20 @@ export function ClubMembersPanel({
               setError(result.error);
               return;
             }
+            if (result.member) {
+              setRows((prev) => {
+                const without = prev.filter(
+                  (m) => m.phone !== result.member!.phone,
+                );
+                return [result.member!, ...without];
+              });
+            }
             setLastSaved({
-              name: displayName.trim() || "חבר/ת",
-              phone: phone.trim(),
+              name:
+                displayName.trim() || result.member?.display_name || "חבר/ת",
+              phone: result.phone || phone.trim(),
             });
-            setStatus(result.message ?? "נשמר. העתק הודעת כניסה למטה.");
+            setStatus(result.message ?? "נשמר.");
             setPhone("");
             setDisplayName("");
             setNotes("");
@@ -115,8 +148,10 @@ export function ClubMembersPanel({
             id="member-name"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="mt-1 rounded-md border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+            className="mt-1 border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
             required
+            minLength={2}
+            placeholder="שם מלא"
           />
         </div>
         <div>
@@ -127,9 +162,12 @@ export function ClubMembersPanel({
             id="member-phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="mt-1 rounded-md border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+            className="mt-1 border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
             dir="ltr"
             required
+            placeholder="05XXXXXXXX"
+            inputMode="tel"
+            autoComplete="tel"
           />
         </div>
         <div>
@@ -140,11 +178,14 @@ export function ClubMembersPanel({
             id="member-notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="mt-1 w-40 rounded-md border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+            className="mt-1 w-40 border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
           />
         </div>
         <div>
-          <label className="block text-xs text-zinc-400" htmlFor="member-expires">
+          <label
+            className="block text-xs text-zinc-400"
+            htmlFor="member-expires"
+          >
             תפוגת גישה (אופציונלי)
           </label>
           <input
@@ -152,27 +193,30 @@ export function ClubMembersPanel({
             type="date"
             value={expiresAt}
             onChange={(e) => setExpiresAt(e.target.value)}
-            className="mt-1 rounded-md border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+            className="mt-1 border border-zinc-600 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
             dir="ltr"
           />
         </div>
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-950"
+          className="bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-950 disabled:opacity-50"
         >
-          שמור חבר
+          {pending ? "שומר..." : "שמור חבר"}
         </button>
       </form>
 
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
-      {status ? <p className="text-sm text-zinc-300">{status}</p> : null}
+      {status ? (
+        <p className="text-sm text-emerald-300" role="status">
+          {status}
+        </p>
+      ) : null}
 
       {lastSaved ? (
         <div className="space-y-2 border border-zinc-600 bg-zinc-950 p-4">
           <p className="text-xs text-zinc-400">
-            הודעה מוכנה ל-{lastSaved.name} (הדרכה + יכולות. הוסף סיסמה ידנית אם
-            צריך, או הנפק קישור ב&quot;קישורי כניסה&quot;).
+            הודעה מוכנה ל-{lastSaved.name}. אפשר להוסיף סיסמה ידנית, או להנפיק
+            קישור ב&quot;קישורי כניסה&quot;.
           </p>
           <pre className="max-h-48 overflow-auto whitespace-pre-wrap font-sans text-xs text-zinc-400">
             {clubAccessGranted({
@@ -213,16 +257,19 @@ export function ClubMembersPanel({
       ) : null}
 
       {feedUrl ? (
-        <div className="rounded border border-zinc-600 bg-zinc-950 p-3">
+        <div className="border border-zinc-600 bg-zinc-950 p-3">
           <p className="text-xs text-zinc-400">
-            פיד פודקאסט פרטי (העתיקו עכשיו. לא יישמר כטקסט גלוי אחרי רענון):
+            פיד פודקאסט פרטי (העתיקו עכשיו):
           </p>
-          <p className="mt-2 break-all font-mono text-xs text-zinc-100" dir="ltr">
+          <p
+            className="mt-2 break-all font-mono text-xs text-zinc-100"
+            dir="ltr"
+          >
             {feedUrl}
           </p>
           <button
             type="button"
-            className="mt-3 rounded border border-zinc-500 px-3 py-1.5 text-xs text-zinc-100"
+            className="mt-3 border border-zinc-500 px-3 py-1.5 text-xs text-zinc-100"
             onClick={() => {
               void navigator.clipboard.writeText(feedUrl);
               setStatus("הקישור הועתק.");
@@ -234,100 +281,98 @@ export function ClubMembersPanel({
       ) : null}
 
       <div>
-        <h3 className="text-sm font-medium text-zinc-200">רשימה</h3>
+        <h3 className="text-sm font-medium text-zinc-200">
+          רשימה ({rows.length})
+        </h3>
         <ul className="mt-3 space-y-2 text-xs text-zinc-400">
-          {members.length === 0 ? (
+          {rows.length === 0 ? (
             <li>אין חברים עדיין.</li>
           ) : (
-            members.map((row) => {
+            rows.map((row) => {
               const expired =
                 row.expires_at &&
                 new Date(row.expires_at).getTime() < Date.now();
               return (
-              <li
-                key={row.phone}
-                className={`flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 py-2 ${
-                  expired ? "text-red-300" : ""
-                }`}
-              >
-                <span>
-                  <span className={expired ? "text-red-200" : "text-zinc-200"}>
-                    {row.display_name || "-"}
+                <li
+                  key={row.phone}
+                  className={`flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 py-2 ${
+                    expired ? "text-red-300" : ""
+                  }`}
+                >
+                  <span>
+                    <span
+                      className={expired ? "text-red-200" : "text-zinc-200"}
+                    >
+                      {row.display_name || "-"}
+                    </span>
+                    {" · "}
+                    <span dir="ltr">{row.phone}</span>
+                    {" · עודכן "}
+                    {formatWhen(row.updated_at)}
+                    {row.expires_at
+                      ? ` · תפוגה ${formatWhen(row.expires_at)}`
+                      : ""}
+                    {expired ? " · פג תוקף" : ""}
                   </span>
-                  {" · "}
-                  <span dir="ltr">{row.phone}</span>
-                  {" · last "}
-                  {formatWhen(row.last_seen_at)}
-                  {row.expires_at ? (
-                    <>
-                      {" · תפוגה "}
-                      {formatWhen(row.expires_at)}
-                      {expired ? " (פג)" : ""}
-                    </>
-                  ) : null}
-                  {row.notes ? ` · ${row.notes}` : ""}
-                </span>
-                <span className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="rounded border border-zinc-600 px-2 py-1 text-zinc-200"
-                    onClick={() => {
-                      const text = row.expires_at
-                        ? expiryReminder({
-                            name: row.display_name || "חבר/ת",
-                            expiresAt: row.expires_at,
-                          })
-                        : clubAccessGranted({
-                            name: row.display_name || "חבר/ת",
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="border border-zinc-600 px-2 py-1 text-zinc-200"
+                      onClick={() => {
+                        startTransition(async () => {
+                          const result = await mintClubFeedToken({
+                            phone: row.phone,
                           });
-                      void navigator.clipboard.writeText(text);
-                      setStatus("הודעת וואטסאפ הועתקה.");
-                    }}
-                  >
-                    העתק הודעת וואטסאפ
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded border border-zinc-600 px-2 py-1 text-zinc-200"
-                    disabled={pending}
-                    onClick={() => {
-                      setError(null);
-                      setStatus(null);
-                      setFeedUrl(null);
-                      startTransition(async () => {
-                        const result = await mintClubFeedToken({
-                          phone: row.phone,
-                          label: row.display_name || "",
+                          if (!result.ok) {
+                            setError(result.error);
+                            return;
+                          }
+                          setFeedUrl(result.url ?? null);
+                          setStatus(result.message ?? "נוצר פיד.");
                         });
-                        if (!result.ok) {
-                          setError(result.error);
+                      }}
+                    >
+                      פיד
+                    </button>
+                    <StudioCopyButton
+                      text={
+                        row.expires_at
+                          ? expiryReminder({
+                              name: row.display_name || "חבר/ת",
+                              expiresAt: row.expires_at,
+                            })
+                          : clubLoginGuide({
+                              name: row.display_name || "חבר/ת",
+                            })
+                      }
+                      label="העתק הודעה"
+                      onCopied={() => setStatus("הודעה הועתקה.")}
+                    />
+                    <button
+                      type="button"
+                      className="border border-zinc-700 px-2 py-1 text-zinc-400"
+                      onClick={() => {
+                        if (!window.confirm(`להסיר את ${row.display_name}?`)) {
                           return;
                         }
-                        setFeedUrl(result.url);
-                        setStatus(result.message ?? "פיד נוצר.");
-                      });
-                    }}
-                  >
-                    פיד פודקאסט
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded border border-zinc-600 px-2 py-1 text-zinc-200"
-                    disabled={pending}
-                    onClick={() => {
-                      startTransition(async () => {
-                        const result = await deleteClubMember(row.phone);
-                        setStatus(
-                          result.ok ? result.message ?? "הוסר." : result.error,
-                        );
-                        if (result.ok) router.refresh();
-                      });
-                    }}
-                  >
-                    הסר
-                  </button>
-                </span>
-              </li>
+                        startTransition(async () => {
+                          const result = await deleteClubMember(row.phone);
+                          if (!result.ok) {
+                            setError(result.error);
+                            return;
+                          }
+                          setRows((prev) =>
+                            prev.filter((m) => m.phone !== row.phone),
+                          );
+                          setStatus(result.message ?? "הוסר.");
+                          router.refresh();
+                        });
+                      }}
+                    >
+                      הסר
+                    </button>
+                  </div>
+                </li>
               );
             })
           )}
@@ -335,19 +380,17 @@ export function ClubMembersPanel({
       </div>
 
       <div>
-        <h3 className="text-sm font-medium text-zinc-200">כניסות אחרונות</h3>
-        <ul className="mt-3 space-y-2 text-xs text-zinc-400">
+        <h3 className="text-sm font-medium text-zinc-200">
+          כניסות מועדון אחרונות
+        </h3>
+        <ul className="mt-3 space-y-1 text-xs text-zinc-500">
           {recentLogins.length === 0 ? (
             <li>אין עדיין.</li>
           ) : (
             recentLogins.map((row) => (
-              <li
-                key={row.id}
-                className="border-b border-zinc-800 py-2"
-              >
-                {formatWhen(row.created_at)} ·{" "}
-                {row.display_name || maskClubPhone(row.phone)} ·{" "}
-                <span dir="ltr">{row.phone}</span> · {row.source}
+              <li key={row.id}>
+                {formatWhen(row.created_at)} · {row.display_name || "-"} ·{" "}
+                <span dir="ltr">{maskClubPhone(row.phone)}</span> · {row.source}
               </li>
             ))
           )}

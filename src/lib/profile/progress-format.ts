@@ -9,6 +9,10 @@ export type ProfileProgressStats = {
   exploredLabels: CoreMechanism[];
   watchTimeSeconds: number;
   lastMeetingAt: string | null;
+  /** scheduled | confirmed | held | cancelled */
+  lastMeetingStatus: string | null;
+  /** Absolute path when a V confirmation is pending. */
+  pendingConfirmPath: string | null;
 };
 
 export function emptyProfileProgressStats(): ProfileProgressStats {
@@ -18,6 +22,8 @@ export function emptyProfileProgressStats(): ProfileProgressStats {
     exploredLabels: [],
     watchTimeSeconds: 0,
     lastMeetingAt: null,
+    lastMeetingStatus: null,
+    pendingConfirmPath: null,
   };
 }
 
@@ -38,4 +44,13 @@ export function formatDiveDepthHours(totalSeconds: number): string {
 export function formatMeetingDate(iso: string | null): string {
   if (!iso) return "אין עדיין";
   return new Date(iso).toLocaleDateString("he-IL", { dateStyle: "medium" });
+}
+
+export function formatMeetingStatus(status: string | null): string {
+  if (!status) return "";
+  if (status === "scheduled") return "מתוכננת";
+  if (status === "confirmed") return "אושרה (V)";
+  if (status === "held") return "התקיימה";
+  if (status === "cancelled") return "בוטלה";
+  return status;
 }

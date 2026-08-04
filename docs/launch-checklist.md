@@ -1,10 +1,10 @@
 # Launch checklist (nevermind.co.il)
 
-Updated 2026-08-03: DNS points at Vercel behind Cloudflare proxy (`Server: cloudflare`, origin Next/Vercel). Health and core routes OK.
+Updated 2026-08-04: Polish merged to `main` and live on Vercel. DNS behind Cloudflare proxy. Health OK.
 
-**Production (`main`):** auth cookies + branded 404 deployed.
+**Production (`main`):** site polish live (club chrome, watch/members wiring, search tabs, greetings).
 
-**Pending polish (`wip/site-polish`):** LIVE archive/votes, watch UX, members/privacy, theme. TypeScript clean locally. Do not merge to production until Supabase migrations 31-32 (+ any 25-30 gaps) and QA pass.
+**Schema:** missing tables/columns from 21, 23, 30, 31, 32 applied and probed PASS (2026-08-04).
 
 ## Done
 
@@ -78,13 +78,18 @@ Optional: WAF rate limit `/nm-ops*` about 10 req/min/IP → Managed Challenge.
 
 Details: `docs/studio-cloudflare-access.md`
 
-### 4. Polish branch (`wip/site-polish`)
+### 4. Schema apply (do this next)
 
-Before merge: apply Supabase migrations `31_profile_theme.sql` and `32_live_video_votes.sql`, then QA LIVE / watch / theme.
+1. Supabase → SQL Editor → paste `docs/sql/APPLY_MISSING_2026-08-04.sql` → Run
+2. Local verify: `node scripts/_probe-schema-matrix.mjs` (all PASS)
+3. QA: theme toggle (signed-in), LIVE likes/requests, Studio banners/quotes, presence, single-video leads
 
 ## Supabase (dashboard)
 
-- [ ] Apply migrations 25–30 if not applied
+- [x] Core search/auth tables (videos, club_members, premium flags, live_stream_config, …)
+- [x] Migration 33 `booking_leads` + pre_meeting status
+- [x] Migration 34 meeting confirm columns + `/m/[token]` + Studio schedule/V UI
+- [x] Apply `APPLY_MISSING_2026-08-04.sql` (21, 23, 30, 31, 32) — verified 2026-08-04
 - [ ] Auth URL config: see `docs/auth-google.md` (Site URL + `https://nevermind.co.il/**`)
 - [ ] Google OAuth: provider on + Google Cloud redirect = `https://<ref>.supabase.co/auth/v1/callback`
 - [ ] Club password in Studio

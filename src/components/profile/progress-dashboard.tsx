@@ -1,6 +1,9 @@
+import Link from "next/link";
+
 import {
   formatDiveDepthHours,
   formatMeetingDate,
+  formatMeetingStatus,
   type ProfileProgressStats,
 } from "@/lib/profile/progress-format";
 
@@ -41,6 +44,13 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
       ? stats.exploredLabels.join(", ")
       : "עדיין לא נרשם מנגנון ליבה מההיסטוריה.";
 
+  const meetingHint = [
+    formatMeetingStatus(stats.lastMeetingStatus),
+    stats.pendingConfirmPath ? "ממתין לאישור שלך (V)" : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <section
       aria-labelledby="progress-dashboard-title"
@@ -55,6 +65,24 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
       <p className="mt-2 max-w-prose text-sm text-[#9CA3AF]">
         תמונת מצב אובייקטיבית מול השיטה. בלי ניקוד ובלי משחוק.
       </p>
+
+      {stats.pendingConfirmPath ? (
+        <div className="mt-5 border border-action/40 bg-action/10 p-4">
+          <p className="text-sm font-medium text-[#FAFAF8]">
+            פגישה ממתינה לאישור
+          </p>
+          <p className="mt-1 text-xs text-[#9CA3AF]">
+            {formatMeetingDate(stats.lastMeetingAt)}. לחץ לסימון V.
+          </p>
+          <Link
+            href={stats.pendingConfirmPath}
+            className="mt-3 inline-flex min-h-10 items-center bg-action px-4 text-xs font-semibold text-white"
+          >
+            לאשר פגישה (V)
+          </Link>
+        </div>
+      ) : null}
+
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <StatCell
           label="מנגנונים"
@@ -69,6 +97,7 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
         <StatCell
           label="פגישה אחרונה"
           value={formatMeetingDate(stats.lastMeetingAt)}
+          hint={meetingHint || undefined}
         />
       </div>
     </section>
