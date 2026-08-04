@@ -1,5 +1,7 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
+
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export type TrendingSearch = {
@@ -17,12 +19,7 @@ function normalizeTerm(query: string): string {
   return query.trim().replace(/\s+/g, " ");
 }
 
-/**
- * Top search queries from the last 7 days, excluding zero-result searches.
- */
-export async function getTrendingSearches(
-  limit = 5,
-): Promise<TrendingSearch[]> {
+async function fetchTrendingSearches(limit: number): Promise<TrendingSearch[]> {
   try {
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
@@ -30,7 +27,8 @@ export async function getTrendingSearches(
       .select("search_query, results_count")
       .gte("created_at", daysAgoIso(7))
       .gt("results_count", 0)
-      .limit(3000);
+      .order("created_at", { ascending: false })
+      .limit(800);
 
     if (error || !data?.length) return [];
 
@@ -48,4 +46,20 @@ export async function getTrendingSearches(
   } catch {
     return [];
   }
+}
+
+const cachedTrendingSearches = unstable_cache(
+  async (limit: number) => fetchTrendingSearches(limit),
+  ["trending-searches-v1"],
+  { revalidate: 180 },
+);
+
+/**
+ * Top search queries from the last 7 days, excluding zero-result searches.
+ * Cached ~3 minutes to avoid scanning analytics on every homepage hit.
+ */
+export async function getTrendingSearches(
+  limit = 5,
+): Promise<TrendingSearch[]> {
+  return cachedTrendingSearches(Math.max(1, Math.min(limit, 20)));
 }

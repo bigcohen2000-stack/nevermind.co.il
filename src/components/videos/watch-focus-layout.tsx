@@ -48,7 +48,7 @@ export function WatchFocusLayout({
         className={cn(
           "mx-auto w-full transition-all duration-300 ease-out",
           focusMode
-            ? "flex min-h-screen max-w-none flex-col justify-center px-2 py-4 sm:px-6 sm:py-8 lg:px-10"
+            ? "flex min-h-screen max-w-none flex-col justify-center px-2 pb-24 pt-4 sm:px-6 sm:pb-28 sm:py-8 lg:px-10"
             : "max-w-6xl px-3 py-4 sm:px-6 sm:py-10 lg:py-14",
         )}
       >
@@ -140,10 +140,10 @@ export function WatchFocusLayout({
         <button
           type="button"
           onClick={() => setFocusMode(false)}
-          className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] start-1/2 z-[60] inline-flex -translate-x-1/2 items-center gap-2 border border-white/30 bg-black/85 px-4 py-2.5 text-sm font-medium text-[#FAFAF8] transition hover:border-[#D42B2B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42B2B]"
+          className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-[100] inline-flex max-w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 items-center justify-center gap-2 border border-white/30 bg-black/90 px-4 py-3 text-sm font-medium text-[#FAFAF8] shadow-lg transition hover:border-[#D42B2B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D42B2B]"
         >
-          <Maximize2 className="size-4" aria-hidden />
-          יציאה ממיקוד
+          <Maximize2 className="size-4 shrink-0" aria-hidden />
+          <span className="whitespace-nowrap">יציאה ממצב ממוקד</span>
         </button>
       ) : null}
     </main>

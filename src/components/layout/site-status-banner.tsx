@@ -223,8 +223,8 @@ export function SiteStatusBanner({
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium tracking-tight">הצטרפו לאתר</p>
           <p className="mt-0.5 text-xs leading-relaxed text-muted sm:text-sm">
-            שמירת סרטונים, הרשימה שלי, והתחברות מהירה עם Google או אימייל. זה לא
-            פותח את מאגר המועדון.
+            שמירת סרטונים, הרשימה שלי, והתחברות עם קישור לאימייל. זה לא פותח את
+            מאגר המועדון.
           </p>
         </div>
 
@@ -236,7 +236,7 @@ export function SiteStatusBanner({
               "transition hover:bg-action/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
             )}
           >
-            התחברות (Google / אימייל)
+            התחברות באימייל
           </Link>
           <button
             type="button"

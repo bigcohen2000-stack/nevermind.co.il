@@ -15,7 +15,6 @@ import {
   Radio,
   Search,
   Settings2,
-  Accessibility,
   Bookmark,
   User,
   X,
@@ -62,13 +61,51 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "/live": Radio,
   "/my-list": Bookmark,
   "/profile": User,
-  "/accessibility": Accessibility,
 };
 
 function NavIcon({ href }: { href: string }) {
   const Icon = NAV_ICONS[href];
   if (!Icon) return null;
   return <Icon className="me-1.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />;
+}
+
+function HeaderSearchCluster({
+  expanded = false,
+  onNavigate,
+  className,
+}: {
+  expanded?: boolean;
+  onNavigate?: () => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-2",
+        expanded ? "w-full" : "w-full max-w-md",
+        className,
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <HeaderSearch expanded={expanded} onNavigate={onNavigate} />
+      </div>
+      <Link
+        href="/search"
+        onClick={onNavigate}
+        className={cn(
+          "inline-flex shrink-0 items-center justify-center gap-1.5 border border-foreground/20 text-sm text-foreground transition",
+          "hover:border-action hover:text-action",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+          expanded ? "min-h-11 px-3" : "min-h-10 min-w-10 px-2.5",
+        )}
+        aria-label="לעמוד החיפוש"
+        title="עמוד חיפוש"
+      >
+        <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+        {expanded ? <span>חיפוש</span> : null}
+      </Link>
+    </div>
+  );
 }
 
 function DesktopMoreMenu() {
@@ -232,7 +269,7 @@ export function SiteHeader({
           <SiteLogo variant="on-dark" size="header" priority />
 
           <div className="hidden min-w-0 flex-1 lg:block">
-            <HeaderSearch />
+            <HeaderSearchCluster />
           </div>
 
           <div className="hidden shrink-0 items-center gap-2 lg:flex">
@@ -308,7 +345,7 @@ export function SiteHeader({
 
       {mobileSearchOpen ? (
         <div className="border-t border-foreground/10 bg-background px-4 py-3 lg:hidden sm:px-6">
-          <HeaderSearch
+          <HeaderSearchCluster
             expanded
             onNavigate={() => setMobileSearchOpen(false)}
           />
@@ -324,7 +361,10 @@ export function SiteHeader({
           aria-label="תפריט אתר"
         >
           <div className="mx-auto flex max-h-[min(80vh,36rem)] w-full max-w-7xl flex-col gap-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
-            <HeaderSearch expanded onNavigate={() => setMenuOpen(false)} />
+            <HeaderSearchCluster
+              expanded
+              onNavigate={() => setMenuOpen(false)}
+            />
 
             <nav aria-label="ניווט ראשי מובייל">
               <ul className="flex flex-col gap-1">

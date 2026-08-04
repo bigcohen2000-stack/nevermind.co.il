@@ -102,9 +102,14 @@ export function HeaderSearch({
 
   function goToSearch(term: string) {
     const t = term.trim();
-    if (!t) return;
-    pushRecentSearch(t);
     onNavigate?.();
+    if (!t) {
+      router.push("/search");
+      setOpen(false);
+      setFocused(false);
+      return;
+    }
+    pushRecentSearch(t);
     router.push(`/search?q=${encodeURIComponent(t)}`);
     setOpen(false);
     setFocused(false);
@@ -172,7 +177,7 @@ export function HeaderSearch({
       dir="rtl"
       className={cn(
         "relative",
-        expanded ? "w-full" : "w-full max-w-[14rem] sm:max-w-[16rem] xl:max-w-[18rem]",
+        expanded ? "w-full max-w-none" : "w-full max-w-[14rem] sm:max-w-[16rem] xl:max-w-[18rem]",
         className,
       )}
     >

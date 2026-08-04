@@ -30,7 +30,6 @@ export const SECONDARY_NAV: NavLink[] = [
   { label: "תיאום", href: "/booking", emoji: "📅" },
   { label: "הרשימה שלי", href: "/my-list", emoji: "⭐" },
   { label: "פרופיל", href: "/profile", emoji: "👤" },
-  { label: "הצהרת נגישות", href: "/accessibility", emoji: "♿" },
 ];
 
 /** Legal / compliance links shown in footer bottom. */

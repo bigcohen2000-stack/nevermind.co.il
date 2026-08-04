@@ -75,7 +75,7 @@ export const STUDIO_GUIDE_SECTIONS: StudioGuideSection[] = [
   {
     id: "layers",
     title: "שכבות גישה",
-    what: "חשבון Google או אימייל = אזור אישי. מועדון = שכבה נפרדת. Studio = רק אתה.",
+    what: "חשבון אימייל = אזור אישי. מועדון = שכבה נפרדת. Studio = רק אתה.",
     canDo: "משתמש רגיל לא רואה Studio. מועדון לא ניתן אוטומטית לכל נרשם.",
     where: "/profile ו-/my-list למשתמשים. /members למועדון.",
   },

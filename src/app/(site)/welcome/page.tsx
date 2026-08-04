@@ -43,7 +43,7 @@ const STEPS = [
 ] as const;
 
 /**
- * Post-registration landing. Clear next steps after Google / email signup.
+ * Post-registration landing. Clear next steps after email signup.
  */
 export default async function WelcomePage() {
   const supabase = await createClient();

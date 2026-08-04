@@ -1,6 +1,6 @@
 /**
  * Site-wide access tier for chrome (not paywall logic).
- * Guest = public. Account = free Google/email. Club = archive unlocked by Yakir.
+ * Guest = public. Account = free email magic link. Club = archive unlocked by Yakir.
  */
 
 export type SiteAccessTier = "guest" | "account" | "club";

@@ -43,7 +43,7 @@ const menuItemClass =
   "flex min-h-10 w-full items-center gap-2 px-2 text-start transition hover:bg-paper";
 
 /**
- * Header auth: personal account (Google / email) or club session.
+ * Header auth: personal account (email) or club session.
  * Guest: התחברות + הרשמה. Connected: list, profile, theme, sign out.
  */
 export function HeaderAuthControls({

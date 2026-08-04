@@ -18,9 +18,9 @@ type ObjectiveTruthToggleProps = {
   segments?: TranscriptSegment[];
   /** True when a transcript exists server-side (even if locked for guests). */
   transcriptAvailable?: boolean;
-  /** Personal Auth (Google / email). Club alone does not unlock transcript. */
+  /** Personal Auth (email magic link). Club alone does not unlock transcript. */
   canViewTranscript?: boolean;
-  /** Return path after magic link / Google. */
+  /** Return path after magic link. */
   signInNextPath?: string;
   videoTitle?: string;
   concepts?: string[];
@@ -207,8 +207,8 @@ export function ObjectiveTruthToggle({
             התמליל המלא לחברים רשומים
           </p>
           <p className="mt-2 text-sm leading-relaxed text-foreground/70">
-            הרשמה בחינם עם Google או קישור לאימייל. בלי סיסמה. אחרי ההתחברות
-            התמליל נפתח כאן.
+            הרשמה בחינם עם קישור לאימייל. בלי סיסמה. אחרי ההתחברות התמליל נפתח
+            כאן.
           </p>
           <MyListSignInForm nextPath={signInNextPath} variant="compact" />
         </div>

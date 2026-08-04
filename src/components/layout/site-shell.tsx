@@ -117,7 +117,9 @@ export async function SiteShell({ children }: { children: ReactNode }) {
             <DailyResetPrompt />
           </FocusModeChrome>
           <PresenceBeacon session={sessionForUi} />
-          <AccessibilityToolbar />
+          <FocusModeChrome>
+            <AccessibilityToolbar />
+          </FocusModeChrome>
           <FocusModeChrome>
             <WhatsAppFloat />
           </FocusModeChrome>

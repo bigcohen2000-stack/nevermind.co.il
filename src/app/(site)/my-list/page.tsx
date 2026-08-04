@@ -97,7 +97,7 @@ export default async function MyListPage({
           </h1>
           <p className="mt-4 text-sm leading-relaxed text-zinc-400">
             הרשימה שומרת סרטונים להמשך. היסטוריית צפייה נשמרת בחשבון. התחברות
-            בחינם עם Google או קישור לאימייל. בלי סיסמה.
+            בחינם עם קישור לאימייל. בלי סיסמה.
           </p>
 
           <ul className="mt-8 space-y-3 text-sm text-zinc-400">
@@ -304,7 +304,7 @@ export default async function MyListPage({
           <ul className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-400">
             <li>
               <strong className="font-medium text-zinc-200">חשבון אתר:</strong>{" "}
-              Google או אימייל. שומר רשימה, היסטוריה, והתמליל המלא בצפייה.
+              קישור לאימייל. שומר רשימה, היסטוריה, והתמליל המלא בצפייה.
             </li>
             <li>
               <strong className="font-medium text-zinc-200">מועדון:</strong>{" "}

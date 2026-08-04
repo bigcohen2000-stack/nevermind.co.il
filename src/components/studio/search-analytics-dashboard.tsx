@@ -104,6 +104,15 @@ function Metric({
 }
 
 function AnalyticsTable({ rows }: { rows: SearchAnalytics[] }) {
+  const [page, setPage] = useState(0);
+  const pageSize = 50;
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const safePage = Math.min(page, pageCount - 1);
+  const pageRows = rows.slice(
+    safePage * pageSize,
+    safePage * pageSize + pageSize,
+  );
+
   if (rows.length === 0) {
     return (
       <p className="mt-6 text-sm text-zinc-400">
@@ -113,84 +122,111 @@ function AnalyticsTable({ rows }: { rows: SearchAnalytics[] }) {
   }
 
   return (
-    <div className="mt-6 overflow-x-auto">
-      <table className="w-full min-w-[40rem] border-collapse text-start text-sm">
-        <thead>
-          <tr className="border-b border-zinc-800 text-zinc-500">
-            <th className="px-2 py-3 font-medium">שאילתה</th>
-            <th className="px-2 py-3 font-medium">תאריך ושעה</th>
-            <th className="px-2 py-3 font-medium">גולש</th>
-            <th className="px-2 py-3 font-medium">תוצאות</th>
-            <th className="px-2 py-3 font-medium">משוב</th>
-            <th className="px-2 py-3 font-medium">הערה</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const zero = row.results_count === 0;
-            const feedbackLabel =
-              row.user_feedback === true
-                ? "חיובי"
-                : row.user_feedback === false
-                  ? "שלילי"
-                  : "-";
-            return (
-              <tr
-                key={row.id}
-                className={`border-b border-zinc-800/80 ${
-                  zero ? "bg-red-950/20" : ""
-                }`}
-              >
-                <td className="px-2 py-3 font-medium text-zinc-100">
-                  <Link
-                    href={`/search?q=${encodeURIComponent(row.search_query)}`}
-                    className="underline-offset-2 hover:text-action hover:underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
+    <div className="mt-6">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[40rem] border-collapse text-start text-sm">
+          <thead>
+            <tr className="border-b border-zinc-800 text-zinc-500">
+              <th className="px-2 py-3 font-medium">שאילתה</th>
+              <th className="px-2 py-3 font-medium">תאריך ושעה</th>
+              <th className="px-2 py-3 font-medium">גולש</th>
+              <th className="px-2 py-3 font-medium">תוצאות</th>
+              <th className="px-2 py-3 font-medium">משוב</th>
+              <th className="px-2 py-3 font-medium">הערה</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageRows.map((row) => {
+              const zero = row.results_count === 0;
+              const feedbackLabel =
+                row.user_feedback === true
+                  ? "חיובי"
+                  : row.user_feedback === false
+                    ? "שלילי"
+                    : "-";
+              return (
+                <tr
+                  key={row.id}
+                  className={`border-b border-zinc-800/80 ${
+                    zero ? "bg-red-950/20" : ""
+                  }`}
+                >
+                  <td className="px-2 py-3 font-medium text-zinc-100">
+                    <Link
+                      href={`/search?q=${encodeURIComponent(row.search_query)}`}
+                      className="underline-offset-2 hover:text-action hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {row.search_query}
+                    </Link>
+                  </td>
+                  <td className="px-2 py-3 whitespace-nowrap text-zinc-400">
+                    {formatDateTime(row.created_at)}
+                  </td>
+                  <td className="px-2 py-3">
+                    {row.user_id ? (
+                      <span className="border border-emerald-800 bg-emerald-950 px-2 py-1 text-xs text-emerald-300">
+                        מחובר
+                      </span>
+                    ) : (
+                      <span className="border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
+                        אורח
+                      </span>
+                    )}
+                  </td>
+                  <td
+                    className={`px-2 py-3 font-mono text-xs ${
+                      zero ? "font-semibold text-red-400" : "text-zinc-300"
+                    }`}
                   >
-                    {row.search_query}
-                  </Link>
-                </td>
-                <td className="px-2 py-3 whitespace-nowrap text-zinc-400">
-                  {formatDateTime(row.created_at)}
-                </td>
-                <td className="px-2 py-3">
-                  {row.user_id ? (
-                    <span className="border border-emerald-800 bg-emerald-950 px-2 py-1 text-xs text-emerald-300">
-                      מחובר
-                    </span>
-                  ) : (
-                    <span className="border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
-                      אורח
-                    </span>
-                  )}
-                </td>
-                <td
-                  className={`px-2 py-3 font-mono text-xs ${
-                    zero ? "font-semibold text-red-400" : "text-zinc-300"
-                  }`}
-                >
-                  {row.results_count}
-                </td>
-                <td
-                  className={`px-2 py-3 text-xs ${
-                    row.user_feedback === false
-                      ? "text-red-400"
-                      : row.user_feedback === true
-                        ? "text-emerald-400"
-                        : "text-zinc-600"
-                  }`}
-                >
-                  {feedbackLabel}
-                </td>
-                <td className="max-w-[14rem] truncate px-2 py-3 text-xs text-zinc-400">
-                  {row.feedback_note?.trim() || "-"}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                    {row.results_count}
+                  </td>
+                  <td
+                    className={`px-2 py-3 text-xs ${
+                      row.user_feedback === false
+                        ? "text-red-400"
+                        : row.user_feedback === true
+                          ? "text-emerald-400"
+                          : "text-zinc-600"
+                    }`}
+                  >
+                    {feedbackLabel}
+                  </td>
+                  <td className="max-w-[14rem] truncate px-2 py-3 text-xs text-zinc-400">
+                    {row.feedback_note?.trim() || "-"}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {pageCount > 1 ? (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
+          <p>
+            עמוד {safePage + 1} מתוך {pageCount} ({rows.length} שורות)
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={safePage <= 0}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              className="border border-zinc-700 px-2.5 py-1 disabled:opacity-40"
+            >
+              הקודם
+            </button>
+            <button
+              type="button"
+              disabled={safePage >= pageCount - 1}
+              onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+              className="border border-zinc-700 px-2.5 py-1 disabled:opacity-40"
+            >
+              הבא
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -254,6 +290,9 @@ export function SearchAnalyticsDashboard({
     return data.rows;
   }, [data.rows, filter]);
 
+  // Reset paging when filter changes is handled inside AnalyticsTable via key.
+  const tableKey = `${filter}-${data.rows.length}`;
+
   const weekChangeLabel =
     data.weekChangePct == null
       ? "אין בסיס להשוואה"
@@ -299,7 +338,7 @@ export function SearchAnalyticsDashboard({
         <SummaryCard title="שיעור 0 תוצאות">
           <Metric
             value={`${data.zeroResultRatePct}%`}
-            hint="מכל החיפושים שנטענו"
+            hint={`ב-${data.metricsDays} הימים האחרונים`}
           />
         </SummaryCard>
         <SummaryCard title="דיסלייק (7 ימים)">
@@ -385,10 +424,13 @@ export function SearchAnalyticsDashboard({
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-zinc-100">
-              כל החיפושים
+              חיפושים אחרונים
             </h2>
             <p className="mt-1 text-xs text-zinc-500">
-              {filteredRows.length} מתוך {data.rows.length} (חדש למעלה)
+              {filteredRows.length} מוצגים מתוך {data.rows.length}
+              {data.rowsTruncated
+                ? ` (חלון ${data.metricsDays} ימים, עד ${data.rows.length} שורות)`
+                : ` (${data.metricsDays} ימים אחרונים)`}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {(
@@ -437,7 +479,7 @@ export function SearchAnalyticsDashboard({
             ])}
           />
         </div>
-        <AnalyticsTable rows={filteredRows} />
+        <AnalyticsTable key={tableKey} rows={filteredRows} />
       </section>
     </div>
   );

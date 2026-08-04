@@ -3,6 +3,16 @@ import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { SearchAnalytics } from "@/types/supabase";
 
+/** Days of history used for KPIs (today + this week + previous week). */
+export const SEARCH_ANALYTICS_METRICS_DAYS = 14;
+/** Max rows scanned for aggregates inside the date window. */
+const METRICS_SCAN_CAP = 2000;
+/** Max detail rows shipped to the Studio table / CSV. */
+export const SEARCH_ANALYTICS_DETAIL_LIMIT = 150;
+
+const DETAIL_COLUMNS =
+  "id, search_query, results_count, user_feedback, feedback_note, user_id, session_id, created_at" as const;
+
 export type SearchTermCount = {
   term: string;
   count: number;
@@ -10,6 +20,9 @@ export type SearchTermCount = {
 
 export type SearchAnalyticsDashboardData = {
   rows: SearchAnalytics[];
+  /** True when more rows exist than DETAIL_LIMIT in the window. */
+  rowsTruncated: boolean;
+  metricsDays: number;
   totalToday: number;
   totalThisWeek: number;
   totalPrevWeek: number;
@@ -32,6 +45,18 @@ export type SearchAnalyticsDashboardData = {
   loadError: string | null;
 };
 
+type AnalyticsRow = Pick<
+  SearchAnalytics,
+  | "id"
+  | "search_query"
+  | "results_count"
+  | "user_feedback"
+  | "feedback_note"
+  | "user_id"
+  | "session_id"
+  | "created_at"
+>;
+
 function startOfLocalDay(now = new Date()): Date {
   const d = new Date(now);
   d.setHours(0, 0, 0, 0);
@@ -48,10 +73,7 @@ function normalizeTerm(query: string): string {
   return query.trim().replace(/\s+/g, " ");
 }
 
-function topTerms(
-  rows: SearchAnalytics[],
-  limit: number,
-): SearchTermCount[] {
+function topTerms(rows: AnalyticsRow[], limit: number): SearchTermCount[] {
   const map = new Map<string, number>();
   for (const row of rows) {
     const term = normalizeTerm(row.search_query);
@@ -64,7 +86,7 @@ function topTerms(
     .slice(0, limit);
 }
 
-function peakHourIsrael(rows: SearchAnalytics[]): string | null {
+function peakHourIsrael(rows: AnalyticsRow[]): string | null {
   if (rows.length === 0) return null;
   const hours = new Array<number>(24).fill(0);
   for (const row of rows) {
@@ -88,12 +110,13 @@ function peakHourIsrael(rows: SearchAnalytics[]): string | null {
   return `${pad(best)}:00-${pad((best + 1) % 24)}:00`;
 }
 
-/**
- * Load search analytics for the Studio dashboard (service role; bypasses RLS).
- */
-export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDashboardData> {
-  const empty: SearchAnalyticsDashboardData = {
+function emptyDashboard(
+  loadError: string | null = null,
+): SearchAnalyticsDashboardData {
+  return {
     rows: [],
+    rowsTruncated: false,
+    metricsDays: SEARCH_ANALYTICS_METRICS_DAYS,
     totalToday: 0,
     totalThisWeek: 0,
     totalPrevWeek: 0,
@@ -109,26 +132,49 @@ export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDash
     topHitTerms: [],
     thumbsDownThisWeek: 0,
     feedbackNotes: [],
-    loadError: null,
+    loadError,
   };
+}
 
+/**
+ * Studio search analytics: bounded date window + column projection.
+ * Detail table ships at most SEARCH_ANALYTICS_DETAIL_LIMIT rows.
+ */
+export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDashboardData> {
   try {
     const admin = getSupabaseAdmin();
-    const { data, error } = await admin
-      .from("search_analytics")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(5000);
+    const windowStart = daysAgo(SEARCH_ANALYTICS_METRICS_DAYS).toISOString();
 
-    if (error) {
-      return {
-        ...empty,
-        loadError: error.message || "טעינת אנליטיקס נכשלה.",
-      };
+    const [metricsResult, notesResult, detailCountResult] = await Promise.all([
+      admin
+        .from("search_analytics")
+        .select(DETAIL_COLUMNS)
+        .gte("created_at", windowStart)
+        .order("created_at", { ascending: false })
+        .limit(METRICS_SCAN_CAP),
+      admin
+        .from("search_analytics")
+        .select("search_query, feedback_note, created_at")
+        .not("feedback_note", "is", null)
+        .gte("created_at", windowStart)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      admin
+        .from("search_analytics")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", windowStart),
+    ]);
+
+    if (metricsResult.error) {
+      return emptyDashboard(
+        metricsResult.error.message || "טעינת אנליטיקס נכשלה.",
+      );
     }
-    if (!data) return empty;
 
-    const rows = data as SearchAnalytics[];
+    const rows = (metricsResult.data ?? []) as AnalyticsRow[];
+    const windowTotal = detailCountResult.count ?? rows.length;
+    const rowsTruncated = windowTotal > SEARCH_ANALYTICS_DETAIL_LIMIT;
+
     const todayStart = startOfLocalDay().getTime();
     const weekStart = daysAgo(7).getTime();
     const prevWeekStart = daysAgo(14).getTime();
@@ -152,9 +198,7 @@ export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDash
         ? totalThisWeek > 0
           ? 100
           : null
-        : Math.round(
-            ((totalThisWeek - totalPrevWeek) / totalPrevWeek) * 100,
-          );
+        : Math.round(((totalThisWeek - totalPrevWeek) / totalPrevWeek) * 100);
 
     const zeroRows = rows.filter((row) => row.results_count === 0);
     const hitRows = rows.filter((row) => row.results_count > 0);
@@ -191,17 +235,23 @@ export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDash
       (row) => row.user_feedback === false,
     ).length;
 
-    const feedbackNotes = rows
+    const feedbackNotes = (notesResult.data ?? [])
       .filter((row) => Boolean(row.feedback_note?.trim()))
-      .slice(0, 20)
       .map((row) => ({
         query: row.search_query,
         note: row.feedback_note!.trim(),
         createdAt: row.created_at,
       }));
 
+    const detailRows = rows.slice(
+      0,
+      SEARCH_ANALYTICS_DETAIL_LIMIT,
+    ) as SearchAnalytics[];
+
     return {
-      rows,
+      rows: detailRows,
+      rowsTruncated,
+      metricsDays: SEARCH_ANALYTICS_METRICS_DAYS,
       totalToday,
       totalThisWeek,
       totalPrevWeek,
@@ -220,10 +270,8 @@ export async function getSearchAnalyticsDashboard(): Promise<SearchAnalyticsDash
       loadError: null,
     };
   } catch (err) {
-    return {
-      ...empty,
-      loadError:
-        err instanceof Error ? err.message : "טעינת אנליטיקס נכשלה.",
-    };
+    return emptyDashboard(
+      err instanceof Error ? err.message : "טעינת אנליטיקס נכשלה.",
+    );
   }
 }
