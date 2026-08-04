@@ -133,7 +133,21 @@ async function notifyAdminClubLogin(input: {
 }
 
 export type ClubActionResult =
-  | { ok: true; url?: string; message?: string }
+  | {
+      ok: true;
+      url?: string;
+      message?: string;
+      phone?: string;
+      member?: {
+        phone: string;
+        display_name: string;
+        notes: string | null;
+        expires_at: string | null;
+        created_at: string;
+        updated_at: string;
+        last_seen_at: string | null;
+      };
+    }
   | { ok: false; error: string };
 
 /**
@@ -338,8 +352,14 @@ export async function upsertClubMember(input: {
 
   const phone = normalizeClubPhone(input.phone);
   const displayName = input.displayName.trim();
-  if (!phone) return { ok: false, error: "מספר טלפון לא תקין." };
-  if (displayName.length < 2) return { ok: false, error: "נא להזין שם." };
+  if (!phone) {
+    return {
+      ok: false,
+      error:
+        'מספר טלפון לא תקין. הזן כמו 05XXXXXXXX או 9725XXXXXXXX (רק ספרות / מקף).',
+    };
+  }
+  if (displayName.length < 2) return { ok: false, error: "נא להזין שם (לפחות 2 תווים)." };
 
   let expiresAt: string | null | undefined = undefined;
   if (input.expiresAt !== undefined) {
@@ -377,11 +397,77 @@ export async function upsertClubMember(input: {
     if (expiresAt !== undefined) {
       row.expires_at = expiresAt;
     }
-    const { error } = await admin.from("club_members").upsert(row, {
-      onConflict: "phone",
-    });
-    if (error) return { ok: false, error: error.message };
-    return { ok: true, message: `נשמר: ${displayName} (${phone}).` };
+    const { data, error } = await admin
+      .from("club_members")
+      .upsert(row, { onConflict: "phone" })
+      .select(
+        "phone, display_name, notes, expires_at, created_at, updated_at, last_seen_at",
+      )
+      .single();
+
+    if (error) {
+      const msg = error.message || "";
+      if (
+        msg.includes("schema cache") ||
+        msg.includes("Could not find the table") ||
+        msg.includes("does not exist")
+      ) {
+        return {
+          ok: false,
+          error:
+            "טבלת club_members חסרה או שה-schema cache לא התעדכן. הרץ 35_ensure_club_members.sql, ואז ב-Supabase: Settings → API → Reload schema.",
+        };
+      }
+      // Retry without expires_at if column missing.
+      if (msg.includes("expires_at")) {
+        const retry = await admin
+          .from("club_members")
+          .upsert(
+            {
+              phone,
+              display_name: displayName,
+              notes: input.notes?.trim() || null,
+              updated_at: now,
+            },
+            { onConflict: "phone" },
+          )
+          .select("phone, display_name, notes, created_at, updated_at, last_seen_at")
+          .single();
+        if (retry.error) return { ok: false, error: retry.error.message };
+        return {
+          ok: true,
+          phone,
+          message: `נשמר: ${displayName} (${phone}).`,
+          member: {
+            phone: retry.data.phone,
+            display_name: retry.data.display_name,
+            notes: retry.data.notes,
+            expires_at: null,
+            created_at: retry.data.created_at,
+            updated_at: retry.data.updated_at,
+            last_seen_at: retry.data.last_seen_at,
+          },
+        };
+      }
+      return { ok: false, error: msg };
+    }
+
+    return {
+      ok: true,
+      phone,
+      message: `נשמר: ${displayName} (${phone}).`,
+      member: data
+        ? {
+            phone: data.phone,
+            display_name: data.display_name,
+            notes: data.notes,
+            expires_at: data.expires_at,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+            last_seen_at: data.last_seen_at,
+          }
+        : undefined,
+    };
   } catch (err) {
     return {
       ok: false,

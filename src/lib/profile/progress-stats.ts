@@ -92,14 +92,22 @@ export async function getProfileProgressStats(
   try {
     const { data: meeting } = await supabase
       .from("user_meetings")
-      .select("held_at")
+      .select("held_at, status, confirmation_token, confirmed_at")
       .eq("user_id", userId)
       .order("held_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     stats.lastMeetingAt = meeting?.held_at ?? null;
+    stats.lastMeetingStatus = meeting?.status ?? null;
+    if (
+      meeting?.status === "scheduled" &&
+      meeting.confirmation_token &&
+      !meeting.confirmed_at
+    ) {
+      stats.pendingConfirmPath = `/m/${meeting.confirmation_token}`;
+    }
   } catch {
-    // table may be missing until migration
+    // table / columns may be missing until migration 34
   }
 
   return stats;

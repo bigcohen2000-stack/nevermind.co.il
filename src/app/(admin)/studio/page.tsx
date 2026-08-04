@@ -84,19 +84,61 @@ async function listRecentTokens(limit = 12) {
   }
 }
 
-async function listClubMembers(limit = 80) {
+type ClubMemberListRow = {
+  phone: string;
+  display_name: string;
+  notes: string | null;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+  last_seen_at: string | null;
+};
+
+async function listClubMembers(limit = 80): Promise<{
+  members: ClubMemberListRow[];
+  error: string | null;
+}> {
   try {
     const admin = getSupabaseAdmin();
-    const { data } = await admin
+    const { data, error } = await admin
       .from("club_members")
       .select(
         "phone, display_name, notes, expires_at, created_at, updated_at, last_seen_at",
       )
       .order("updated_at", { ascending: false })
       .limit(limit);
-    return data ?? [];
-  } catch {
-    return [];
+
+    if (!error) {
+      return { members: (data as ClubMemberListRow[]) ?? [], error: null };
+    }
+
+    const fallback = await admin
+      .from("club_members")
+      .select("phone, display_name, notes, created_at, updated_at, last_seen_at")
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+
+    if (fallback.error) {
+      return { members: [], error: fallback.error.message };
+    }
+
+    return {
+      members: (fallback.data ?? []).map((row) => ({
+        phone: row.phone,
+        display_name: row.display_name,
+        notes: row.notes,
+        expires_at: null,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        last_seen_at: row.last_seen_at,
+      })),
+      error: null,
+    };
+  } catch (err) {
+    return {
+      members: [],
+      error: err instanceof Error ? err.message : "טעינת חברים נכשלה.",
+    };
   }
 }
 
@@ -128,7 +170,7 @@ export default async function StudioPage() {
     gatedForTeaser,
     recentTokens,
     passwordStatus,
-    members,
+    membersResult,
     recentLogins,
     liveRow,
     feedbackItems,
@@ -225,7 +267,8 @@ export default async function StudioPage() {
               title: "חברי מועדון",
               children: (
                 <ClubMembersPanel
-                  members={members}
+                  members={membersResult.members}
+                  loadError={membersResult.error}
                   recentLogins={recentLogins}
                 />
               ),

@@ -3,9 +3,17 @@ import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { AuthLoginEvent } from "@/types/supabase";
 
+export type MeetingStatus =
+  | "scheduled"
+  | "confirmed"
+  | "held"
+  | "cancelled";
+
 export type StudioUserRow = {
   userId: string;
   email: string | null;
+  /** Short label for tables / greetings. */
+  displayName: string;
   createdAt: string | null;
   lastSignInAt: string | null;
   hasVideoAccess: boolean;
@@ -13,6 +21,11 @@ export type StudioUserRow = {
   loginCount: number;
   lastLoginEventAt: string | null;
   accessExpiresAt: string | null;
+  lastMeetingAt: string | null;
+  lastMeetingStatus: MeetingStatus | null;
+  lastMeetingId: string | null;
+  meetingCount: number;
+  pendingConfirmation: boolean;
 };
 
 export type StudioOnlineRow = {
@@ -32,9 +45,13 @@ export type StudioUsersDashboardData = {
   loginsToday: number;
   withVideoAccess: number;
   onlineCount: number;
+  expiringSoonCount: number;
+  pendingMeetingConfirmCount: number;
+  loadError: string | null;
 };
 
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+const EXPIRING_SOON_MS = 7 * 24 * 60 * 60 * 1000;
 
 function startOfLocalDay(now = new Date()): Date {
   const d = new Date(now);
@@ -42,8 +59,23 @@ function startOfLocalDay(now = new Date()): Date {
   return d;
 }
 
+function shortNameFromEmail(email: string | null): string {
+  if (!email) return "משתמש";
+  const local = email.split("@")[0]?.trim();
+  if (!local) return "משתמש";
+  return local.replace(/[._+-]+/g, " ").trim().slice(0, 32) || "משתמש";
+}
+
+type MeetingAgg = {
+  lastAt: string;
+  lastStatus: MeetingStatus;
+  lastId: string;
+  count: number;
+  pendingConfirmation: boolean;
+};
+
 /**
- * Combine Auth admin users, profiles entitlement, auth_login_events, presence.
+ * Combine Auth admin users, profiles entitlement, meetings, auth_login_events, presence.
  */
 export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardData> {
   const empty: StudioUsersDashboardData = {
@@ -54,6 +86,9 @@ export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardDat
     loginsToday: 0,
     withVideoAccess: 0,
     onlineCount: 0,
+    expiringSoonCount: 0,
+    pendingMeetingConfirmCount: 0,
+    loadError: null,
   };
 
   try {
@@ -65,9 +100,12 @@ export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardDat
       { data: profiles, error: profilesError },
       { data: loginEvents, error: loginsError },
       { data: presenceRows, error: presenceError },
+      { data: meetings, error: meetingsError },
     ] = await Promise.all([
       admin.auth.admin.listUsers({ page: 1, perPage: 200 }),
-      admin.from("profiles").select("id, is_premium, has_video_access, access_expires_at"),
+      admin
+        .from("profiles")
+        .select("id, is_premium, has_video_access, access_expires_at"),
       admin
         .from("auth_login_events")
         .select("*")
@@ -79,9 +117,16 @@ export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardDat
         .gte("last_seen_at", since)
         .order("last_seen_at", { ascending: false })
         .limit(100),
+      admin
+        .from("user_meetings")
+        .select("id, user_id, held_at, status, confirmation_token, confirmed_at")
+        .order("held_at", { ascending: false })
+        .limit(500),
     ]);
 
-    if (authError) return empty;
+    if (authError) {
+      return { ...empty, loadError: authError.message };
+    }
 
     const profileMap = new Map<
       string,
@@ -101,6 +146,30 @@ export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardDat
       }
     }
 
+    const meetingByUser = new Map<string, MeetingAgg>();
+    if (!meetingsError && meetings) {
+      for (const row of meetings) {
+        const status = (row.status ?? "held") as MeetingStatus;
+        const existing = meetingByUser.get(row.user_id);
+        const pending =
+          status === "scheduled" &&
+          Boolean(row.confirmation_token) &&
+          !row.confirmed_at;
+        if (!existing) {
+          meetingByUser.set(row.user_id, {
+            lastAt: row.held_at,
+            lastStatus: status,
+            lastId: row.id,
+            count: 1,
+            pendingConfirmation: pending,
+          });
+        } else {
+          existing.count += 1;
+          if (pending) existing.pendingConfirmation = true;
+        }
+      }
+    }
+
     const events = (!loginsError && loginEvents
       ? loginEvents
       : []) as AuthLoginEvent[];
@@ -117,13 +186,17 @@ export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardDat
       }
     }
 
+    const now = Date.now();
     const users: StudioUserRow[] = (authData?.users ?? []).map((user) => {
       const profile = profileMap.get(user.id);
       const hasVideoAccess =
         Boolean(profile?.has_video_access) || Boolean(profile?.is_premium);
+      const meeting = meetingByUser.get(user.id);
+      const email = user.email ?? null;
       return {
         userId: user.id,
-        email: user.email ?? null,
+        email,
+        displayName: shortNameFromEmail(email),
         createdAt: user.created_at ?? null,
         lastSignInAt: user.last_sign_in_at ?? null,
         hasVideoAccess,
@@ -131,6 +204,11 @@ export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardDat
         loginCount: loginCountByUser.get(user.id) ?? 0,
         lastLoginEventAt: lastEventByUser.get(user.id) ?? null,
         accessExpiresAt: profile?.access_expires_at ?? null,
+        lastMeetingAt: meeting?.lastAt ?? null,
+        lastMeetingStatus: meeting?.lastStatus ?? null,
+        lastMeetingId: meeting?.lastId ?? null,
+        meetingCount: meeting?.count ?? 0,
+        pendingConfirmation: meeting?.pendingConfirmation ?? false,
       };
     });
 
@@ -156,6 +234,12 @@ export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardDat
       userId: row.user_id,
     }));
 
+    const expiringSoonCount = users.filter((u) => {
+      if (!u.accessExpiresAt) return false;
+      const t = new Date(u.accessExpiresAt).getTime();
+      return t >= now && t <= now + EXPIRING_SOON_MS;
+    }).length;
+
     return {
       users,
       recentLogins: events.slice(0, 40),
@@ -164,8 +248,17 @@ export async function getStudioUsersDashboard(): Promise<StudioUsersDashboardDat
       loginsToday,
       withVideoAccess: users.filter((u) => u.hasVideoAccess).length,
       onlineCount: onlineNow.length,
+      expiringSoonCount,
+      pendingMeetingConfirmCount: users.filter((u) => u.pendingConfirmation)
+        .length,
+      loadError: meetingsError
+        ? `פגישות: ${meetingsError.message} (החל מיגרציה 34 אם חסרות עמודות)`
+        : null,
     };
-  } catch {
-    return empty;
+  } catch (err) {
+    return {
+      ...empty,
+      loadError: err instanceof Error ? err.message : "טעינה נכשלה.",
+    };
   }
 }

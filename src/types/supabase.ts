@@ -567,6 +567,10 @@ export type Database = {
           held_at: string;
           note: string | null;
           created_at: string;
+          status: string;
+          confirmation_token: string | null;
+          confirmation_requested_at: string | null;
+          confirmed_at: string | null;
         };
         Insert: {
           id?: string;
@@ -574,6 +578,10 @@ export type Database = {
           held_at: string;
           note?: string | null;
           created_at?: string;
+          status?: string;
+          confirmation_token?: string | null;
+          confirmation_requested_at?: string | null;
+          confirmed_at?: string | null;
         };
         Update: {
           id?: string;
@@ -581,6 +589,10 @@ export type Database = {
           held_at?: string;
           note?: string | null;
           created_at?: string;
+          status?: string;
+          confirmation_token?: string | null;
+          confirmation_requested_at?: string | null;
+          confirmed_at?: string | null;
         };
         Relationships: [
           {
