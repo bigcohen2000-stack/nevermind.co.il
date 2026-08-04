@@ -10,6 +10,8 @@ export function KeyboardShortcutsHud() {
     >
       <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-md border border-foreground/15 bg-black/70 px-3 py-1.5 text-[11px] leading-none text-foreground/70 backdrop-blur-sm sm:text-xs">
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+          <Kbd>⌘K</Kbd>
+          <span className="text-muted">/</span>
           <Kbd>/</Kbd>
           <span className="text-muted">חיפוש</span>
         </span>

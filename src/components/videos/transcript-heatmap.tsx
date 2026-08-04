@@ -77,7 +77,7 @@ export function TranscriptHeatmap({
                 }`}
                 title={
                   isHot
-                    ? bucket.concepts.join(" · ")
+                    ? bucket.concepts.join(", ")
                     : formatMinuteLabel(bucket.startSeconds)
                 }
                 onMouseEnter={() => setActive(index)}
@@ -103,7 +103,7 @@ export function TranscriptHeatmap({
             </p>
             {buckets[active].concepts.length > 0 ? (
               <p className="mt-1 leading-relaxed text-foreground/80">
-                {buckets[active].concepts.join(" · ")}
+                {buckets[active].concepts.join(", ")}
               </p>
             ) : (
               <p className="mt-1 text-muted">דיבור רגיל בדקה הזו.</p>

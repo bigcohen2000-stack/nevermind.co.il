@@ -55,5 +55,5 @@ export function publicFactsLine(): string {
     `${proof.investigationLevels} רמות חקירה`,
     `פעיל מאז ${proof.activeSinceYear}`,
     "מעל 200,000 צפיות בחקירה",
-  ].join(" · ");
+  ].join(", ");
 }

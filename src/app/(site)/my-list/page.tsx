@@ -86,11 +86,11 @@ export default async function MyListPage({
     return (
       <main className="min-h-full w-full bg-zinc-950 text-zinc-100">
         <div className="mx-auto flex w-full max-w-lg flex-col px-6 py-16 sm:py-24">
-          <p className="text-xs font-medium tracking-[0.2em] text-zinc-500 uppercase">
+          <p className="text-xs font-medium tracking-[0.2em] text-zinc-500">
             <span aria-hidden="true" className="me-2">
               ⭐
             </span>
-            My List
+            הרשימה שלי
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl">
             התחברות לרשימה האישית
@@ -142,11 +142,11 @@ export default async function MyListPage({
   return (
     <main className="min-h-full w-full bg-zinc-950 text-zinc-100">
       <div className="mx-auto w-full max-w-6xl px-6 py-16 lg:py-24">
-        <p className="text-xs font-medium tracking-[0.2em] text-zinc-500 uppercase">
+        <p className="text-xs font-medium tracking-[0.2em] text-zinc-500">
           <span aria-hidden="true" className="me-2">
             ⭐
           </span>
-          My List
+          הרשימה שלי
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-50 lg:text-5xl">
           הרשימה שלי

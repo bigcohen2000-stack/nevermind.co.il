@@ -391,7 +391,12 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
         : null;
 
   const primaryTopic = concepts.find((c) => c.name)?.name || video.title;
-  const captionTags = buildCaptionTagCloud(transcript, conceptNames);
+  const captionTags = buildCaptionTagCloud(
+    transcript,
+    conceptNames,
+    24,
+    timedSegments,
+  );
   const hasMorePanel =
     heatmapBuckets.length > 0 ||
     Boolean(video.duration_seconds) ||
@@ -522,6 +527,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
                     <ObjectiveTruthToggle
                       facts={coreFacts}
                       transcript={authed ? transcript : null}
+                      segments={authed ? timedSegments : []}
                       transcriptAvailable={Boolean(transcript?.trim())}
                       canViewTranscript={authed}
                       signInNextPath={watchHref}

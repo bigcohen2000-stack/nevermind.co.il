@@ -112,7 +112,7 @@ export function LiveGateClient({
       <div className="space-y-4 text-center">
         <p className="text-sm text-foreground/70">
           שידור חי ממפגש הפודקאסט
-          {topic ? ` · ${topic}` : ""}
+          {topic ? `: ${topic}` : ""}
         </p>
         {youtubeUrl ? (
           <a

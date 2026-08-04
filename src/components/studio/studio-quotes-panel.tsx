@@ -68,14 +68,14 @@ function QuoteRow({
           </h3>
           <p className="mt-1 text-sm text-zinc-400">
             {quote.product_label}
-            {" · "}
+            {", "}
             {formatQuotePriceIls(Number(quote.price_ils))}
           </p>
           {(quote.customer_phone || quote.customer_email) && (
             <p className="mt-1 text-xs text-zinc-500">
               {[quote.customer_phone, quote.customer_email]
                 .filter(Boolean)
-                .join(" · ")}
+                .join(", ")}
             </p>
           )}
         </div>

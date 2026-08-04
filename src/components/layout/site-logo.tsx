@@ -53,7 +53,7 @@ export function SiteLogo({
     >
       <Image
         src={src}
-        alt="השם לא משנה · NeverMinde"
+        alt="השם לא משנה. NeverMinde"
         width={dims.width}
         height={dims.height}
         className={cn(dims.className, "object-contain object-right")}

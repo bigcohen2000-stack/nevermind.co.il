@@ -25,7 +25,6 @@ import {
   type BreakdownLevel,
 } from "@/lib/videos/investigation";
 import { cn } from "@/lib/utils";
-import { useSearchHotkey } from "@/hooks/use-search-hotkey";
 
 type HeaderSearchProps = {
   className?: string;
@@ -60,8 +59,6 @@ export function HeaderSearch({
   const trimmed = query.trim();
   const showSuggest = open && items.length > 0;
   const panelOpen = focused && (loading || showSuggest || trimmed.length >= 2);
-
-  useSearchHotkey(inputRef);
 
   useEffect(() => {
     const q = query.trim();

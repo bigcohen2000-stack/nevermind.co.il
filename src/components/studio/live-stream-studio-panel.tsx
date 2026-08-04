@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
+import { sendTestLivePush } from "@/actions/live-push";
 import { endLiveStream, startLiveStream } from "@/actions/live-stream";
 import { StudioCopyButton } from "@/components/studio/studio-copy-button";
 import { LIVE_PAGE_URL } from "@/lib/live/schedule";
@@ -21,12 +22,18 @@ export type LiveStudioStatus = {
 
 type LiveStreamStudioPanelProps = {
   status: LiveStudioStatus;
+  pushReady?: boolean;
+  liveOptIns?: number;
 };
 
 /**
  * Studio control for שידור חי מהאין: paste unlisted YouTube Live URL and go live.
  */
-export function LiveStreamStudioPanel({ status }: LiveStreamStudioPanelProps) {
+export function LiveStreamStudioPanel({
+  status,
+  pushReady = false,
+  liveOptIns = 0,
+}: LiveStreamStudioPanelProps) {
   const router = useRouter();
   const [youtubeUrl, setYoutubeUrl] = useState(status.youtubeUrl);
   const [topic, setTopic] = useState(status.topic);
@@ -83,6 +90,17 @@ export function LiveStreamStudioPanel({ status }: LiveStreamStudioPanelProps) {
           {status.isLive ? "בשידור" : "כבוי"}
         </span>
       </div>
+
+      <p className="text-xs text-zinc-500">
+        התראות דפדפן:{" "}
+        {pushReady ? (
+          <span className="text-emerald-400">VAPID מוכן</span>
+        ) : (
+          <span className="text-amber-300">חסר VAPID</span>
+        )}
+        {", "}
+        {liveOptIns} נרשמו ללייב
+      </p>
 
       {startedLabel && status.isLive ? (
         <p className="text-xs text-zinc-500">התחיל {startedLabel}.</p>
@@ -164,6 +182,32 @@ export function LiveStreamStudioPanel({ status }: LiveStreamStudioPanelProps) {
             }}
           >
             סיים שידור
+          </button>
+          <button
+            type="button"
+            disabled={pending || !pushReady}
+            className="border border-zinc-600 px-4 py-2 text-sm text-zinc-300 hover:border-zinc-400 disabled:opacity-40"
+            title={
+              pushReady
+                ? "שולח התראת בדיקה למי שנרשם ללייב"
+                : "חסרים מפתחות VAPID"
+            }
+            onClick={() => {
+              setError(null);
+              setMessage(null);
+              startTransition(async () => {
+                const result = await sendTestLivePush({
+                  topic: topic || "בדיקת התראה",
+                });
+                if (!result.ok) {
+                  setError(result.error);
+                  return;
+                }
+                setMessage(result.message);
+              });
+            }}
+          >
+            בדיקת התראה
           </button>
         </div>
       </div>

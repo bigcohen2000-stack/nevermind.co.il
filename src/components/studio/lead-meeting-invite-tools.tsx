@@ -106,7 +106,7 @@ export function LeadMeetingInviteTools({
           >
             {MEETING_TRACKS.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.title} · {t.inquiryPriceBeforeVat}
+                {t.title}, {t.inquiryPriceBeforeVat}
               </option>
             ))}
           </select>

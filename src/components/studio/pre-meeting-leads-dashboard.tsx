@@ -50,7 +50,7 @@ function LeadCard({ lead }: { lead: PreMeetingLead }) {
           <h3 className="text-lg font-semibold text-zinc-50">{lead.name}</h3>
           <p className="mt-1 text-sm text-zinc-400" dir="ltr">
             {lead.phone}
-            {lead.email ? ` · ${lead.email}` : ""}
+            {lead.email ? `, ${lead.email}` : ""}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <a

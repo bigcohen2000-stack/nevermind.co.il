@@ -108,7 +108,7 @@ export function VideoCard({
               {gated ? <LockOverlay /> : null}
               {showNew ? (
                 <span className="absolute start-2 top-2 z-[2] border border-background/40 bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-background">
-                  NEW
+                  חדש
                 </span>
               ) : null}
               {!gated ? (

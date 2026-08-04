@@ -4,6 +4,7 @@ self.addEventListener("push", (event) => {
     title: "NeverMinde",
     body: "איפוס יומי",
     url: "/",
+    tag: "daily-reset",
   };
 
   try {
@@ -13,6 +14,10 @@ self.addEventListener("push", (event) => {
         title: typeof parsed.title === "string" ? parsed.title : payload.title,
         body: typeof parsed.body === "string" ? parsed.body : payload.body,
         url: typeof parsed.url === "string" ? parsed.url : payload.url,
+        tag:
+          typeof parsed.tag === "string" && parsed.tag
+            ? parsed.tag
+            : payload.tag,
       };
     }
   } catch {
@@ -32,7 +37,7 @@ self.addEventListener("push", (event) => {
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       data: { url: payload.url },
-      tag: "daily-reset",
+      tag: payload.tag,
       renotify: true,
     }),
   );

@@ -16,7 +16,6 @@ import {
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import { RandomInvestigationButton } from "@/components/search/random-investigation-button";
 import { logSearchQuery } from "@/actions/search-analytics";
-import { useSearchHotkey } from "@/hooks/use-search-hotkey";
 import { pushRecentSearch, readRecentSearches } from "@/lib/recent-searches";
 import { storeSearchAnalyticsId } from "@/lib/search/analytics-session";
 import {
@@ -32,6 +31,7 @@ import {
   BREAKDOWN_LEVEL_NUMBERS,
   type BreakdownLevel,
 } from "@/lib/videos/investigation";
+import { formatTimestampLabel } from "@/lib/videos/timestamp";
 import { cn } from "@/lib/utils";
 
 export type { SuggestItem } from "@/lib/search/types";
@@ -121,7 +121,7 @@ export function HeroSearch({
   const [breakdown, setBreakdown] = useState<BreakdownLevel | null>(null);
 
   const isDark = variant === "dark";
-  useSearchHotkey(inputRef);
+  // Global ⌘K / / handled by CommandPalette.
 
   const placeholders =
     placeholdersProp && placeholdersProp.length > 0
@@ -554,6 +554,25 @@ export function HeroSearch({
                   <p>
                     לא נמצאו תוצאות ל-&quot;{trimmed}&quot;.
                   </p>
+                  {popularConcepts.length > 0 ? (
+                    <div>
+                      <p className="text-xs text-muted">מושגי ליבה במאגר:</p>
+                      <ul className="mt-2 flex flex-wrap gap-2">
+                        {popularConcepts.slice(0, 4).map((c) => (
+                          <li key={c.id}>
+                            <button
+                              type="button"
+                              className="border border-foreground/15 px-2.5 py-1 text-xs hover:border-action hover:text-action"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => fillSearch(c.name)}
+                            >
+                              {c.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   <div className="flex flex-wrap items-center gap-3">
                     <button
                       type="button"
@@ -582,6 +601,10 @@ export function HeroSearch({
                       item.type === "video" && item.snippet
                         ? item.snippet
                         : null;
+                    const startLabel =
+                      item.type === "video" && item.startSeconds != null
+                        ? formatTimestampLabel(item.startSeconds)
+                        : null;
                     const key =
                       item.type === "article"
                         ? `article-${item.slug}`
@@ -608,7 +631,12 @@ export function HeroSearch({
                           </span>
                           {snippet ? (
                             <span className="mt-1 block text-xs leading-snug text-muted">
-                              "{highlightMatch(snippet, query)}"
+                              {startLabel ? (
+                                <span className="me-1.5 inline-block border border-foreground/15 px-1 py-0.5 font-mono text-[10px] tabular-nums text-action">
+                                  {startLabel}
+                                </span>
+                              ) : null}
+                              &quot;{highlightMatch(snippet, query)}&quot;
                             </span>
                           ) : null}
                         </span>

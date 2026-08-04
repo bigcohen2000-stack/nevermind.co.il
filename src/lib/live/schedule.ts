@@ -177,7 +177,7 @@ export function nextOccurrenceForSlot(
 }
 
 export function formatLiveSlotLine(slot: LiveScheduleSlot): string {
-  return `${slot.label} · ${slot.timeLabel}`;
+  return `${slot.label}: ${slot.timeLabel}`;
 }
 
 function icsEscape(text: string): string {
@@ -218,7 +218,7 @@ export function buildLiveCalendarIcs(from: Date = new Date()): string {
   const events = LIVE_SCHEDULE_SLOTS.map((slot) => {
     const start = nextOccurrenceForSlot(slot, from);
     const uid = `live-${slot.id}@nevermind.co.il`;
-    const summary = icsEscape(`שידור חי · ${slot.label} · NeverMinde`);
+    const summary = icsEscape(`שידור חי: ${slot.label}, NeverMinde`);
 
     return [
       "BEGIN:VEVENT",
@@ -241,7 +241,7 @@ export function buildLiveCalendarIcs(from: Date = new Date()): string {
     "PRODID:-//NeverMinde//LIVE//HE",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:שידור חי · NeverMinde",
+    "X-WR-CALNAME:שידור חי, NeverMinde",
     `X-WR-TIMEZONE:${LIVE_TIMEZONE}`,
     ...events,
     "END:VCALENDAR",

@@ -34,7 +34,7 @@ export function RelatedConceptsStrip({
         <span key={name}>
           {i > 0 ? (
             <span className="text-muted" aria-hidden="true">
-              {" · "}
+              {", "}
             </span>
           ) : null}
           <Link

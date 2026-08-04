@@ -185,7 +185,7 @@ export function StudioFeaturedCommentsPanel({
                       <span className="ms-2 text-xs font-normal text-zinc-500">
                         סדר {row.sort_order}
                         {row.timestamp_seconds != null
-                          ? ` · ${row.timestamp_seconds}s`
+                          ? `, ${row.timestamp_seconds}s`
                           : ""}
                       </span>
                     </p>

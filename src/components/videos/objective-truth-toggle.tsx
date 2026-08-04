@@ -5,12 +5,17 @@ import { useId, useState } from "react";
 
 import { MyListSignInForm } from "@/components/auth/my-list-sign-in-form";
 import { ArticleGlossary } from "@/components/content/article-glossary";
+import { useWatchSeek } from "@/components/videos/watch-seek-context";
+import type { TranscriptSegment } from "@/lib/videos/heatmap";
+import { formatTimestampLabel } from "@/lib/videos/timestamp";
 import { cn } from "@/lib/utils";
 
 type ObjectiveTruthToggleProps = {
   facts: string[];
   /** Full transcript text. Pass null when guest (do not leak in HTML). */
   transcript: string | null;
+  /** Timed segments for click-to-seek. */
+  segments?: TranscriptSegment[];
   /** True when a transcript exists server-side (even if locked for guests). */
   transcriptAvailable?: boolean;
   /** Personal Auth (Google / email). Club alone does not unlock transcript. */
@@ -20,6 +25,53 @@ type ObjectiveTruthToggleProps = {
   videoTitle?: string;
   concepts?: string[];
 };
+
+function SeekableTranscript({
+  transcript,
+  segments,
+}: {
+  transcript: string;
+  segments: TranscriptSegment[];
+}) {
+  const seek = useWatchSeek();
+
+  if (segments.length === 0) {
+    return <p className="whitespace-pre-wrap">{transcript}</p>;
+  }
+
+  return (
+    <div className="space-y-1" role="list" aria-label="מקטעי תמליל">
+      {segments.map((seg, index) => {
+        const startSeconds = Math.floor(Math.max(0, seg.offsetMs) / 1000);
+        const label = formatTimestampLabel(startSeconds);
+        const canSeek = seek != null;
+        return (
+          <button
+            key={`${seg.offsetMs}-${index}`}
+            type="button"
+            role="listitem"
+            disabled={!canSeek}
+            className={cn(
+              "flex w-full gap-3 px-1 py-1.5 text-start transition-colors",
+              canSeek
+                ? "hover:bg-foreground/[0.04] focus-visible:bg-foreground/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-action"
+                : "cursor-default",
+            )}
+            onClick={() => {
+              if (!canSeek) return;
+              seek.seekTo(startSeconds);
+            }}
+          >
+            <span className="w-10 shrink-0 font-mono text-[10px] tabular-nums text-action">
+              {label}
+            </span>
+            <span className="min-w-0 flex-1 leading-relaxed">{seg.text}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function downloadTranscript(text: string, title: string) {
   const safe = title
@@ -46,6 +98,7 @@ function downloadTranscript(text: string, title: string) {
 export function ObjectiveTruthToggle({
   facts,
   transcript,
+  segments = [],
   transcriptAvailable = Boolean(transcript?.trim()),
   canViewTranscript = true,
   signInNextPath = "/my-list",
@@ -183,12 +236,16 @@ export function ObjectiveTruthToggle({
           {transcriptOpen ? (
             <div className="mt-3 max-h-[18rem] overflow-y-auto border border-foreground/10 bg-paper/40 p-4 text-sm leading-relaxed text-foreground/80">
               <ArticleGlossary>
-                <p className="whitespace-pre-wrap">{transcript}</p>
+                <SeekableTranscript
+                  transcript={transcript!.trim()}
+                  segments={segments}
+                />
               </ArticleGlossary>
             </div>
           ) : (
             <p className="mt-3 text-sm text-muted">
-              התמליל מכווץ. לחץ להצגה או להורדה כקובץ טקסט.
+              התמליל מכווץ. לחץ להצגה או להורדה כקובץ טקסט. לחיצה על מקטע קופצת
+              לזמן בסרטון.
             </p>
           )}
         </div>

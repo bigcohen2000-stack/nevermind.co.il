@@ -7,6 +7,7 @@ import { SearchJumpLinks } from "@/components/search/search-browse-nav";
 import { SearchFilterControls } from "@/components/search/search-filter-controls";
 import { SearchQualityFeedback } from "@/components/search/search-quality-feedback";
 import { SearchVideosPagination } from "@/components/search/search-videos-pagination";
+import { SmartEmptyState } from "@/components/ui/smart-empty-state";
 import { LearningJourney } from "@/components/videos/learning-journey";
 import { VideoCard } from "@/components/videos/video-card";
 import { CATEGORY_LABELS } from "@/lib/content/articles";
@@ -126,28 +127,13 @@ export async function SearchResults({
     return (
       <div id="search-results" className="mt-8 scroll-mt-24 space-y-10">
         {blindSpotBlock}
-        <div className="space-y-4 border border-foreground/10 bg-paper p-5 sm:p-6">
-          <p className="text-foreground/80">
-            {trimmedQuery
-              ? `לא נמצאו תוצאות ל-"${trimmedQuery}"${type !== "all" ? " בסוג שנבחר" : ""}.`
-              : "בחר מושג, מנגנון, או התחל לכתוב בשדה החיפוש."}
-          </p>
-          <p className="text-sm text-muted">
-            אפשר לעבור ל{" "}
-            <Link href="/concepts" className="text-action">
-              מדריך המושגים
-            </Link>
-            , ל{" "}
-            <Link href="/mechanisms" className="text-action">
-              מנגנונים
-            </Link>
-            , או ל{" "}
-            <Link href="/videos" className="text-action">
-              סרטונים
-            </Link>
-            .
-          </p>
-        </div>
+        <SmartEmptyState
+          message={
+            trimmedQuery
+              ? `לא נמצאו תוצאות ל-"${trimmedQuery}"${type !== "all" ? " בסוג שנבחר" : ""}. אפשר להתחיל מאחד ממושגי הליבה.`
+              : "בחר מושג, מנגנון, או התחל לכתוב בשדה החיפוש."
+          }
+        />
         {trimmedQuery ? (
           <SearchQualityFeedback
             searchQuery={trimmedQuery}

@@ -8,6 +8,7 @@ import {
   UserRound,
 } from "lucide-react";
 
+import { InfoTip } from "@/components/ui/info-tip";
 import {
   LIVE_MODIIN_SEAT,
   LIVE_OPEN_MIC,
@@ -94,12 +95,51 @@ export function LiveJoinPaths() {
 }
 
 /** Compact schedule list for accordion. */
-export function LiveScheduleBlock() {
+export function LiveScheduleBlock({
+  upcoming,
+}: {
+  upcoming?: { id: string; topic: string; scheduled_at: string; status: string }[];
+}) {
   return (
     <div className="space-y-4">
+      {upcoming && upcoming.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-foreground">מתוכננים בקרוב</p>
+          <ul className="divide-y divide-foreground/10 border border-foreground/10">
+            {upcoming.map((item) => (
+              <li
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm"
+              >
+                <span className="font-medium">
+                  {item.topic?.trim() || "שידור חי"}
+                  {item.status === "live" ? ", עכשיו" : ""}
+                </span>
+                <span className="tabular-nums text-foreground/65">
+                  {new Date(item.scheduled_at).toLocaleString("he-IL", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted">
+            רוצים התראה בדפדפן כשמתחיל?{" "}
+            <a href="/profile?tab=settings#settings" className="text-action underline-offset-2 hover:underline">
+              הגדרות בפרופיל
+            </a>
+            .
+          </p>
+        </div>
+      ) : null}
       <p className="flex items-center gap-2 text-sm text-foreground/80">
         <Clock3 className="size-4 text-action" aria-hidden />
         לוח קבוע. שעון ישראל.
+        <InfoTip label="לוח שידורים קבוע">
+          אלה השעות הקבועות. שידורים מתוכננים ספציפיים מופיעים למעלה כשיש תור
+          בסטודיו.
+        </InfoTip>
       </p>
       <ul className="divide-y divide-foreground/10 border border-foreground/10">
         {LIVE_SCHEDULE_SLOTS.map((slot) => (

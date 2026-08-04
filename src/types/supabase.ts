@@ -499,6 +499,9 @@ export type Database = {
           auth: string;
           user_agent: string | null;
           created_at: string;
+          notify_live: boolean;
+          notify_daily: boolean;
+          user_id: string | null;
         };
         Insert: {
           endpoint: string;
@@ -506,6 +509,9 @@ export type Database = {
           auth: string;
           user_agent?: string | null;
           created_at?: string;
+          notify_live?: boolean;
+          notify_daily?: boolean;
+          user_id?: string | null;
         };
         Update: {
           endpoint?: string;
@@ -513,6 +519,9 @@ export type Database = {
           auth?: string;
           user_agent?: string | null;
           created_at?: string;
+          notify_live?: boolean;
+          notify_daily?: boolean;
+          user_id?: string | null;
         };
         Relationships: [];
       };
@@ -627,6 +636,36 @@ export type Database = {
           youtube_url?: string;
           topic?: string;
           started_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      live_stream_queue: {
+        Row: {
+          id: string;
+          youtube_url: string;
+          topic: string;
+          scheduled_at: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          youtube_url: string;
+          topic?: string;
+          scheduled_at: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          youtube_url?: string;
+          topic?: string;
+          scheduled_at?: string;
+          status?: string;
+          created_at?: string;
           updated_at?: string;
         };
         Relationships: [];

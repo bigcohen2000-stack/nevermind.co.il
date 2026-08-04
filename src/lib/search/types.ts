@@ -58,7 +58,7 @@ export function suggestItemHref(item: SuggestItem): string {
 /** Short Hebrew type badge for suggest rows. */
 export function suggestItemBadge(item: SuggestItem): string {
   if (item.type === "video") {
-    return item.isGated ? "סרטון · מועדון" : "סרטון";
+    return item.isGated ? "סרטון, מועדון" : "סרטון";
   }
   if (item.type === "article") return "מאמר";
   if (

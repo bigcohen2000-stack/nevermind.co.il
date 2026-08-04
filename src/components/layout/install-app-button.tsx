@@ -133,7 +133,7 @@ export function InstallAppButton({
         )}
         aria-hidden="true"
       >
-        …
+        ...
       </span>
     );
   }

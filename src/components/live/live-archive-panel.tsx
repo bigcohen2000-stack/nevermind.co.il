@@ -169,7 +169,7 @@ export function LiveArchivePanel({
                 </Link>
                 {item.label || item.airedAt ? (
                   <p className="mt-0.5 text-xs text-muted">
-                    {[item.label, item.airedAt].filter(Boolean).join(" · ")}
+                    {[item.label, item.airedAt].filter(Boolean).join(", ")}
                   </p>
                 ) : null}
               </div>

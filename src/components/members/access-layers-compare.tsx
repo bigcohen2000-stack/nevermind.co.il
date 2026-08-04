@@ -36,7 +36,7 @@ export function AccessLayersCompare() {
             <li key={item.title}>
               <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                 <span>
-                  <span className="text-muted">חינם · </span>
+                  <span className="text-muted">חינם: </span>
                   {item.title}
                 </span>
                 <InfoTip label={`הסבר: ${item.title}`}>{item.tip}</InfoTip>
@@ -84,7 +84,7 @@ export function AccessLayersCompare() {
             <li key={item.title}>
               <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                 <span>
-                  <span className="text-action">מועדון · </span>
+                  <span className="text-action">מועדון: </span>
                   {item.title}
                 </span>
                 <InfoTip label={`הסבר: ${item.title}`}>{item.tip}</InfoTip>
