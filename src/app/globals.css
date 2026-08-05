@@ -586,12 +586,12 @@ p {
     main > section {
       animation: nm-reveal linear both;
       animation-timeline: view();
-      animation-range: entry 0% entry 55%;
+      animation-range: entry 0% entry 40%;
     }
     @keyframes nm-reveal {
       from {
-        opacity: 0;
-        transform: translateY(18px);
+        opacity: 0.35;
+        transform: translateY(10px);
       }
       to {
         opacity: 1;
@@ -599,6 +599,47 @@ p {
       }
     }
   }
+}
+
+/* Reading progress bar for article pages. Scroll-driven, no JS. Hidden by
+   default so unsupported browsers and motion-off users never see a stuck
+   full-width bar. */
+.nm-reading-progress {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: scroll(root)) {
+    .nm-reading-progress {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      z-index: 51;
+      background-color: var(--action);
+      pointer-events: none;
+      transform-origin: left center;
+      animation: nm-reading-progress linear both;
+      animation-timeline: scroll(root);
+    }
+    [dir="rtl"] .nm-reading-progress {
+      transform-origin: right center;
+    }
+    @keyframes nm-reading-progress {
+      from {
+        transform: scaleX(0);
+      }
+      to {
+        transform: scaleX(1);
+      }
+    }
+  }
+}
+
+html[data-a11y-motion="reduce"] .nm-reading-progress {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

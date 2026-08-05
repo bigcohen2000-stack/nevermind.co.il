@@ -114,6 +114,7 @@ export default async function ArticlePage({
 
   return (
     <main className="w-full text-start">
+      <div aria-hidden="true" className="nm-reading-progress" />
       <JsonLd data={breadcrumbLd} />
       <JsonLd data={buildYakirCohenPersonLd()} />
       <JsonLd data={articleLd} />
