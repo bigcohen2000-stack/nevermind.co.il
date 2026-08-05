@@ -8,6 +8,8 @@ export type PremiumStatus = {
   isPremium: boolean;
   hasVideoAccess: boolean;
   userId: string | null;
+  /** profiles.access_expires_at (ISO). Null means open ended. */
+  accessExpiresAt: string | null;
 };
 
 /**
@@ -39,6 +41,7 @@ export async function getPremiumStatus(): Promise<PremiumStatus> {
         isPremium: false,
         hasVideoAccess: false,
         userId: null,
+        accessExpiresAt: null,
       };
     }
 
@@ -59,6 +62,7 @@ export async function getPremiumStatus(): Promise<PremiumStatus> {
         isPremium: false,
         hasVideoAccess: false,
         userId: user.id,
+        accessExpiresAt: null,
       };
     }
 
@@ -76,6 +80,10 @@ export async function getPremiumStatus(): Promise<PremiumStatus> {
       isPremium: hasVideoAccess,
       hasVideoAccess,
       userId: user.id,
+      accessExpiresAt:
+        typeof profile.access_expires_at === "string"
+          ? profile.access_expires_at
+          : null,
     };
   } catch {
     return {
@@ -83,6 +91,7 @@ export async function getPremiumStatus(): Promise<PremiumStatus> {
       isPremium: false,
       hasVideoAccess: false,
       userId: null,
+      accessExpiresAt: null,
     };
   }
 }

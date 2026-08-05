@@ -16,6 +16,11 @@ export type ClubAccessResult = {
   phone: string | null;
   /** Display name from club cookie (if set). */
   displayName: string | null;
+  /**
+   * When the membership ends (ISO), from club_members.expires_at or
+   * profiles.access_expires_at. Null means open ended.
+   */
+  expiresAt: string | null;
 };
 
 async function clubConfigVersion(): Promise<number> {
@@ -32,13 +37,19 @@ async function clubConfigVersion(): Promise<number> {
   }
 }
 
+type ClubMemberCheck = {
+  valid: boolean;
+  /** club_members.expires_at when the column is readable. */
+  expiresAt: string | null;
+};
+
 /**
  * Cookie alone is not enough: member must still be allowlisted and not expired.
  * If club_members is missing (SQL not applied yet), keep cookie trust so login is not bricked.
  */
 async function clubMemberStillValid(
   session: ClubSessionPayload,
-): Promise<boolean> {
+): Promise<ClubMemberCheck> {
   try {
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
@@ -50,27 +61,32 @@ async function clubMemberStillValid(
     if (error) {
       const msg = error.message?.toLowerCase() ?? "";
       if (msg.includes("does not exist") || msg.includes("42p01")) {
-        return true;
+        return { valid: true, expiresAt: null };
       }
-      return false;
+      return { valid: false, expiresAt: null };
     }
 
-    if (!data) return false;
+    if (!data) return { valid: false, expiresAt: null };
 
     if (
       data.expires_at &&
       new Date(data.expires_at).getTime() < Date.now()
     ) {
-      return false;
+      return { valid: false, expiresAt: data.expires_at };
     }
 
-    return true;
+    return { valid: true, expiresAt: data.expires_at ?? null };
   } catch {
-    return true;
+    return { valid: true, expiresAt: null };
   }
 }
 
-async function assertLiveClubSession(): Promise<ClubSessionPayload | null> {
+type LiveClubSession = {
+  session: ClubSessionPayload;
+  expiresAt: string | null;
+};
+
+async function assertLiveClubSession(): Promise<LiveClubSession | null> {
   const session = await readClubSession();
   if (!session) return null;
 
@@ -80,13 +96,13 @@ async function assertLiveClubSession(): Promise<ClubSessionPayload | null> {
     return null;
   }
 
-  const memberOk = await clubMemberStillValid(session);
-  if (!memberOk) {
+  const member = await clubMemberStillValid(session);
+  if (!member.valid) {
     await clearClubSessionCookie();
     return null;
   }
 
-  return session;
+  return { session, expiresAt: member.expiresAt };
 }
 
 /**
@@ -94,21 +110,23 @@ async function assertLiveClubSession(): Promise<ClubSessionPayload | null> {
  * NeverMind archive unlock only.
  */
 export async function resolveVideoEntitlement(): Promise<ClubAccessResult> {
-  const session = await assertLiveClubSession();
-  if (session) {
+  const live = await assertLiveClubSession();
+  if (live) {
     const premium = await getPremiumStatus().catch(() => ({
       isAuthenticated: false,
       isPremium: false,
       hasVideoAccess: false,
       userId: null,
+      accessExpiresAt: null as string | null,
     }));
     return {
       entitled: true,
       clubSession: true,
       hasVideoAccess: true,
       isAuthenticated: premium.isAuthenticated,
-      phone: session.phone,
-      displayName: session.name?.trim() || null,
+      phone: live.session.phone,
+      displayName: live.session.name?.trim() || null,
+      expiresAt: live.expiresAt ?? premium.accessExpiresAt ?? null,
     };
   }
 
@@ -117,6 +135,7 @@ export async function resolveVideoEntitlement(): Promise<ClubAccessResult> {
     isPremium: false,
     hasVideoAccess: false,
     userId: null,
+    accessExpiresAt: null as string | null,
   }));
 
   const hasVideoAccess =
@@ -129,10 +148,11 @@ export async function resolveVideoEntitlement(): Promise<ClubAccessResult> {
     isAuthenticated: premium.isAuthenticated,
     phone: null,
     displayName: null,
+    expiresAt: hasVideoAccess ? premium.accessExpiresAt ?? null : null,
   };
 }
 
 export async function validateClubSession(): Promise<boolean> {
-  const session = await assertLiveClubSession();
-  return Boolean(session);
+  const live = await assertLiveClubSession();
+  return Boolean(live);
 }

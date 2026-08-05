@@ -28,6 +28,22 @@ export const CORE_CONCEPT_ANCHORS: readonly ConceptAnchor[] = [
     definition:
       "סיפור או פירוש שמוסיפים על עובדה. העודף הוא לא המציאות עצמה.",
   },
+  {
+    term: "מנגנון",
+    id: "concept-mechanism",
+    definition:
+      "תבנית חוזרת שמפעילה תגובה. לא האירוע הבודד, אלא המבנה שמתחת לרגש.",
+  },
+  {
+    term: "מציאות",
+    id: "concept-metziut",
+    definition: "מה שקורה בפועל, בלי הסיפור שמוסיפים עליו.",
+  },
+  {
+    term: "הזדהות",
+    id: "concept-hizdahut",
+    definition: "הדבקה של העצמי לסיפור, לרגש, לתפקיד או לרעיון.",
+  },
 ] as const;
 
 /** Site-wide citation sentence for AI crawlers (one claim). */

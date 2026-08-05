@@ -32,6 +32,7 @@ async function listPublicYoutubeIds(): Promise<
       .from("videos")
       .select("youtube_id, created_at")
       .eq("is_gated", false)
+      .eq("is_unlisted", false)
       .order("created_at", { ascending: false })
       .limit(2000);
     return data ?? [];
@@ -41,10 +42,8 @@ async function listPublicYoutubeIds(): Promise<
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.map((path) => ({
     url: `${SITE_URL}${path}`,
-    lastModified: now,
     changeFrequency: path === "" || path === "/videos" ? "daily" : "weekly",
     priority: path === "" ? 1 : path === "/videos" || path === "/search" ? 0.9 : 0.7,
   }));
@@ -52,7 +51,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const articleEntries: MetadataRoute.Sitemap = getAllArticles().map(
     (article) => ({
       url: `${SITE_URL}/articles/${article.slug}`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.8,
     }),

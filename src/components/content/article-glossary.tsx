@@ -56,6 +56,7 @@ export function ArticleGlossary({ children }: ArticleGlossaryProps) {
     }
 
     const mounts: Root[] = [];
+    const enhancedTerms = new Set<string>();
 
     for (const textNode of textNodes) {
       const parent = textNode.parentElement;
@@ -77,7 +78,8 @@ export function ArticleGlossary({ children }: ArticleGlossaryProps) {
       for (const part of parts) {
         if (!part) continue;
         const definition = glossaryDefinition(part);
-        if (definition) {
+        if (definition && !enhancedTerms.has(part)) {
+          enhancedTerms.add(part);
           const span = document.createElement("span");
           span.setAttribute("data-glossary-term", part);
           frag.appendChild(span);
@@ -98,14 +100,17 @@ export function ArticleGlossary({ children }: ArticleGlossaryProps) {
 
     mountsRef.current = mounts;
     return () => {
-      for (const mount of mountsRef.current) {
-        mount.unmount();
-      }
+      const mountedRoots = mountsRef.current;
       mountsRef.current = [];
       root.querySelectorAll("[data-glossary-term]").forEach((el) => {
         const term = el.getAttribute("data-glossary-term") ?? "";
         el.replaceWith(document.createTextNode(term));
       });
+      window.setTimeout(() => {
+        for (const mount of mountedRoots) {
+          mount.unmount();
+        }
+      }, 0);
     };
   }, [terms]);
 

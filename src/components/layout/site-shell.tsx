@@ -3,10 +3,12 @@ import type { ReactNode } from "react";
 import { AccessibilityToolbar } from "@/components/a11y/accessibility-toolbar";
 import { WhatsAppFloat } from "@/components/contact/whatsapp-float";
 import { AccessTierMarker } from "@/components/layout/access-tier-marker";
+import { ClubExpiryBanner } from "@/components/layout/club-expiry-banner";
 import { ClubMemberChrome } from "@/components/layout/club-member-chrome";
 import { getHeaderSession } from "@/lib/auth/header-session";
 import { resolveSiteAccessTier } from "@/lib/access/site-tier";
 import { resolveVideoEntitlement } from "@/lib/club/access";
+import { resolveClubExpiryState } from "@/lib/club/expiry";
 import { getLiveUpdateItems } from "@/lib/site/live-updates";
 import { resolveSiteTheme } from "@/lib/theme/preference";
 import { DailyResetPrompt } from "@/components/push/daily-reset-prompt";
@@ -45,6 +47,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
       isAuthenticated: false,
       phone: null as string | null,
       displayName: null as string | null,
+      expiresAt: null as string | null,
     })),
   ]);
   const theme = await resolveSiteTheme(session);
@@ -57,6 +60,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
     ...session,
     displayName: access.displayName || session.displayName,
   };
+  const clubExpiry = isClub ? resolveClubExpiryState(access.expiresAt) : null;
 
   return (
     <CommandPaletteRoot>
@@ -80,6 +84,14 @@ export async function SiteShell({ children }: { children: ReactNode }) {
             <FocusModeChrome>
               <SiteStatusBanner session={sessionForUi} accessTier={accessTier} />
             </FocusModeChrome>
+            {clubExpiry?.showNotice ? (
+              <FocusModeChrome>
+                <ClubExpiryBanner
+                  state={clubExpiry}
+                  displayName={sessionForUi.displayName}
+                />
+              </FocusModeChrome>
+            ) : null}
             <FocusModeChrome>
               <SiteHeader
                 session={sessionForUi}

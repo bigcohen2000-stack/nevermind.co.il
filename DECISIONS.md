@@ -764,6 +764,18 @@ When a new decision must be made, use this format:
 
 ---
 
+### Membership access and renewal (Aug 6, 2026)
+
+**Auth:** Supabase Auth is the official provider. No replacement provider is planned.
+
+**No checkout:** there is no payment processing on the site. Membership is opened and extended manually by the admin (Studio, SQL, or WhatsApp).
+
+**Content locking:** video only. Articles stay open and have no premium gate.
+
+**Expiry banner:** club members with an end date see a top strip with the days left and a renewal request button. Source of truth is `club_members.expires_at`, with `profiles.access_expires_at` as fallback. The button opens WhatsApp with a prefilled request, plus a link to `/contact`. On the last day the copy offers one paid month plus 2 free months. The date extension itself stays manual in Studio.
+
+---
+
 **Document Status:** UPDATED (investigation protocol Aug 2, 2026)  
 **Last Updated:** August 2, 2026  
 **Next Review:** YouTube Analytics retention / comment frequency cloud

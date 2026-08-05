@@ -73,9 +73,15 @@ export function ArticleHeader({
           {title}
         </h1>
 
-        <p className="mt-6 max-w-prose text-lg leading-relaxed text-foreground/80">
-          {description}
-        </p>
+        <div
+          className="mt-6 max-w-prose border border-foreground/15 bg-foreground/[0.04] p-4 sm:p-5"
+          data-ai-hint="tldr"
+        >
+          <p className="text-xs font-medium tracking-wide text-action">בקצרה</p>
+          <p className="mt-2 text-base leading-relaxed text-foreground/85 sm:text-lg">
+            {description}
+          </p>
+        </div>
       </div>
     </section>
   );

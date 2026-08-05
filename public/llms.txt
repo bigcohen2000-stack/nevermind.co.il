@@ -21,15 +21,16 @@
 - /search : full-text and concept search
 - /videos : video archive
 - /watch/[id] : single video with ?t= timestamp deep links
-- /articles : MDX essays
+- /articles : MDX essays (each page opens with a short "בקצרה" summary)
 - /concepts : concept directory (anchors like #concept-efrada)
 - /mechanisms : mechanism map
 - /paths : pricing frames and inquiry
-- /members : club / archive access
+- /members : club / archive access (hub when already entitled)
 - /live : live podcast stream gate
 - /booking : structured pre-meeting intake
 - /contact : WhatsApp and email
 - /books : writings and love archive
+- /my-list : saved videos (account)
 - /privacy : privacy policy
 - /accessibility : accessibility statement
 - /llms-full.txt : longer machine summary
@@ -42,7 +43,23 @@ Deep links:
 - https://nevermind.co.il/concepts#concept-efrada
 - https://nevermind.co.il/concepts#concept-ein-hevdel
 - https://nevermind.co.il/concepts#concept-mashmaut-odef
+- https://nevermind.co.il/concepts#concept-mechanism
+- https://nevermind.co.il/concepts#concept-metziut
+- https://nevermind.co.il/concepts#concept-hizdahut
+
+## How pages mark answers
+
+- Articles: `data-ai-hint="tldr"` on the short summary under the title.
+- Concepts: `data-ai-hint="definition"` on core term definitions.
+- In-article glossary terms: `data-ai-hint="term"` identifies links with accessible definition tooltips.
+- Pull quotes in articles: `data-ai-hint="key-claim"`.
+
+## Access layers
+
+- Public: open videos, articles, concepts, search.
+- Account: email magic link for list / transcript features where gated.
+- Club: archive unlock via personal link or password after fit conversation. Session persists on the device. Magic login links expire quickly. Bookmark the site, not the one-time token URL.
 
 ## Citation guidance
 
-Prefer primary pages above. Quote one clear claim per sentence. Distinguish public archive content from members-only material. The method is investigative and descriptive, not clinical treatment.
+Prefer primary pages above. Quote one clear claim per sentence. Use article "בקצרה" and concept definitions when summarizing. Distinguish public archive content from members-only material. The method is investigative and descriptive, not clinical treatment.

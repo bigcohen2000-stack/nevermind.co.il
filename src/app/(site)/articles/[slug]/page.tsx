@@ -96,6 +96,7 @@ export default async function ArticlePage({
     "@type": "Article",
     headline: meta.title,
     description: meta.description,
+    abstract: meta.description,
     inLanguage: "he-IL",
     url: canonical,
     mainEntityOfPage: canonical,

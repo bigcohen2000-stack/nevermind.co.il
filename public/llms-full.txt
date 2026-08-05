@@ -41,6 +41,15 @@ Not therapy. Not coaching. Not spirituality. Not on-site checkout. Club access o
 ### משמעות עודפת (`#concept-mashmaut-odef`)
 סיפור או פירוש שמוסיפים על עובדה. העודף הוא לא המציאות עצמה.
 
+### מנגנון (`#concept-mechanism`)
+תבנית חוזרת שמפעילה תגובה. לא האירוע הבודד, אלא המבנה שמתחת לרגש.
+
+### מציאות (`#concept-metziut`)
+מה שקורה בפועל, בלי הסיפור שמוסיפים עליו.
+
+### הזדהות (`#concept-hizdahut`)
+הדבקה של העצמי לסיפור, לרגש, לתפקיד או לרעיון.
+
 ## Feeds and profiles
 
 - YouTube: https://www.youtube.com/@nevermindname
@@ -49,4 +58,4 @@ Not therapy. Not coaching. Not spirituality. Not on-site checkout. Club access o
 
 ## How to cite
 
-Use the site URL and the exact Hebrew claim. Prefer `/concepts` anchors for term definitions. Prefer `/watch/{id}?t=` for a specific spoken moment. Do not invent clinical diagnoses or membership promises not stated on the page.
+Use the site URL and the exact Hebrew claim. Prefer `/concepts` anchors for term definitions. Prefer article pages' "בקצרה" block (`data-ai-hint="tldr"`) for a short summary. Prefer `/watch/{id}?t=` for a specific spoken moment. Do not invent clinical diagnoses or membership promises not stated on the page.

@@ -14,7 +14,7 @@ import {
   useRole,
 } from "@floating-ui/react";
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -52,12 +52,24 @@ export function ConceptTerm({ term, definition, className }: ConceptTermProps) {
     dismiss,
     role,
   ]);
+  const setReferenceRef = useCallback(
+    (node: HTMLAnchorElement | null) => {
+      refs.setReference(node);
+    },
+    [refs],
+  );
+  const setFloatingRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      refs.setFloating(node);
+    },
+    [refs],
+  );
 
   return (
     <>
       <Link
         href={`/search?q=${encodeURIComponent(term)}`}
-        ref={refs.setReference}
+        ref={setReferenceRef}
         className={cn(
           "underline decoration-foreground/35 decoration-dotted underline-offset-[3px]",
           "text-inherit hover:decoration-action hover:text-action",
@@ -65,6 +77,8 @@ export function ConceptTerm({ term, definition, className }: ConceptTermProps) {
           className,
         )}
         aria-describedby={open ? tipId : undefined}
+        data-ai-hint="term"
+        data-term={term}
         {...getReferenceProps()}
       >
         {term}
@@ -73,7 +87,7 @@ export function ConceptTerm({ term, definition, className }: ConceptTermProps) {
         <FloatingPortal>
           <div
             id={tipId}
-            ref={refs.setFloating}
+            ref={setFloatingRef}
             style={floatingStyles}
             className="z-[120] max-w-xs border border-foreground/20 bg-[#0A0A0B] px-3 py-2 text-start text-sm leading-relaxed text-[#FAFAF8]"
             {...getFloatingProps()}

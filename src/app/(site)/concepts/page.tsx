@@ -153,7 +153,13 @@ export default async function ConceptsPage() {
                   <dt className="font-semibold text-foreground">
                     <dfn id={`${item.id}-dfn`}>{item.term}</dfn>
                   </dt>
-                  <dd className="mt-1">{item.definition}</dd>
+                  <dd
+                    className="mt-1"
+                    data-ai-hint="definition"
+                    data-term={item.term}
+                  >
+                    {item.definition}
+                  </dd>
                 </div>
               ))}
             </dl>
