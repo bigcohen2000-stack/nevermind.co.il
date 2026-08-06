@@ -10,6 +10,7 @@ import { HeartQuestionsStrip } from "@/components/community/heart-questions-stri
 import { HomePathsGrid } from "@/components/home/home-paths-grid";
 import { HomeLiveStrip } from "@/components/live/home-live-strip";
 import { InvestigationFactsStrip } from "@/components/members/investigation-facts-strip";
+import { NewsletterSignup } from "@/components/newsletter/newsletter-signup";
 import { SiteBanner } from "@/components/site/site-banner";
 import { ContinueWatchingSection } from "@/components/videos/continue-watching-section";
 import { getLatestContinueWatching } from "@/actions/video-progress";
@@ -590,6 +591,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <NewsletterSignup source="home" />
 
       {/* 9 — FINAL CTA ----------------------------------------------------- */}
       <section

@@ -29,6 +29,7 @@
  *   30_quotes_and_banners.sql
  *   31_profile_theme.sql
  *   32_live_video_votes.sql
+ *   38_newsletter_subscribers.sql
  *
  * Replace with generated types after linking a live project:
  *   npx supabase gen types typescript --project-id <YOUR_NEW_PROJECT_ID> > src/types/supabase.ts
@@ -522,6 +523,27 @@ export type Database = {
           notify_live?: boolean;
           notify_daily?: boolean;
           user_id?: string | null;
+        };
+        Relationships: [];
+      };
+      newsletter_subscribers: {
+        Row: {
+          id: string;
+          email: string;
+          source: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          source?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          source?: string;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -1207,6 +1229,8 @@ export type BookingLead =
   Database["public"]["Tables"]["booking_leads"]["Row"];
 export type PushSubscriber =
   Database["public"]["Tables"]["subscribers"]["Row"];
+export type NewsletterSubscriber =
+  Database["public"]["Tables"]["newsletter_subscribers"]["Row"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type UserMeeting =
   Database["public"]["Tables"]["user_meetings"]["Row"];

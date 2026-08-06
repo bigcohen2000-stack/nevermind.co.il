@@ -10,6 +10,7 @@ import {
 import { ContactLeadForm } from "@/components/contact/contact-lead-form";
 import { DirectWhatsAppQuestionBox } from "@/components/contact/direct-whatsapp-question-box";
 import { JsonLd } from "@/components/seo/json-ld";
+import { ProductFaq } from "@/components/seo/product-faq";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
 import { CONTACT_FAQ, RESPONSE_SLA_NOTE } from "@/lib/content/offers";
 import { shareImageMetadata } from "@/lib/og/share-image";
@@ -83,23 +84,9 @@ export default async function ContactPage({ searchParams }: PageProps) {
     { name: "יצירת קשר", path: "/contact" },
   ]);
 
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: CONTACT_FAQ.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.answer,
-      },
-    })),
-  };
-
   return (
     <main className="w-full text-start">
       <JsonLd data={breadcrumbLd} />
-      <JsonLd data={faqJsonLd} />
 
       <section aria-labelledby="contact-hero-title" className="band-dark">
         <Watermark className="bottom-[-1.5rem] start-[-0.5rem] text-[6rem] text-foreground/[0.045] sm:text-[9rem] lg:text-[12rem]">
@@ -248,32 +235,12 @@ export default async function ContactPage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      <section
-        aria-labelledby="contact-faq-title"
-        className="border-t border-foreground/10 bg-paper text-foreground"
-      >
-        <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
-          <h2
-            id="contact-faq-title"
-            className="text-2xl font-semibold tracking-tight sm:text-3xl"
-          >
-            שאלות לפני שמתחילים.
-          </h2>
-          <dl className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {CONTACT_FAQ.map((item) => (
-              <div
-                key={item.question}
-                className="border border-foreground/15 bg-background p-4 sm:p-5"
-              >
-                <dt className="font-semibold tracking-tight">{item.question}</dt>
-                <dd className="mt-2 text-sm leading-relaxed text-muted">
-                  {item.answer}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
+      <ProductFaq
+        items={CONTACT_FAQ}
+        title="שאלות לפני שמתחילים."
+        headingId="contact-faq-title"
+        sectionId="contact-faq"
+      />
     </main>
   );
 }

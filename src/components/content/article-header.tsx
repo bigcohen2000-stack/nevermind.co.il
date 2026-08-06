@@ -13,6 +13,8 @@ interface ArticleHeaderProps {
   description: string;
   categoryLabel: string;
   isPremium?: boolean;
+  /** Quiet estimate from article body word count. */
+  readingMinutes?: number;
 }
 
 export function ArticleHeader({
@@ -20,6 +22,7 @@ export function ArticleHeader({
   description,
   categoryLabel,
   isPremium = false,
+  readingMinutes,
 }: ArticleHeaderProps) {
   return (
     <section aria-labelledby="article-title" className="band-dark">
@@ -59,6 +62,11 @@ export function ArticleHeader({
           <span className="text-sm font-medium tracking-wide text-muted">
             {categoryLabel}
           </span>
+          {typeof readingMinutes === "number" && readingMinutes > 0 ? (
+            <span className="text-sm text-muted">
+              {readingMinutes} דקות קריאה
+            </span>
+          ) : null}
           {isPremium && (
             <span className="rounded-full border border-foreground/30 px-3 py-0.5 text-xs text-foreground/80">
               לחברים

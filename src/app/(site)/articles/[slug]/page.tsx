@@ -16,6 +16,10 @@ import {
   getArticleSlugs,
 } from "@/lib/content/articles";
 import {
+  getArticleReadingMinutes,
+  readingMinutesToIsoDuration,
+} from "@/lib/content/reading-time";
+import {
   getArticleBridgeTerms,
   getRelatedArticlesForCategory,
   getRelatedVideosForArticle,
@@ -84,6 +88,7 @@ export default async function ArticlePage({
   );
   const relatedConcepts = bridgeTerms.slice(0, 6).map((name) => ({ name }));
   const canonical = `https://nevermind.co.il/articles/${meta.slug}`;
+  const readingMinutes = getArticleReadingMinutes(meta.slug);
 
   const breadcrumbLd = buildBreadcrumbList([
     { name: "בית", path: "/" },
@@ -100,6 +105,7 @@ export default async function ArticlePage({
     inLanguage: "he-IL",
     url: canonical,
     mainEntityOfPage: canonical,
+    timeRequired: readingMinutesToIsoDuration(readingMinutes),
     author: yakirCohenAuthorRef(),
     creator: yakirCohenAuthorRef(),
     publisher: {
@@ -124,6 +130,7 @@ export default async function ArticlePage({
         description={meta.description}
         categoryLabel={CATEGORY_LABELS[meta.category]}
         isPremium={meta.isPremium}
+        readingMinutes={readingMinutes}
       />
 
       <section className="bg-background text-foreground">

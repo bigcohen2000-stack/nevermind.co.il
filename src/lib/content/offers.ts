@@ -496,6 +496,20 @@ export const PATHS_FAQ: FaqItem[] = [
   },
 ];
 
+/** Short credibility FAQ for /members (non-member marketing surface). */
+export const MEMBERS_CREDIBILITY_FAQ: FaqItem[] = [
+  {
+    question: "למה יש אומדן וגם ספירה חיה?",
+    answer:
+      "האומדן מתאר את עומק הארכיון ההיסטורי. הספירה החיה מתארת מה מסונכרן ופתוח או חסום באתר עכשיו.",
+  },
+  {
+    question: "למה אין מספר מנויים?",
+    answer:
+      "כי הכמות לא מדד לעומק. הקהילה סגורה אחרי בדיקת התאמה.",
+  },
+];
+
 /** FAQ for /live (stream, archive, votes). */
 export const LIVE_FAQ: FaqItem[] = [
   {

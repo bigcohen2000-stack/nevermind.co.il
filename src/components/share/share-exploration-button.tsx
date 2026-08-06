@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 
+import { buildWhatsAppHref } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
+
+const SITE_ORIGIN = "https://nevermind.co.il";
 
 type ShareExplorationButtonProps = {
   /** Share title (video / article / page name). */
@@ -19,10 +22,11 @@ type ShareStatus = "idle" | "copied" | "failed";
 function resolveShareUrl(url?: string): string {
   if (url) {
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    if (typeof window !== "undefined") {
-      return new URL(url, window.location.origin).toString();
+    try {
+      return new URL(url, SITE_ORIGIN).toString();
+    } catch {
+      return url;
     }
-    return url;
   }
   if (typeof window !== "undefined") return window.location.href;
   return "";
@@ -56,6 +60,7 @@ async function copyToClipboard(value: string): Promise<boolean> {
 
 /**
  * Native OS share sheet when available. Clipboard fallback otherwise.
+ * Quiet WhatsApp link as a secondary path (no social icon cluster).
  */
 export function ShareExplorationButton({
   title,
@@ -64,6 +69,10 @@ export function ShareExplorationButton({
   className = "",
 }: ShareExplorationButtonProps) {
   const [status, setStatus] = useState<ShareStatus>("idle");
+  const shareUrlForWa = url ? resolveShareUrl(url) : "";
+  const whatsAppHref = shareUrlForWa
+    ? buildWhatsAppHref(`${text}\n${shareUrlForWa}`)
+    : null;
 
   async function onShare() {
     const shareUrl = resolveShareUrl(url);
@@ -74,10 +83,14 @@ export function ShareExplorationButton({
 
     const payload: ShareData = { title, text, url: shareUrl };
 
-    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    if (
+      typeof navigator !== "undefined" &&
+      typeof navigator.share === "function"
+    ) {
       try {
         const canShare =
-          typeof navigator.canShare !== "function" || navigator.canShare(payload);
+          typeof navigator.canShare !== "function" ||
+          navigator.canShare(payload);
         if (canShare) {
           await navigator.share(payload);
           setStatus("idle");
@@ -121,6 +134,16 @@ export function ShareExplorationButton({
         <span className="text-xs text-muted" aria-hidden="true">
           לא ניתן לשתף כרגע
         </span>
+      ) : null}
+      {whatsAppHref ? (
+        <a
+          href={whatsAppHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-muted no-underline transition-colors hover:text-action hover:no-underline"
+        >
+          לשתף בוואטסאפ
+        </a>
       ) : null}
     </span>
   );

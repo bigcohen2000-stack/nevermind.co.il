@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { JsonLd } from "@/components/seo/json-ld";
+import { NewsletterSignup } from "@/components/newsletter/newsletter-signup";
 import { Eyebrow } from "@/components/ui/editorial";
 import { CATEGORY_LABELS, getAllArticles } from "@/lib/content/articles";
 import { shareImageMetadata } from "@/lib/og/share-image";
@@ -122,6 +123,8 @@ export default function ArticlesPage() {
           </ol>
         </div>
       </section>
+
+      <NewsletterSignup source="articles" />
     </main>
   );
 }
