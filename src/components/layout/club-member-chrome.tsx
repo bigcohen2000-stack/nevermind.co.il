@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   Bookmark,
   Clapperboard,
+  Headphones,
   KeyRound,
   Library,
   Radio,
@@ -14,8 +15,9 @@ type ClubMemberChromeProps = {
 };
 
 const LINKS = [
-  { href: "/videos?filter=club", label: "מאגר מועדון", icon: Library },
-  { href: "/search", label: "חיפוש", icon: Search },
+  { href: "/videos?filter=club", label: "ארכיון מועדון", icon: Library },
+  { href: "/search", label: "חיפוש תמלילים", icon: Search },
+  { href: "/members#podcast", label: "פודקאסט פרטי", icon: Headphones },
   { href: "/live", label: "שידור חי", icon: Radio },
   { href: "/my-list", label: "הרשימה שלי", icon: Bookmark },
   { href: "/members", label: "המועדון", icon: KeyRound },

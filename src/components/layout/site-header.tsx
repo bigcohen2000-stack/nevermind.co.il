@@ -24,6 +24,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
+import { AccessUpgradeStrip } from "@/components/access/access-upgrade-strip";
 import { HeaderAuthControls } from "@/components/layout/header-auth-controls";
 import { HeaderSearch } from "@/components/layout/header-search";
 import { InstallAppButton } from "@/components/layout/install-app-button";
@@ -279,6 +280,13 @@ export function SiteHeader({
 
           <div className="hidden shrink-0 items-center gap-2 lg:flex">
             {isClub ? <ClubMemberChrome variant="chip" /> : null}
+            {!isClub ? (
+              <AccessUpgradeStrip
+                tier={accessTier}
+                density="header"
+                hideStatus
+              />
+            ) : null}
             <HeaderAuthControls
               session={session}
               theme={theme}
@@ -437,6 +445,12 @@ export function SiteHeader({
               layout="stack"
               onNavigate={() => setMenuOpen(false)}
             />
+
+            {!isClub ? (
+              <div className="border-t border-foreground/10 pt-4">
+                <AccessUpgradeStrip tier={accessTier} density="section" />
+              </div>
+            ) : null}
 
             <div className="border-t border-foreground/10 pt-4">
               <InstallAppButton className="w-full" />

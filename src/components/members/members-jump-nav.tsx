@@ -25,21 +25,22 @@ export type MembersJumpItem = {
 };
 
 const DEFAULT_JUMPS: MembersJumpItem[] = [
+  { href: "#access", label: "בקשת גישה", icon: KeyRound },
   { href: "#login", label: "כניסה", icon: KeyRound },
-  { href: "#members-stats-title", label: "עומק", icon: Compass },
+  { href: "#access-layers-title", label: "שכבות", icon: Library },
   { href: "#membership-benefits", label: "מה כלול", icon: Library },
   { href: "#membership-prices", label: "מחירים", icon: Wallet },
   { href: "#members-syllabus", label: "נושאים", icon: Compass },
   { href: "#members-credibility", label: "אמינות", icon: ShieldQuestion },
   { href: "#members-access-steps", label: "איך נכנסים", icon: Clapperboard },
-  { href: "#podcast", label: "פודקאסט", icon: Headphones },
+  { href: "#podcast", label: "פודקאסט פרטי", icon: Headphones },
 ];
 
 const MEMBER_JUMPS: MembersJumpItem[] = [
   { href: "#member-hub", label: "התחנה שלי", icon: Library },
   { href: "/videos?filter=club", label: "מאגר", icon: Clapperboard },
   { href: "/videos", label: "כל הסרטונים", icon: Library },
-  { href: "/search", label: "חיפוש", icon: Search },
+  { href: "/search", label: "חיפוש תמלילים", icon: Search },
   { href: "/live", label: "לייב", icon: Radio },
   { href: "#podcast", label: "פיד פרטי", icon: Headphones },
   { href: "/my-list", label: "רשימה", icon: Bookmark },

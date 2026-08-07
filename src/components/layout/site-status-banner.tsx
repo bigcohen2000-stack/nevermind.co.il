@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { logoutClub } from "@/actions/club-login";
 import { clearSiteThemePreference } from "@/actions/theme";
+import { AccessUpgradeStrip } from "@/components/access/access-upgrade-strip";
 import type { SiteAccessTier } from "@/lib/access/site-tier";
 import {
   formatHeaderAuthLabel,
@@ -35,20 +36,19 @@ export function SiteStatusBanner({
 }: SiteStatusBannerProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [dismissed, setDismissed] = useState(true);
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return window.localStorage.getItem(DISMISS_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
 
   const authLabel = formatHeaderAuthLabel(session.authEmail);
   const clubLabel = formatHeaderClubLabel(session.clubPhone);
   const hasAuth = Boolean(session.authUserId);
   const isClub = accessTier === "club";
-
-  useEffect(() => {
-    try {
-      setDismissed(window.localStorage.getItem(DISMISS_KEY) === "1");
-    } catch {
-      setDismissed(false);
-    }
-  }, []);
 
   function dismissGuest() {
     try {
@@ -163,7 +163,7 @@ export function SiteStatusBanner({
                 aria-hidden="true"
                 className="inline-block size-1.5 rounded-full bg-emerald-400"
               />
-              מחובר לאתר
+              חשבון פתוח
             </span>
             <TimeOfDayGreeting
               name={session.displayName}
@@ -174,26 +174,15 @@ export function SiteStatusBanner({
             ) : null}
             <span className="text-muted">
               {" "}
-              חשבון חופשי. מאגר המועדון נפתח בנפרד אחרי אישור.
+              חשבון מייל לא פותח את המאגר. לשדרוג: בקשת גישה למועדון.
             </span>
           </p>
 
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-            <Link
-              href="/my-list"
-              className="inline-flex min-h-8 items-center rounded-md px-2 text-xs text-foreground/85 transition hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
-            >
-              הרשימה שלי
-            </Link>
-            <Link
-              href="/members"
-              className="inline-flex min-h-8 items-center rounded-md px-2 text-xs text-foreground/85 transition hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
-            >
-              כניסה למועדון
-            </Link>
+            <AccessUpgradeStrip tier="account" density="banner" />
             <Link
               href="/profile"
-              className="inline-flex min-h-8 items-center rounded-md px-2 text-xs text-foreground/85 transition hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+              className="inline-flex min-h-8 items-center px-2 text-xs text-foreground/85 transition hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
             >
               פרופיל
             </Link>
@@ -201,7 +190,7 @@ export function SiteStatusBanner({
               type="button"
               disabled={pending}
               onClick={signOutAccount}
-              className="inline-flex min-h-8 items-center rounded-md px-2 text-xs text-muted transition hover:text-action disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+              className="inline-flex min-h-8 items-center px-2 text-xs text-muted transition hover:text-action disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
             >
               התנתק
             </button>
@@ -216,33 +205,27 @@ export function SiteStatusBanner({
   return (
     <div
       role="region"
-      aria-label="הצטרפות לאתר"
+      aria-label="שכבות גישה"
       className="border-b border-action/35 bg-action/[0.08] text-foreground"
     >
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium tracking-tight">הצטרפו לאתר</p>
+          <p className="text-sm font-medium tracking-tight">שתי שכבות ברורות</p>
           <p className="mt-0.5 text-xs leading-relaxed text-muted sm:text-sm">
-            שמירת סרטונים, הרשימה שלי, והתחברות עם קישור לאימייל. זה לא פותח את
-            מאגר המועדון.
+            חשבון חינם שומר רשימה והיסטוריה. מועדון פותח את המאגר אחרי התאמה.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/my-list"
-            className={cn(
-              "inline-flex min-h-9 items-center justify-center rounded-md bg-action px-3 text-xs font-semibold text-white",
-              "transition hover:bg-action/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
-            )}
-          >
-            התחברות באימייל
-          </Link>
+          <AccessUpgradeStrip tier="guest" density="banner" />
           <button
             type="button"
             onClick={dismissGuest}
-            className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md text-muted transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
-            aria-label="סגירת באנר הצטרפות"
+            className={cn(
+              "inline-flex min-h-9 min-w-9 items-center justify-center text-muted transition hover:text-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
+            )}
+            aria-label="סגירת באנר שכבות גישה"
           >
             <span aria-hidden="true">×</span>
           </button>

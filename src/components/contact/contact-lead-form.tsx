@@ -10,6 +10,11 @@ import {
   LEAD_SOURCE_LABELS,
   type PathId,
 } from "@/lib/content/offers";
+import {
+  validateEmail,
+  validateName,
+  validatePhone,
+} from "@/lib/forms/validators";
 import { buildSmsHref, buildWhatsAppHref } from "@/lib/whatsapp";
 
 type ContactLeadFormProps = {
@@ -53,72 +58,111 @@ export function ContactLeadForm({ source }: ContactLeadFormProps) {
     );
   }
 
-  function persistLead(channel: "whatsapp" | "sms") {
-    const contextParts = [
-      interestLabel,
-      message.trim() || null,
-      sourceLabel ? `מקור: ${sourceLabel}` : null,
-      `ערוץ: ${channel}`,
-    ].filter(Boolean);
-
-    void submitBookingLead({
-      name: name.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      context: contextParts.join(" | "),
-      source: source
-        ? `contact-${source}-${channel}`
-        : `contact-${channel}`,
-    });
+  function validateLeadBasics(opts: { requireEmail?: boolean } = {}) {
+    const nameErr = validateName(name);
+    if (nameErr) return nameErr;
+    const phoneErr = validatePhone(phone);
+    if (phoneErr) return phoneErr;
+    if (opts.requireEmail) {
+      const emailErr = validateEmail(email, { required: true });
+      if (emailErr) return emailErr;
+    } else {
+      const emailErr = validateEmail(email);
+      if (emailErr) return emailErr;
+    }
+    return null;
   }
 
   function onWhatsApp(e: React.FormEvent) {
     e.preventDefault();
-    const trimmedName = name.trim();
-    const trimmedPhone = phone.trim();
-    if (!trimmedName || !trimmedPhone) {
-      setError("נא למלא שם וטלפון.");
+    const validationError = validateLeadBasics();
+    if (validationError) {
+      setError(validationError);
       return;
     }
+    const trimmedName = name.trim();
+    const trimmedPhone = phone.trim();
     setError("");
-    persistLead("whatsapp");
-    const text = buildLeadWhatsAppText({
-      name: trimmedName,
-      phone: trimmedPhone,
-      interestLabel,
-      message,
-      source: sourceLabel,
+    startTransition(async () => {
+      const result = await submitBookingLead({
+        name: trimmedName,
+        phone: trimmedPhone,
+        email: email.trim(),
+        context: [
+          interestLabel,
+          message.trim() || null,
+          sourceLabel ? `מקור: ${sourceLabel}` : null,
+          "ערוץ: whatsapp",
+        ]
+          .filter(Boolean)
+          .join(" | "),
+        source: source
+          ? `contact-${source}-whatsapp`
+          : "contact-whatsapp",
+      });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      const text = buildLeadWhatsAppText({
+        name: trimmedName,
+        phone: trimmedPhone,
+        interestLabel,
+        message,
+        source: sourceLabel,
+      });
+      window.open(buildWhatsAppHref(text), "_blank", "noopener,noreferrer");
     });
-    window.open(buildWhatsAppHref(text), "_blank", "noopener,noreferrer");
   }
 
   function onSms() {
-    const trimmedName = name.trim();
-    const trimmedPhone = phone.trim();
-    if (!trimmedName || !trimmedPhone) {
-      setError("נא למלא שם וטלפון.");
+    const validationError = validateLeadBasics();
+    if (validationError) {
+      setError(validationError);
       return;
     }
+    const trimmedName = name.trim();
+    const trimmedPhone = phone.trim();
     setError("");
-    persistLead("sms");
-    const text = buildLeadWhatsAppText({
-      name: trimmedName,
-      phone: trimmedPhone,
-      interestLabel,
-      message,
-      source: sourceLabel,
+    startTransition(async () => {
+      const result = await submitBookingLead({
+        name: trimmedName,
+        phone: trimmedPhone,
+        email: email.trim(),
+        context: [
+          interestLabel,
+          message.trim() || null,
+          sourceLabel ? `מקור: ${sourceLabel}` : null,
+          "ערוץ: sms",
+        ]
+          .filter(Boolean)
+          .join(" | "),
+        source: source ? `contact-${source}-sms` : "contact-sms",
+      });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      const text = buildLeadWhatsAppText({
+        name: trimmedName,
+        phone: trimmedPhone,
+        interestLabel,
+        message,
+        source: sourceLabel,
+      });
+      window.location.href = buildSmsHref(text);
     });
-    window.location.href = buildSmsHref(text);
   }
 
   function onEmail() {
+    const validationError = validateLeadBasics({ requireEmail: true });
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     const trimmedName = name.trim();
     const trimmedPhone = phone.trim();
     const trimmedEmail = email.trim();
-    if (!trimmedName || !trimmedPhone || !trimmedEmail) {
-      setError("לשליחה במייל נדרשים שם, טלפון ואימייל.");
-      return;
-    }
     setError("");
     setEmailSent(false);
 

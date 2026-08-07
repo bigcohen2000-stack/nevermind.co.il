@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Suspense } from "react";
 
+import { ClubSoftGateNote } from "@/components/access/club-soft-gate-note";
 import { SetBreadcrumbCurrent } from "@/components/layout/site-breadcrumbs";
 import { RabbitHoleSearchBridge } from "@/components/premium/rabbit-hole-search-bridge";
 import { SearchBrowseNav } from "@/components/search/search-browse-nav";
@@ -148,7 +149,17 @@ export default async function SearchPage({ searchParams }: PageProps) {
           </h1>
           <p className="mt-6 max-w-prose text-lg leading-relaxed text-foreground/80">
             חפש מאמר, מושג או סרטון. סנן לפי סוג תוצאה, מנגנון, או גישה לסרטונים.
-            סרטוני מועדון מסומנים. הצפייה נפתחת אחרי כניסה מאושרת.
+            סרטוני מועדון מסומנים. חיפוש תמלילים מלא נפתח אחרי כניסת מועדון.
+          </p>
+          <p className="mt-3 max-w-prose text-sm text-foreground/65">
+            רוצים תמלילים מלאים?{" "}
+            <Link
+              href="/members#access"
+              className="text-action underline-offset-2 hover:underline"
+            >
+              בקשת גישה למועדון
+            </Link>
+            .
           </p>
 
           <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -234,6 +245,9 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 נקה סינון
               </Link>
             </p>
+          ) : null}
+          {filter === "club" ? (
+            <ClubSoftGateNote className="mt-3 text-sm leading-relaxed text-muted" />
           ) : null}
 
           <Suspense

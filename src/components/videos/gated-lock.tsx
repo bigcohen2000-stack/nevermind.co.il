@@ -153,13 +153,24 @@ export function GatedLock({
           </div>
         </section>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 border-t border-foreground/10 pt-8">
-          <Link href="/members" className="btn btn-secondary">
-            דף המועדון
-          </Link>
-          <Link href="/videos" className="btn btn-secondary">
-            סרטונים פתוחים
-          </Link>
+        <div className="mx-auto max-w-lg border-t border-foreground/10 pt-8">
+          <p className="text-center text-sm text-muted">
+            חשבון מייל לא פותח את המאגר. רק כניסת מועדון.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/members#access" className="btn btn-primary">
+              בקשת גישה למועדון
+            </Link>
+            <Link
+              href="/profile?mode=register"
+              className="btn btn-secondary"
+            >
+              חשבון חינם
+            </Link>
+            <Link href="/videos?filter=open" className="btn btn-secondary">
+              סרטונים פתוחים
+            </Link>
+          </div>
         </div>
       </div>
     </div>

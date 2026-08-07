@@ -26,6 +26,7 @@ import {
 import { MemberOffersStrip } from "@/components/members/member-offers-strip";
 import { PathInquiryCta } from "@/components/paths/path-inquiry-cta";
 import {
+  ACCESS_LAYER_LABELS,
   MEMBERSHIP_COMPARE_ROWS,
   MEMBERSHIP_HIGHLIGHTS,
   type MembershipCompareRow,
@@ -112,9 +113,9 @@ export function MembershipBenefitsBoard({
   const lead =
     surface === "members"
       ? showPricing
-        ? "טבלה ברורה: חינם מול מועדון. מתחתיה מסגרות מחיר גלויות. אין סליקה באתר. הגישה אחרי שיחת התאמה."
-        : "טבלה ברורה: חינם מול מועדון. מחירים מופיעים בסעיף נפרד למטה. אין סליקה באתר. הגישה אחרי שיחת התאמה."
-      : "רואים קודם מה כלול. אחר כך בוחרים מסגרת מחיר. אין סליקה באתר. הגישה נפתחת ידנית אחרי התאמה.";
+        ? "טבלה ברורה: אורח, חשבון מייל, ומועדון. מתחתיה מסגרות מחיר גלויות. אין סליקה באתר. הגישה אחרי שיחת התאמה."
+        : "טבלה ברורה: אורח, חשבון מייל, ומועדון. מחירים מופיעים בסעיף נפרד למטה. אין סליקה באתר. הגישה אחרי שיחת התאמה."
+      : "רואים קודם מה כלול בכל שכבה. אחר כך בוחרים מסגרת מחיר. אין סליקה באתר. הגישה נפתחת ידנית אחרי התאמה.";
 
   const offersVisible = showOffers ?? isMember;
   /** On /members the hero already shows these four facts. */
@@ -168,9 +169,9 @@ export function MembershipBenefitsBoard({
         ) : null}
 
         <div className="mt-10 overflow-x-auto overscroll-x-contain border border-foreground/20">
-          <table className="w-full min-w-[36rem] border-collapse text-start text-sm">
+          <table className="w-full min-w-[44rem] border-collapse text-start text-sm">
             <caption className="sr-only">
-              השוואת יתרונות: חינם מול מועדון
+              השוואת יתרונות: אורח, חשבון מייל, ומועדון
             </caption>
             <thead>
               <tr className="border-b border-foreground/20 bg-paper">
@@ -179,15 +180,21 @@ export function MembershipBenefitsBoard({
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-center font-medium text-muted"
+                  className="px-3 py-3 text-center font-medium text-muted"
                 >
-                  חינם
+                  {ACCESS_LAYER_LABELS.guest}
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-center font-medium text-action"
+                  className="px-3 py-3 text-center font-medium text-foreground/85"
                 >
-                  מועדון
+                  {ACCESS_LAYER_LABELS.account}
+                </th>
+                <th
+                  scope="col"
+                  className="px-3 py-3 text-center font-medium text-action"
+                >
+                  {ACCESS_LAYER_LABELS.club}
                 </th>
               </tr>
             </thead>
@@ -218,10 +225,13 @@ export function MembershipBenefitsBoard({
                         </span>
                       </span>
                     </th>
-                    <td className="px-4 py-3 text-center">
-                      <CellMark on={row.free} />
+                    <td className="px-3 py-3 text-center">
+                      <CellMark on={row.guest} />
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 py-3 text-center">
+                      <CellMark on={row.account} />
+                    </td>
+                    <td className="px-3 py-3 text-center">
                       <CellMark on={row.club} />
                     </td>
                   </tr>
@@ -230,6 +240,20 @@ export function MembershipBenefitsBoard({
             </tbody>
           </table>
         </div>
+
+        {!isMember ? (
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/profile?mode=register" className="btn btn-secondary">
+              חשבון חינם
+            </Link>
+            <Link href="/members#access" className="btn btn-primary">
+              בקשת גישה למועדון
+            </Link>
+            <Link href="/videos?filter=open" className="btn btn-secondary">
+              להישאר בתוכן הפתוח
+            </Link>
+          </div>
+        ) : null}
 
         {showPricing ? (
           <div id="membership-prices" className="mt-12 scroll-mt-28">

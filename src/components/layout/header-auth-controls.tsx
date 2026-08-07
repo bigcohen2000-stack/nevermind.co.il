@@ -120,6 +120,16 @@ export function HeaderAuthControls({
           <KeyRound className="h-4 w-4 shrink-0" aria-hidden="true" />
           המועדון
         </Link>
+      ) : hasAuth ? (
+        <Link
+          role="menuitem"
+          href="/members#access"
+          className={layout === "stack" ? "nav-link flex min-h-11 items-center gap-2 text-action" : cn(menuItemClass, "text-action")}
+          onClick={layout === "stack" ? onNavigate : close}
+        >
+          <KeyRound className="h-4 w-4 shrink-0" aria-hidden="true" />
+          בקשת גישה למועדון
+        </Link>
       ) : null}
       <Link
         role="menuitem"
@@ -225,7 +235,17 @@ export function HeaderAuthControls({
                 onClick={onNavigate}
               >
                 <UserPlus className="h-4 w-4 shrink-0" aria-hidden="true" />
-                הרשמה
+                חשבון חינם
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/members#access"
+                className="nav-link flex min-h-12 items-center gap-2 px-2 text-base text-action"
+                onClick={onNavigate}
+              >
+                <KeyRound className="h-4 w-4 shrink-0" aria-hidden="true" />
+                בקשת גישה למועדון
               </Link>
             </li>
           </ul>
@@ -240,10 +260,8 @@ export function HeaderAuthControls({
         <Link
           href="/profile"
           className={cn(
-            "inline-flex min-h-10 items-center gap-1.5 border border-foreground/20 text-sm text-foreground transition",
+            "btn btn-secondary min-h-10 gap-1.5 text-sm",
             compact ? "min-w-11 justify-center px-2" : "px-3",
-            "hover:border-action hover:text-action",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
           )}
           aria-label="התחברות"
         >
@@ -253,15 +271,13 @@ export function HeaderAuthControls({
         <Link
           href="/profile?mode=register"
           className={cn(
-            "inline-flex min-h-10 items-center gap-1.5 border border-foreground/20 bg-foreground text-sm text-background transition",
+            "btn btn-secondary min-h-10 gap-1.5 border-foreground/30 bg-foreground text-sm text-background hover:border-action hover:bg-action hover:text-white",
             compact ? "min-w-11 justify-center px-2" : "px-3",
-            "hover:border-action hover:bg-action hover:text-white",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
           )}
-          aria-label="הרשמה"
+          aria-label="חשבון חינם"
         >
           <UserPlus className="h-4 w-4 shrink-0" aria-hidden="true" />
-          {compact ? null : <span>הרשמה</span>}
+          {compact ? null : <span>חשבון חינם</span>}
         </Link>
       </div>
     );

@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { subscribeNewsletter } from "@/actions/newsletter";
+import { ValidatedInput } from "@/components/forms/validated-field";
+import { validateEmail } from "@/lib/forms/validators";
 import { cn } from "@/lib/utils";
 
 type NewsletterSignupProps = {
@@ -13,8 +16,7 @@ type NewsletterSignupProps = {
 };
 
 /**
- * Dry email signup. Stores in Supabase and notifies admin via Resend.
- * No gradient, no hype copy.
+ * Email updates only. Not an account. Not club access.
  */
 export function NewsletterSignup({
   source = "site",
@@ -23,13 +25,20 @@ export function NewsletterSignup({
 }: NewsletterSignupProps) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [showErrors, setShowErrors] = useState(false);
   const [done, setDone] = useState(false);
   const [pending, startTransition] = useTransition();
   const isDark = tone === "dark";
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setShowErrors(true);
     setError("");
+    const fieldError = validateEmail(email, { required: true });
+    if (fieldError) {
+      setError(fieldError);
+      return;
+    }
     startTransition(async () => {
       const result = await subscribeNewsletter({ email, source });
       if (!result.ok) {
@@ -56,7 +65,7 @@ export function NewsletterSignup({
             id="newsletter-title"
             className="text-2xl font-semibold tracking-tight sm:text-3xl"
           >
-            עדכונים במייל
+            עדכון במייל
           </h2>
           <p
             className={cn(
@@ -64,45 +73,33 @@ export function NewsletterSignup({
               isDark ? "text-[#9CA3AF]" : "text-muted",
             )}
           >
-            מאמרים חדשים וחקירות. בלי רעש.
+            מאמרים חדשים וחקירות. בלי רעש. זה לא פותח חשבון או מועדון.
           </p>
 
           {done ? (
             <p className="mt-6 text-sm font-medium text-action">
-              נרשמת. נשלח כשיהיה מה לשלוח.
+              נרשמת לעדכון. נשלח כשיהיה מה לשלוח.
             </p>
           ) : (
-            <form
-              onSubmit={onSubmit}
-              className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch"
-            >
-              <label className="sr-only" htmlFor="newsletter-email">
-                אימייל
-              </label>
-              <input
-                id="newsletter-email"
-                type="email"
-                name="email"
-                autoComplete="email"
-                required
+            <form onSubmit={onSubmit} className="mt-6 space-y-3">
+              <ValidatedInput
+                label="אימייל"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="האימייל שלך"
+                onChange={setEmail}
+                validate={(v) => validateEmail(v, { required: true })}
+                showErrors={showErrors}
                 disabled={pending}
-                className={cn(
-                  "min-h-11 flex-1 border px-3 text-sm outline-none transition",
-                  "focus-visible:ring-2 focus-visible:ring-action",
-                  isDark
-                    ? "border-[#FAFAF8]/25 bg-black/40 text-[#FAFAF8] placeholder:text-[#9CA3AF]"
-                    : "border-foreground/20 bg-background text-foreground placeholder:text-muted",
-                )}
+                tone={isDark ? "dark" : "light"}
+                type="email"
+                autoComplete="email"
+                placeholder="האימייל שלך"
               />
               <button
                 type="submit"
                 disabled={pending}
-                className="btn btn-primary min-h-11 shrink-0 px-5"
+                className="btn btn-primary min-h-11 w-full px-5 sm:w-auto"
               >
-                {pending ? "שולח..." : "הרשמה"}
+                {pending ? "שולח..." : "עדכון במייל"}
               </button>
             </form>
           )}
@@ -112,6 +109,29 @@ export function NewsletterSignup({
               {error}
             </p>
           ) : null}
+
+          <p
+            className={cn(
+              "mt-4 text-xs leading-relaxed",
+              isDark ? "text-[#9CA3AF]" : "text-muted",
+            )}
+          >
+            רוצים גם רשימה אישית?{" "}
+            <Link
+              href="/profile?mode=register"
+              className="text-action underline-offset-2 hover:underline"
+            >
+              פתחו חשבון חינם
+            </Link>
+            . למאגר המלא:{" "}
+            <Link
+              href="/members#access"
+              className="text-action underline-offset-2 hover:underline"
+            >
+              בקשת גישה למועדון
+            </Link>
+            .
+          </p>
         </div>
       </div>
     </section>

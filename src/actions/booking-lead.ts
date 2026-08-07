@@ -14,8 +14,11 @@ const bookingSchema = z.object({
   phone: z
     .string()
     .trim()
-    .min(5, "נא למלא מספר טלפון תקין")
-    .max(40, "מספר הטלפון ארוך מדי"),
+    .min(1, "נא למלא מספר טלפון תקין")
+    .max(40, "מספר הטלפון ארוך מדי")
+    .refine((value) => value.replace(/\D/g, "").length >= 9, {
+      message: "עוד לא שלם. לדוגמה: 05xxxxxxxx או +9725xxxxxxxx.",
+    }),
   email: z
     .string()
     .trim()

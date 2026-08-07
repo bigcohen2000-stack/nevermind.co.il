@@ -123,7 +123,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
             </FocusModeChrome>
           ) : null}
           <FocusModeChrome>
-            <MobileCtaBar />
+            <MobileCtaBar accessTier={accessTier} />
           </FocusModeChrome>
           <FocusModeChrome>
             <KeyboardShortcutsHud />

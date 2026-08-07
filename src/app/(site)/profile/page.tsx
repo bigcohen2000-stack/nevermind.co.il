@@ -4,12 +4,14 @@ import Link from "next/link";
 
 import { logoutClub } from "@/actions/club-login";
 import { listWatchHistory } from "@/actions/watch-history";
+import { AccessUpgradeStrip } from "@/components/access/access-upgrade-strip";
 import { MyListSignInForm } from "@/components/auth/my-list-sign-in-form";
 import { ClearWatchHistoryButton } from "@/components/profile/clear-watch-history-button";
 import { ClubMemberVoucher } from "@/components/profile/club-member-voucher";
 import { LiveNotifySettings } from "@/components/profile/live-notify-settings";
 import { ProgressDashboard } from "@/components/profile/progress-dashboard";
 import { SignOutButton } from "@/components/profile/sign-out-button";
+import { resolveSiteAccessTier } from "@/lib/access/site-tier";
 import { resolveVideoEntitlement } from "@/lib/club/access";
 import { maskClubPhone } from "@/lib/club/phone";
 import { getClubVoucherState } from "@/lib/profile/club-voucher";
@@ -139,6 +141,11 @@ export default async function ProfilePage({
       : Promise.resolve(null),
   ]);
 
+  const accessTier = resolveSiteAccessTier({
+    authUserId: user.id,
+    entitled: club.entitled || club.hasVideoAccess || club.clubSession,
+  });
+
   const createdAt = user.created_at
     ? new Date(user.created_at).toLocaleDateString("he-IL", {
         dateStyle: "medium",
@@ -156,6 +163,12 @@ export default async function ProfilePage({
         </h1>
         <p className="mt-4 max-w-prose leading-relaxed text-[#9CA3AF]">
           פרטי חשבון, מעקב התקדמות והיסטוריית צפייה. בלי רעש.
+        </p>
+        <p className="mt-3 text-sm text-[#FAFAF8]/80">
+          סטטוס:{" "}
+          {accessTier === "club"
+            ? "מועדון פעיל"
+            : "חשבון פתוח · לשדרוג מועדון"}
         </p>
 
         <section
@@ -277,29 +290,34 @@ export default async function ProfilePage({
             <li className="flex flex-wrap items-center justify-between gap-2">
               <span>
                 <span className="text-[#9CA3AF]">מועדון: </span>
-                {club.clubSession
-                  ? `${club.displayName ? `${club.displayName}. ` : ""}${maskClubPhone(club.phone)}`
+                {club.clubSession || club.entitled
+                  ? `${club.displayName ? `${club.displayName}. ` : ""}${maskClubPhone(club.phone) || "פתוח במכשיר"}`
                   : "לא מחובר במכשיר הזה"}
               </span>
               {club.clubSession ? (
                 <form action={logoutClub}>
                   <button
                     type="submit"
-                    className="border border-[#FAFAF8]/25 px-3 py-1.5 text-xs text-[#FAFAF8] transition hover:border-[#D42B2B] hover:text-[#D42B2B]"
+                    className="btn btn-secondary border-[#FAFAF8]/25 bg-transparent text-xs text-[#FAFAF8]"
                   >
                     יציאה מהמועדון
                   </button>
                 </form>
               ) : (
                 <Link
-                  href="/members#login"
-                  className="text-xs text-[#FAFAF8] underline-offset-2 hover:underline"
+                  href="/members#access"
+                  className="btn btn-primary text-xs"
                 >
-                  כניסה למועדון
+                  בקשת גישה למועדון
                 </Link>
               )}
             </li>
           </ul>
+          {accessTier !== "club" ? (
+            <div className="mt-6 [&_.btn-secondary]:border-[#FAFAF8]/25 [&_.btn-secondary]:bg-transparent [&_.btn-secondary]:text-[#FAFAF8]">
+              <AccessUpgradeStrip tier="account" density="section" />
+            </div>
+          ) : null}
         </section>
 
         <ProgressDashboard stats={progress} />

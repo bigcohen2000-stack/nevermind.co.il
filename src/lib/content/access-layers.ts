@@ -8,7 +8,7 @@ export type AccessBenefit = {
   tip: string;
 };
 
-/** What anyone gets without club payment or allowlist. */
+/** What anyone gets without signup or club. */
 export const FREE_ACCESS_BENEFITS: AccessBenefit[] = [
   {
     title: "סרטונים פתוחים",
@@ -26,7 +26,7 @@ export const FREE_ACCESS_BENEFITS: AccessBenefit[] = [
     tip: "חקירה בכתב ומפת שלושת הצירים זמינים לכולם.",
   },
   {
-    title: "מושגים וחיפוש",
+    title: "מושגים וחיפוש ציבורי",
     body: "מדריך מושגים, חיפוש, והשלמה בעברית על התוכן הציבורי.",
     tip: "החיפוש על תוכן מועדון נפתח אחרי כניסה.",
   },
@@ -36,9 +36,33 @@ export const FREE_ACCESS_BENEFITS: AccessBenefit[] = [
     tip: "זה לא הפיד הפרטי של המועדון.",
   },
   {
-    title: "חשבון אתר (חינם)",
-    body: "קישור לאימייל. שומרים רשימה והיסטוריית צפייה. בלי סיסמה. זה לא פותח את מאגר המועדון.",
+    title: "עדכון במייל",
+    body: "ניוזלטר על מאמרים וחקירות. זה לא חשבון וזה לא מועדון.",
+    tip: "רק מיילים. בלי רשימה ובלי מאגר.",
+  },
+];
+
+/** Free email account (magic link). Does not unlock club archive. */
+export const ACCOUNT_ACCESS_BENEFITS: AccessBenefit[] = [
+  {
+    title: "הרשימה שלי",
+    body: "שומרים סרטונים להמשך, בלי לחפש שוב.",
+    tip: "נפתח אחרי קישור לאימייל. בלי סיסמה.",
+  },
+  {
+    title: "היסטוריית צפייה",
+    body: "ממשיכים מאיפה שעצרתם אחרי התחברות.",
+    tip: "נשמר בחשבון האתר בלבד.",
+  },
+  {
+    title: "פרופיל והעדפות",
+    body: "ערכת נושא והגדרות בסיסיות בחשבון.",
     tip: "חשבון האתר ומועדון הם שתי שכבות נפרדות.",
+  },
+  {
+    title: "לא פותח מאגר",
+    body: "חשבון מייל לא פותח סרטונים חסומים או חיפוש תמלילי מועדון.",
+    tip: "למאגר צריך בקשת גישה למועדון.",
   },
 ];
 
@@ -148,7 +172,10 @@ export const MEMBERSHIP_HIGHLIGHTS = [
 
 export type MembershipCompareRow = {
   feature: string;
-  free: boolean;
+  /** Anonymous visitor. */
+  guest: boolean;
+  /** Free email magic-link account. */
+  account: boolean;
   club: boolean;
   note?: string;
   icon:
@@ -168,83 +195,110 @@ export type MembershipCompareRow = {
     | "sparkles";
 };
 
-/** Free vs club comparison rows for the membership board. */
+/** Guest / account / club comparison rows for the membership board. */
 export const MEMBERSHIP_COMPARE_ROWS: MembershipCompareRow[] = [
   {
     feature: "סרטונים ציבוריים",
-    free: true,
+    guest: true,
+    account: true,
     club: true,
     icon: "play",
   },
   {
     feature: "טיזר 2 דקות למועדון",
-    free: true,
+    guest: true,
+    account: true,
     club: true,
     note: "טיזר בלבד למי שלא במועדון.",
     icon: "timer",
   },
   {
     feature: "מאמרים ומנגנונים",
-    free: true,
+    guest: true,
+    account: true,
     club: true,
     icon: "book",
   },
   {
     feature: "חיפוש על תוכן ציבורי",
-    free: true,
+    guest: true,
+    account: true,
     club: true,
     icon: "search",
   },
   {
-    feature: "חשבון אתר (רשימה והיסטוריה)",
-    free: true,
+    feature: "עדכון במייל (ניוזלטר)",
+    guest: true,
+    account: true,
     club: true,
-    note: "לא פותח את מאגר המועדון.",
+    note: "לא פותח חשבון או מאגר.",
+    icon: "pen",
+  },
+  {
+    feature: "רשימה והיסטוריית צפייה",
+    guest: false,
+    account: true,
+    club: true,
+    note: "דורש חשבון מייל. לא פותח מאגר.",
     icon: "user",
   },
   {
     feature: "פיד פודקאסט ציבורי",
-    free: true,
+    guest: true,
+    account: true,
     club: true,
     icon: "rss",
   },
   {
     feature: "מאגר סרטונים לא רשומים",
-    free: false,
+    guest: false,
+    account: false,
     club: true,
     icon: "lock",
   },
   {
     feature: "פיד פודקאסט פרטי",
-    free: false,
+    guest: false,
+    account: false,
     club: true,
     icon: "headphones",
   },
   {
     feature: "ארבע רמות פירוק",
-    free: false,
+    guest: false,
+    account: false,
     club: true,
     icon: "layers",
   },
   {
     feature: "חיפוש בתמלילי מועדון",
-    free: false,
+    guest: false,
+    account: false,
     club: true,
     icon: "fileSearch",
   },
   {
     feature: "מדדי חקירה ליד הסרטון",
-    free: false,
+    guest: false,
+    account: false,
     club: true,
     icon: "gauge",
   },
   {
     feature: "החוקר המצטיין",
-    free: false,
+    guest: false,
+    account: false,
     club: true,
     icon: "message",
   },
 ];
+
+/** Layer labels for 3-column boards. */
+export const ACCESS_LAYER_LABELS = {
+  guest: "אורח",
+  account: "חשבון מייל",
+  club: "מועדון",
+} as const;
 
 /** Quick links after club entry. Everything open for an entitled member. */
 export const MEMBER_POST_LOGIN_OFFERS = [

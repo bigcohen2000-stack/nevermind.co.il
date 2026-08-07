@@ -72,7 +72,7 @@ export function SearchVideoRow({
               dark ? "text-white/55" : "text-muted",
             )}
           >
-            מועדון
+            נפתח במועדון. הצפייה אחרי בקשת גישה.
           </span>
         ) : null}
       </span>

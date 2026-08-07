@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import { AccessUpgradeStrip } from "@/components/access/access-upgrade-strip";
 import { MyListSignInForm } from "@/components/auth/my-list-sign-in-form";
 import { SmartEmptyState } from "@/components/ui/smart-empty-state";
 import { VideoCard } from "@/components/videos/video-card";
 import { listSavedVideos } from "@/actions/saved-videos";
 import { listWatchHistory } from "@/actions/watch-history";
+import { resolveVideoEntitlement } from "@/lib/club/access";
+import { resolveSiteAccessTier } from "@/lib/access/site-tier";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -119,6 +122,26 @@ export default async function MyListPage({
             nextPath="/my-list"
             initialError={authError}
           />
+          <p className="mt-6 text-sm text-zinc-400">
+            אין חשבון?{" "}
+            <Link
+              href="/profile?mode=register"
+              className="text-zinc-100 underline-offset-2 hover:underline"
+            >
+              חשבון חינם
+            </Link>
+            . כבר יש חשבון? בקשו קישור למעלה.
+          </p>
+          <p className="mt-4 text-sm text-zinc-500">
+            חשבון מייל לא פותח את המאגר.{" "}
+            <Link
+              href="/members#access"
+              className="text-zinc-200 underline-offset-2 hover:underline"
+            >
+              בקשת גישה למועדון
+            </Link>
+            .
+          </p>
           <p className="mt-8 text-sm text-zinc-500">
             או חזור ל{" "}
             <Link
@@ -134,10 +157,18 @@ export default async function MyListPage({
     );
   }
 
-  const [videos, history] = await Promise.all([
+  const [videos, history, entitlement] = await Promise.all([
     listSavedVideos(),
     listWatchHistory(8),
+    resolveVideoEntitlement().catch(() => ({
+      entitled: false,
+      hasVideoAccess: false,
+    })),
   ]);
+  const accessTier = resolveSiteAccessTier({
+    authUserId: user.id,
+    entitled: entitlement.entitled || entitlement.hasVideoAccess,
+  });
 
   return (
     <main className="min-h-full w-full bg-zinc-950 text-zinc-100">
@@ -146,7 +177,7 @@ export default async function MyListPage({
           <span aria-hidden="true" className="me-2">
             ⭐
           </span>
-          הרשימה שלי
+          מרחב אישי
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-50 lg:text-5xl">
           הרשימה שלי
@@ -155,6 +186,12 @@ export default async function MyListPage({
           כאן נשמרים סרטונים שסימנת, והמשך צפייה אחרונה. החשבון אישי. מאגר
           המועדון נפתח בנפרד.
         </p>
+
+        {accessTier !== "club" ? (
+          <div className="mt-8 max-w-xl border border-zinc-700 bg-zinc-900/60 p-4 [&_.btn-primary]:border-red-600 [&_.btn-primary]:bg-red-600 [&_.btn-secondary]:border-zinc-500 [&_.btn-secondary]:text-zinc-100">
+            <AccessUpgradeStrip tier={accessTier} density="section" />
+          </div>
+        ) : null}
 
         <section
           aria-labelledby="my-list-hub-title"

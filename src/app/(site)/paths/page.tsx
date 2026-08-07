@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getPremiumStatus } from "@/actions/premium";
+import { AccessUpgradeStrip } from "@/components/access/access-upgrade-strip";
 import { InvestigationFactsStrip } from "@/components/members/investigation-facts-strip";
 import { PricingTracks } from "@/components/paths/pricing-tracks";
 import { WhatsAppTrackCta } from "@/components/paths/whatsapp-track-cta";
 import { ProductFaq } from "@/components/seo/product-faq";
+import { resolveSiteAccessTier } from "@/lib/access/site-tier";
+import { getHeaderSession } from "@/lib/auth/header-session";
 import {
   buildIntroCallWhatsAppText,
   PATHS_FAQ,
@@ -25,9 +28,18 @@ export const metadata: Metadata = {
 };
 
 export default async function PathsPage() {
-  const premium = await getPremiumStatus().catch(() => ({
-    hasVideoAccess: false,
-  }));
+  const [premium, session] = await Promise.all([
+    getPremiumStatus().catch(() => ({
+      hasVideoAccess: false,
+    })),
+    getHeaderSession().catch(() => ({
+      authUserId: null as string | null,
+    })),
+  ]);
+  const accessTier = resolveSiteAccessTier({
+    authUserId: session.authUserId,
+    entitled: Boolean(premium.hasVideoAccess),
+  });
   const breadcrumbLd = buildBreadcrumbList([
     { name: "בית", path: "/" },
     { name: "מסלולים", path: "/paths" },
@@ -42,6 +54,11 @@ export default async function PathsPage() {
         moreHref="/members"
         moreLabel="למאגר המועדון"
       />
+      {accessTier !== "club" ? (
+        <div className="mx-auto w-full max-w-6xl px-4 pt-8 sm:px-6">
+          <AccessUpgradeStrip tier={accessTier} density="section" />
+        </div>
+      ) : null}
       <PricingTracks hasVideoAccess={Boolean(premium.hasVideoAccess)} />
 
       <section className="border-t border-[#1A1A1A] bg-[#1A1A1A] text-[#FAFAF8]">

@@ -136,6 +136,16 @@ export default async function ConceptsPage() {
             מתוך הסרטונים. מפה מראה מי מופיע עם מי. הרשימה מתחת פותחת חיפוש לכל
             מושג.
           </p>
+          <p className="mt-4 max-w-prose text-sm leading-relaxed text-foreground/65">
+            תמלילים מלאים של סרטוני מועדון נפתחים אחרי כניסה.{" "}
+            <Link
+              href="/members#access"
+              className="text-action underline-offset-2 hover:underline"
+            >
+              בקשת גישה
+            </Link>
+            .
+          </p>
 
           <section
             aria-labelledby="core-terms-title"

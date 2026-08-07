@@ -103,7 +103,7 @@ export function MyListSignInForm({
         inputClassName={
           compact
             ? undefined
-            : "rounded-xl border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 placeholder:text-zinc-600"
+            : "border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 placeholder:text-zinc-600"
         }
       />
 
@@ -133,11 +133,7 @@ export function MyListSignInForm({
       <button
         type="submit"
         disabled={pending || coolingDown}
-        className={
-          compact
-            ? "btn btn-primary w-full text-sm disabled:opacity-60"
-            : "inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
-        }
+        className="btn btn-primary w-full text-sm disabled:opacity-60"
       >
         {pending
           ? "שולח..."
@@ -169,8 +165,12 @@ export function MyListSignInForm({
             הקישור מהמייל. אחרי האישור תעברו למסך &quot;ברוך הבא&quot;
           </li>
           <li>
-            <span className="font-semibold text-zinc-100">3.</span> משם לרשימה,
-            לחיפוש, או להתקנת אפליקציה
+            <span className="font-semibold text-zinc-100">3.</span> משם לרשימה
+            ולחיפוש. מאגר המועדון נשאר שכבה נפרדת
+          </li>
+          <li>
+            <span className="font-semibold text-zinc-100">4.</span> רוצים את
+            המאגר המלא? בקשת גישה בדף המועדון
           </li>
         </ol>
       ) : null}

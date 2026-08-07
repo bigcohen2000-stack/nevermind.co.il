@@ -4,9 +4,15 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { loginClubPassword, logoutClub } from "@/actions/club-login";
+import { ValidatedInput } from "@/components/forms/validated-field";
 import { ClubJoinDisclaimer } from "@/components/members/club-join-disclaimer";
 import { RandomClubButton } from "@/components/members/random-club-button";
 import { maskClubPhone } from "@/lib/club/phone";
+import {
+  validateName,
+  validatePassword,
+  validatePhone,
+} from "@/lib/forms/validators";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +47,7 @@ export function ClubLoginForm({
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -124,10 +131,18 @@ export function ClubLoginForm({
         className={cn("space-y-4", compact ? "mt-4" : "mt-8 max-w-md")}
         onSubmit={(e) => {
           e.preventDefault();
+          setShowErrors(true);
           setError(null);
           setMessage(null);
           if (!acceptedDisclaimer) {
             setError("נדרש לאשר את האזהרה לפני הכניסה.");
+            return;
+          }
+          const nameErr = validateName(displayName);
+          const phoneErr = validatePhone(phone);
+          const passErr = validatePassword(password);
+          if (nameErr || phoneErr || passErr) {
+            setError(nameErr || phoneErr || passErr);
             return;
           }
           startTransition(async () => {
@@ -149,55 +164,35 @@ export function ClubLoginForm({
           });
         }}
       >
-        <div>
-          <label htmlFor="club-name" className="block text-sm font-medium">
-            שם מלא
-          </label>
-          <input
-            id="club-name"
-            name="displayName"
-            type="text"
-            autoComplete="name"
-            required
-            minLength={2}
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            className="mt-1.5 w-full rounded-md border border-foreground/20 bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="club-phone" className="block text-sm font-medium">
-            מספר טלפון
-          </label>
-          <input
-            id="club-phone"
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            required
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="mt-1.5 w-full rounded-md border border-foreground/20 bg-background px-3 py-2 text-sm"
-            dir="ltr"
-            placeholder="05xxxxxxxx"
-          />
-        </div>
-        <div>
-          <label htmlFor="club-password" className="block text-sm font-medium">
-            סיסמת מועדון
-          </label>
-          <input
-            id="club-password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1.5 w-full rounded-md border border-foreground/20 bg-background px-3 py-2 text-sm"
-            dir="ltr"
-          />
-        </div>
+        <ValidatedInput
+          label="שם מלא"
+          value={displayName}
+          onChange={setDisplayName}
+          validate={validateName}
+          showErrors={showErrors}
+          autoComplete="name"
+        />
+        <ValidatedInput
+          label="מספר טלפון"
+          value={phone}
+          onChange={setPhone}
+          validate={validatePhone}
+          showErrors={showErrors}
+          type="tel"
+          autoComplete="tel"
+          dir="ltr"
+          placeholder="05xxxxxxxx"
+        />
+        <ValidatedInput
+          label="סיסמת מועדון"
+          value={password}
+          onChange={setPassword}
+          validate={(v) => validatePassword(v)}
+          showErrors={showErrors}
+          type="password"
+          autoComplete="current-password"
+          dir="ltr"
+        />
 
         <label
           className={cn(

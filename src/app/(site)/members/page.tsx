@@ -175,9 +175,12 @@ export default async function MembersPage() {
               </>
             ) : (
               <>
-                <a href="#login" className="btn btn-primary">
+                <a href="#access" className="btn btn-primary">
                   <KeyRound className="size-3.5" aria-hidden />
-                  כניסה למועדון
+                  בקשת גישה למועדון
+                </a>
+                <a href="#login" className="btn btn-secondary">
+                  כניסה עם סיסמה
                 </a>
                 <a
                   href={buildWhatsAppHref(ACCESS_TEXT)}
@@ -185,7 +188,7 @@ export default async function MembersPage() {
                   rel="noopener noreferrer"
                   className="btn btn-secondary"
                 >
-                  בקשת גישה בוואטסאפ
+                  וואטסאפ
                 </a>
                 <a href="#membership-prices" className="btn btn-secondary">
                   מחירים
@@ -219,10 +222,11 @@ export default async function MembersPage() {
               id="access-layers-title"
               className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl"
             >
-              חינם מול מועדון.
+              אורח, חשבון מייל, ומועדון.
             </h2>
             <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
-              מה פתוח לכולם, ומה נפתח אחרי שיחת התאמה. בלי סליקה באתר.
+              שלוש שכבות ברורות. חשבון מייל שומר רשימה. מועדון פותח את המאגר.
+              בלי סליקה באתר.
             </p>
             <div className="mt-8">
               <AccessLayersCompare />
@@ -267,13 +271,16 @@ export default async function MembersPage() {
         </section>
       ) : null}
 
-      <section className="bg-background text-foreground">
+      <section
+        id="access"
+        className="scroll-mt-24 bg-background text-foreground"
+      >
         <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="flex items-center gap-2 text-xs font-medium tracking-[0.16em] text-action uppercase">
                 <KeyRound className="size-3.5" aria-hidden />
-                כניסה
+                כניסה ובקשת גישה
               </p>
               <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
                 {isMember ? "סטטוס גישה" : "יש לכם סיסמה או קישור?"}

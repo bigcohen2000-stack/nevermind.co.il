@@ -133,25 +133,25 @@ const PATHS: Array<{
   accent?: boolean;
 }> = [
   {
-    id: "buy",
-    label: "רכישה מהירה",
-    hint: '50 ש"ח + מע"מ לסרטון הזה',
-    accent: true,
-  },
-  {
-    id: "account",
-    label: "חשבון אתר חינם",
-    hint: "רשימה והיסטוריה. לא פותח מועדון",
-  },
-  {
     id: "club",
-    label: "מנוי מועדון",
-    hint: "כל המאגר אחרי בדיקת התאמה",
+    label: "בקשת גישה למועדון",
+    hint: "כל המאגר אחרי בדיקת התאמה. אין סליקה באתר",
+    accent: true,
   },
   {
     id: "login",
     label: "כבר יש לי גישה",
     hint: "כניסה עם סיסמה או קישור",
+  },
+  {
+    id: "buy",
+    label: "רכישה מהירה",
+    hint: '50 ש"ח + מע"מ לסרטון הזה בלבד',
+  },
+  {
+    id: "account",
+    label: "חשבון אתר חינם",
+    hint: "רשימה והיסטוריה. לא פותח את המאגר",
   },
   {
     id: "app",
@@ -196,8 +196,8 @@ export function WatchAccessChooser({
   isAuthenticated = false,
   hasTeaser = false,
 }: WatchAccessChooserProps) {
-  // Buy path open by default: one clear CTA, other forms stay collapsed.
-  const [path, setPath] = useState<AccessPath>("buy");
+  // Club request open by default: archive path is the main upgrade.
+  const [path, setPath] = useState<AccessPath>("club");
 
   const visiblePaths = useMemo(() => {
     if (isAuthenticated) {
@@ -221,8 +221,8 @@ export function WatchAccessChooser({
           </p>
           <p className="mt-1.5 text-sm leading-relaxed text-foreground/75">
             {hasTeaser
-              ? "הטעימה הסתיימה. בוחרים אפשרות אחת. הטופס נפתח מתחת."
-              : "הסרטון המלא במועדון. בוחרים אפשרות אחת. הטופס נפתח מתחת."}
+              ? "הטעימה הסתיימה. חשבון מייל לא פותח את המאגר. רק כניסת מועדון."
+              : "הסרטון המלא במועדון. חשבון מייל לא פותח את המאגר. רק כניסת מועדון."}
           </p>
         </div>
       </div>

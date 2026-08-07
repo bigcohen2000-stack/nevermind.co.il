@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AccessUpgradeStrip } from "@/components/access/access-upgrade-strip";
 import { InstallAppButton } from "@/components/layout/install-app-button";
 import { createClient } from "@/lib/supabase/server";
 
@@ -23,19 +24,28 @@ const STEPS = [
   {
     n: 2,
     title: "הרשימה שלי",
-    body: "שומרים סרטונים להמשך, בלי לחפש שוב.",
+    body: "שומרים סרטון ראשון להמשך, בלי לחפש שוב.",
     href: "/my-list",
     cta: "לרשימה",
+    primary: true,
   },
   {
     n: 3,
     title: "חיפוש וצפייה",
-    body: "מחפשים מושג או סרטון, ונכנסים לחקירה.",
+    body: "מחפשים מושג אחד, ונכנסים לחקירה.",
     href: "/search",
     cta: "לחיפוש",
   },
   {
     n: 4,
+    title: "מאגר המועדון",
+    body: "חשבון מייל לא פותח את המאגר. למאגר המלא מבקשים גישה אחרי שיחת התאמה.",
+    href: "/members#access",
+    cta: "בקשת גישה למאגר",
+    club: true,
+  },
+  {
+    n: 5,
     title: "אפליקציה במסך הבית",
     body: "אופציונלי. גישה מהירה כמו אפליקציה, בלי חנות.",
     install: true,
@@ -73,15 +83,19 @@ export default async function WelcomePage() {
           {name ? `ברוך הבא, ${name}` : "ברוך הבא"}
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-foreground/70">
-          החשבון פעיל. זה לא עמוד התחברות נוסף. הנה מה שאפשר לעשות עכשיו, לפי
-          סדר.
+          החשבון פעיל. זה לא עמוד התחברות נוסף. הנה מה אפשר לעשות עכשיו, לפי
+          סדר. חשבון מייל ומועדון הם שתי שכבות נפרדות.
         </p>
 
         <ol className="mt-10 space-y-4">
           {STEPS.map((step) => (
             <li
               key={step.n}
-              className="border border-foreground/15 bg-paper p-4 sm:p-5"
+              className={
+                "club" in step && step.club
+                  ? "border border-action bg-paper p-4 sm:p-5"
+                  : "border border-foreground/15 bg-paper p-4 sm:p-5"
+              }
             >
               <div className="flex items-start gap-3">
                 <span
@@ -89,7 +103,9 @@ export default async function WelcomePage() {
                     "flex size-8 shrink-0 items-center justify-center text-sm font-semibold " +
                     ("done" in step && step.done
                       ? "bg-action text-background"
-                      : "border border-foreground/20 text-foreground")
+                      : "club" in step && step.club
+                        ? "border border-action text-action"
+                        : "border border-foreground/20 text-foreground")
                   }
                   aria-hidden="true"
                 >
@@ -110,7 +126,12 @@ export default async function WelcomePage() {
                   {"href" in step && step.href ? (
                     <Link
                       href={step.href}
-                      className="btn btn-secondary mt-3 inline-flex text-sm"
+                      className={
+                        ("club" in step && step.club) ||
+                        ("primary" in step && step.primary)
+                          ? "btn btn-primary mt-3 inline-flex text-sm"
+                          : "btn btn-secondary mt-3 inline-flex text-sm"
+                      }
                     >
                       {step.cta}
                     </Link>
@@ -126,15 +147,15 @@ export default async function WelcomePage() {
           ))}
         </ol>
 
-        <p className="mt-10 text-sm text-foreground/70">
-          רוצים את מאגר המועדון המלא? זה מסלול נפרד ב{" "}
-          <Link href="/members" className="text-action underline-offset-2 hover:underline">
-            אזור המועדון
-          </Link>
-          .
-        </p>
-        <p className="mt-4">
-          <Link href="/profile" className="text-sm text-muted underline-offset-2 hover:underline">
+        <div className="mt-10">
+          <AccessUpgradeStrip tier="account" density="section" />
+        </div>
+
+        <p className="mt-6">
+          <Link
+            href="/profile"
+            className="text-sm text-muted underline-offset-2 hover:underline"
+          >
             לפרופיל
           </Link>
         </p>

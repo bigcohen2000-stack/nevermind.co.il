@@ -11,6 +11,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  validateEmail,
+  validateName,
+  validatePhone,
+} from "@/lib/forms/validators";
 
 type ContextualBookingModalProps = {
   /** Video title or search query to pre-fill as context. */
@@ -58,6 +63,22 @@ export function ContextualBookingModal({
     e.preventDefault();
     setError("");
     setSuccess(false);
+
+    const nameErr = validateName(name);
+    if (nameErr) {
+      setError(nameErr);
+      return;
+    }
+    const phoneErr = validatePhone(phone);
+    if (phoneErr) {
+      setError(phoneErr);
+      return;
+    }
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      setError(emailErr);
+      return;
+    }
 
     startTransition(async () => {
       const result = await submitBookingLead({

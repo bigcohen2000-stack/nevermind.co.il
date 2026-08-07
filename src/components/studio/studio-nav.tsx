@@ -4,6 +4,7 @@ import {
   Clapperboard,
   FileText,
   Inbox,
+  KeyRound,
   Megaphone,
   MessageSquare,
   Search,
@@ -17,6 +18,7 @@ const LINKS: {
   label: string;
   active:
     | "ingestion"
+    | "club"
     | "analytics"
     | "leads"
     | "quotes"
@@ -31,6 +33,12 @@ const LINKS: {
     label: "סרטונים",
     active: "ingestion",
     icon: Clapperboard,
+  },
+  {
+    href: "/studio/club",
+    label: "חברי מועדון",
+    active: "club",
+    icon: KeyRound,
   },
   {
     href: "/studio/analytics",
