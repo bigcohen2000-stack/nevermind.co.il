@@ -100,7 +100,7 @@ export function WatchQuickActions({
       )}
 
       <Link
-        href="/contact"
+        href="/contact?from=watch"
         className="inline-flex min-h-11 shrink-0 items-center gap-2 border border-foreground/15 bg-background px-3.5 text-sm no-underline transition hover:border-action hover:text-action hover:no-underline"
       >
         <MessageCircle className="size-4" aria-hidden />

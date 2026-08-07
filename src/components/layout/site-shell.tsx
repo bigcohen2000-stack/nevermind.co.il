@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { AccessibilityToolbar } from "@/components/a11y/accessibility-toolbar";
 import { WhatsAppFloat } from "@/components/contact/whatsapp-float";
+import { WhatsAppTopicProvider } from "@/components/contact/whatsapp-topic-context";
 import { AccessTierMarker } from "@/components/layout/access-tier-marker";
 import { ClubExpiryBanner } from "@/components/layout/club-expiry-banner";
 import { ClubMemberChrome } from "@/components/layout/club-member-chrome";
@@ -64,6 +65,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
 
   return (
     <CommandPaletteRoot>
+      <WhatsAppTopicProvider>
       <FocusModeProvider>
         <SiteShellFrame>
           <AccessTierMarker tier={accessTier} />
@@ -138,6 +140,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
           </FocusModeChrome>
         </SiteShellFrame>
       </FocusModeProvider>
+      </WhatsAppTopicProvider>
     </CommandPaletteRoot>
   );
 }

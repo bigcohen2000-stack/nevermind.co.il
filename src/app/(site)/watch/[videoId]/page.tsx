@@ -25,8 +25,8 @@ import { PublicWatchNextSteps } from "@/components/videos/public-watch-next-step
 import { TeaserWatchGate } from "@/components/videos/teaser-watch-gate";
 import { TranscriptHeatmap } from "@/components/videos/transcript-heatmap";
 import { WatchAccessChooser } from "@/components/videos/watch-access-chooser";
-import { WatchBookingNudge } from "@/components/videos/watch-booking-nudge";
 import { WatchContentTabs } from "@/components/videos/watch-content-tabs";
+import { WatchConversionProvider } from "@/components/videos/watch-conversion-provider";
 import { WatchFocusLayout } from "@/components/videos/watch-focus-layout";
 import {
   WatchExploreLinks,
@@ -35,8 +35,11 @@ import {
 } from "@/components/videos/watch-guide-strip";
 import { WatchPrevNext } from "@/components/videos/watch-prev-next";
 import { WatchQuickActions } from "@/components/videos/watch-quick-actions";
+import { WatchTalkStrip } from "@/components/videos/watch-talk-strip";
 import { LogicalContinuationLink } from "@/components/videos/logical-continuation-link";
 import { WatchSeekProvider } from "@/components/videos/watch-seek-context";
+import { NewsletterSignup } from "@/components/newsletter/newsletter-signup";
+import { WhatsAppTopicSetter } from "@/components/contact/whatsapp-topic-context";
 import {
   WATCH_LOCKED_FAQ,
   WATCH_LOCKED_HIGHLIGHTS,
@@ -463,11 +466,16 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
   return (
     <>
       <SetBreadcrumbCurrent title={video.title} />
+      <WhatsAppTopicSetter topic={video.title} />
       <JsonLd data={breadcrumbLd} />
       {jsonLd ? <JsonLd data={buildYakirCohenPersonLd()} /> : null}
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
       {tipsFaqLd ? <JsonLd data={tipsFaqLd} /> : null}
 
+      <WatchConversionProvider
+        videoTitle={video.title}
+        showNudge={!entitled}
+      >
       <WatchSeekProvider>
         <WatchFocusLayout
           title={video.title}
@@ -503,6 +511,8 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
                   maskedPhone={maskClubPhone(access.phone)}
                 />
               ) : null}
+
+              <WatchTalkStrip topic={primaryTopic} />
 
               <WatchGuideStrip
                 highlights={
@@ -622,6 +632,8 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
               ) : null}
 
               <WatchExploreLinks />
+
+              {!entitled ? <NewsletterSignup source="watch" /> : null}
             </div>
           }
           sidebar={
@@ -664,7 +676,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
           }
         />
       </WatchSeekProvider>
-      {!entitled ? <WatchBookingNudge /> : null}
+      </WatchConversionProvider>
     </>
   );
 }

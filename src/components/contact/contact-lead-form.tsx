@@ -53,6 +53,25 @@ export function ContactLeadForm({ source }: ContactLeadFormProps) {
     );
   }
 
+  function persistLead(channel: "whatsapp" | "sms") {
+    const contextParts = [
+      interestLabel,
+      message.trim() || null,
+      sourceLabel ? `מקור: ${sourceLabel}` : null,
+      `ערוץ: ${channel}`,
+    ].filter(Boolean);
+
+    void submitBookingLead({
+      name: name.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      context: contextParts.join(" | "),
+      source: source
+        ? `contact-${source}-${channel}`
+        : `contact-${channel}`,
+    });
+  }
+
   function onWhatsApp(e: React.FormEvent) {
     e.preventDefault();
     const trimmedName = name.trim();
@@ -62,6 +81,7 @@ export function ContactLeadForm({ source }: ContactLeadFormProps) {
       return;
     }
     setError("");
+    persistLead("whatsapp");
     const text = buildLeadWhatsAppText({
       name: trimmedName,
       phone: trimmedPhone,
@@ -80,6 +100,7 @@ export function ContactLeadForm({ source }: ContactLeadFormProps) {
       return;
     }
     setError("");
+    persistLead("sms");
     const text = buildLeadWhatsAppText({
       name: trimmedName,
       phone: trimmedPhone,

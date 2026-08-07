@@ -24,6 +24,7 @@ import { MembershipBenefitsBoard } from "@/components/members/membership-benefit
 import { MembersSyllabusSection } from "@/components/members/members-syllabus-section";
 import { PrivatePodcastBanner } from "@/components/members/private-podcast-banner";
 import { RandomClubButton } from "@/components/members/random-club-button";
+import { NewsletterSignup } from "@/components/newsletter/newsletter-signup";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Eyebrow, Watermark } from "@/components/ui/editorial";
 import { InfoTip } from "@/components/ui/info-tip";
@@ -327,6 +328,8 @@ export default async function MembersPage() {
       {!isMember ? <MembersCredibilityFaq /> : null}
 
       {!isMember ? <MembersAccessSteps /> : null}
+
+      {!isMember ? <NewsletterSignup source="members" /> : null}
 
       {!isMember ? (
         <section className="border-t border-foreground/10 bg-paper text-foreground">

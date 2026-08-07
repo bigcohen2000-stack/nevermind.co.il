@@ -1,31 +1,49 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { useFabBarContribution } from "@/components/layout/use-fab-bar-contribution";
+import { useWatchConversion } from "@/components/videos/watch-conversion-provider";
 
 const STORAGE_KEY = "nm_watch_booking_nudge_seen";
+/** Wait until the visitor has had time to get value from the video. */
+const SHOW_AFTER_MS = 45_000;
 
 /**
- * One-shot bottom banner after first watch visit in the session.
+ * One-shot bottom banner after ~45s on watch (not on mount).
+ * Opens the contextual booking modal instead of /booking.
  * On mobile publishes height into --nm-fab-bar so WhatsApp / a11y sit above it.
- * MobileCta is hidden on /watch to avoid a second full-width bar.
  */
 export function WatchBookingNudge() {
+  const { openBooking } = useWatchConversion();
   const [visible, setVisible] = useState(false);
   const [isMdUp, setIsMdUp] = useState(false);
   const contribute = visible && !isMdUp;
   const barRef = useFabBarContribution<HTMLDivElement>("nudge", contribute);
 
   useEffect(() => {
+    let cancelled = false;
+
     try {
       if (window.sessionStorage.getItem(STORAGE_KEY) === "1") return;
-      window.sessionStorage.setItem(STORAGE_KEY, "1");
-      setVisible(true);
     } catch {
-      /* private mode */
+      /* private mode: still show once after delay */
     }
+
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      try {
+        window.sessionStorage.setItem(STORAGE_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+      setVisible(true);
+    }, SHOW_AFTER_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -46,12 +64,19 @@ export function WatchBookingNudge() {
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 md:mx-0">
         <p className="text-sm leading-relaxed text-foreground/80">
-          רוצה להפריד עובדה מסיפור לפני שיחה אישית?
+          רוצה לפרק את זה בשיחה קצרה?
         </p>
         <div className="flex flex-wrap gap-2">
-          <Link href="/booking" className="btn btn-primary text-sm">
+          <button
+            type="button"
+            className="btn btn-primary text-sm"
+            onClick={() => {
+              setVisible(false);
+              openBooking();
+            }}
+          >
             לתיאום
-          </Link>
+          </button>
           <button
             type="button"
             className="btn btn-secondary text-sm"

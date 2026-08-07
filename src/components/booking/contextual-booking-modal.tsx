@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 
 import { submitBookingLead } from "@/actions/booking-lead";
 import {
@@ -46,12 +46,13 @@ export function ContextualBookingModal({
   const [success, setSuccess] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    if (!open) {
+  function handleOpenChange(next: boolean) {
+    if (!next) {
       setError("");
       setSuccess(false);
     }
-  }, [open]);
+    setOpen(next);
+  }
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -80,7 +81,7 @@ export function ContextualBookingModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       {showTrigger ? (
         <DialogTrigger asChild>
           <button type="button" className="btn btn-primary mt-6">
@@ -95,6 +96,12 @@ export function ContextualBookingModal({
           <DialogDescription>
             פרטים קצרים. נחזור אליך לתיאום. ההקשר מהאתר נשמר אוטומטית.
           </DialogDescription>
+          <p
+            className="mt-3 text-sm leading-relaxed text-[#9CA3AF]"
+            data-ai-hint="key-claim"
+          >
+            זה לא טיפול. זה פירוק לוגי.
+          </p>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>

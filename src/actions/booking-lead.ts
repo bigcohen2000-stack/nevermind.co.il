@@ -19,12 +19,23 @@ const bookingSchema = z.object({
   email: z
     .string()
     .trim()
-    .min(1, "נא למלא אימייל")
-    .email("נא למלא אימייל תקין")
-    .max(200, "האימייל ארוך מדי"),
+    .max(200, "האימייל ארוך מדי")
+    .optional()
+    .default("")
+    .refine(
+      (value) => value === "" || z.string().email().safeParse(value).success,
+      "נא למלא אימייל תקין",
+    ),
   context: z.string().trim().max(2000).optional().default(""),
   source: z.string().trim().max(80).optional().default("site"),
 });
+
+/** Placeholder when WhatsApp/SMS lead has no email (column is NOT NULL). */
+function emailForLead(email: string, phone: string): string {
+  if (email) return email;
+  const digits = phone.replace(/\D/g, "").slice(-12) || "unknown";
+  return `wa-${digits}@lead.nevermind.internal`;
+}
 
 export type BookingLeadInput = z.infer<typeof bookingSchema>;
 
@@ -54,6 +65,7 @@ export async function submitBookingLead(
     }
 
     const { name, phone, email, context, source } = parsed.data;
+    const leadEmail = emailForLead(email, phone);
 
     let saved = false;
     try {
@@ -61,7 +73,7 @@ export async function submitBookingLead(
       const { error: dbError } = await admin.from("booking_leads").insert({
         name,
         phone,
-        email,
+        email: leadEmail,
         context: context || "",
         source: source || "site",
         status: "new",
@@ -83,7 +95,7 @@ export async function submitBookingLead(
       const { error } = await resend.emails.send({
         from: fromEmail,
         to: [adminEmail],
-        replyTo: email,
+        replyTo: email || undefined,
         subject: context
           ? `בקשת תיאום: ${context.slice(0, 80)}`
           : "בקשת תיאום חדשה מ-nevermind.co.il",
@@ -92,7 +104,7 @@ export async function submitBookingLead(
           "",
           `שם: ${name}`,
           `טלפון: ${phone}`,
-          `אימייל: ${email}`,
+          `אימייל: ${email || "(לא סופק, ערוץ וואטסאפ/SMS)"}`,
           `הקשר: ${context || "(ללא)"}`,
           `מקור: ${source}`,
           "",

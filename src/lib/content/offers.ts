@@ -572,8 +572,10 @@ export function buildLeadWhatsAppText(input: {
 export const LEAD_SOURCE_LABELS: Record<string, string> = {
   "mobile-cta": "בר תחתון במובייל",
   watch: "דף צפייה",
+  "watch-nudge": "באנר צפייה",
   videos: "ספריית וידאו",
   search: "חיפוש",
   home: "עמוד הבית",
   paths: "מסלולים",
+  members: "מועדון",
 };

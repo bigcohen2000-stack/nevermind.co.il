@@ -101,6 +101,24 @@ export function PathInquiryCta({
   function openChannel(kind: "whatsapp" | "sms") {
     if (!validateContact(false)) return;
     const message = buildTrackWhatsAppText(trackInput());
+    const context = [
+      track,
+      priceBeforeVat ? `מחיר לפני מע"מ: ${priceBeforeVat}` : null,
+      detail?.trim() || null,
+      `מטרה: ${purpose.trim()}`,
+      `ערוץ: ${kind}`,
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
+    void submitBookingLead({
+      name: name.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      context,
+      source: `paths-${source}-${kind}`,
+    });
+
     setStatus(
       kind === "whatsapp"
         ? "הבקשה נקלטה. פותח וואטסאפ."
