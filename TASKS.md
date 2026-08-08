@@ -18,6 +18,7 @@
 - [ ] `GATED_PLAYLIST_IDS` ב-Vercel
 - [ ] טעימות חסרות
 - [ ] Smoke Incognito: gated watch + contact + Studio
+- [ ] CSP: להפוך Report-Only ל-enforced אחרי כמה ימים שקטים בלוגים (פירוט ב-`docs/launch-checklist.md`)
 
 ## מחוץ לסקופ
 

@@ -32,6 +32,7 @@ Updated 2026-08-08. Production on Vercel. DNS behind Cloudflare.
 7. [ ] Set `GATED_PLAYLIST_IDS` in Vercel if empty
 8. [ ] Close teaser gaps from Studio health / `#teasers`
 9. [ ] Run `supabase/migrations/43_club_renewal_request.sql` (member renewal mark in the expiry banner)
+10. [ ] CSP: after a few quiet days in Vercel logs (`scope: "csp.report"`), rename `Content-Security-Policy-Report-Only` to `Content-Security-Policy` in `next.config.ts` (keep the small enforced header until then)
 
 ## Keep
 
