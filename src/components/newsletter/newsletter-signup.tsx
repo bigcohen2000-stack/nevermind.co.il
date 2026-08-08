@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type RefObject } from "react";
 
 import { subscribeNewsletter } from "@/actions/newsletter";
 import { subscribeWhatsAppUpdates } from "@/actions/whatsapp-updates";
@@ -38,38 +38,49 @@ type PhoneOutcome =
       message: string;
     };
 
-function Mark({
+function OutcomeBanner({
   ok,
-  label,
+  title,
+  detail,
   tone,
+  bannerRef,
 }: {
   ok: boolean;
-  label: string;
+  title: string;
+  detail?: string;
   tone: "paper" | "dark";
+  bannerRef?: RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <p
+    <div
+      ref={bannerRef}
+      tabIndex={-1}
       className={cn(
-        "mt-4 flex items-start gap-2 border px-3 py-3 text-sm leading-relaxed",
+        "mt-4 border px-4 py-4 text-sm leading-relaxed sm:text-base",
         ok
           ? tone === "dark"
-            ? "border-emerald-500/45 bg-emerald-500/10 text-emerald-200"
-            : "border-emerald-700/35 bg-emerald-700/5 text-emerald-900"
+            ? "border-emerald-500/45 bg-emerald-500/10 text-emerald-100"
+            : "border-emerald-800/40 bg-emerald-50 text-emerald-950"
           : tone === "dark"
             ? "border-[#D42B2B]/70 bg-[#D42B2B]/10 text-[#FF8A8A]"
             : "border-[#D42B2B] bg-[#D42B2B]/5 text-[#D42B2B]",
       )}
-      role="status"
+      role={ok ? "status" : "alert"}
+      aria-live={ok ? "polite" : "assertive"}
     >
-      <span
-        className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center border border-current text-xs font-semibold"
-        aria-hidden
-      >
-        {ok ? "V" : "X"}
-      </span>
-      <span>{label}</span>
-    </p>
+      <p className="font-semibold tracking-tight">
+        {ok ? "הצלחה" : "שגיאה"}: {title}
+      </p>
+      {detail ? <p className="mt-1.5 text-[0.95em] opacity-90">{detail}</p> : null}
+    </div>
   );
+}
+
+function scrollToBanner(ref: RefObject<HTMLDivElement | null>) {
+  requestAnimationFrame(() => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    ref.current?.focus({ preventScroll: true });
+  });
 }
 
 /**
@@ -88,6 +99,8 @@ export function NewsletterSignup({
   const [phoneOutcome, setPhoneOutcome] = useState<PhoneOutcome | null>(null);
   const [emailPending, startEmail] = useTransition();
   const [phonePending, startPhone] = useTransition();
+  const emailBannerRef = useRef<HTMLDivElement>(null);
+  const phoneBannerRef = useRef<HTMLDivElement>(null);
   const isDark = tone === "dark";
 
   const muted = isDark ? "text-[#9CA3AF]" : "text-muted";
@@ -98,6 +111,14 @@ export function NewsletterSignup({
     () => !validateEmail(email, { required: true }) && email.trim().length > 0,
     [email],
   );
+
+  useEffect(() => {
+    if (emailOutcome) scrollToBanner(emailBannerRef);
+  }, [emailOutcome]);
+
+  useEffect(() => {
+    if (phoneOutcome) scrollToBanner(phoneBannerRef);
+  }, [phoneOutcome]);
 
   function onEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -113,16 +134,26 @@ export function NewsletterSignup({
       return;
     }
     startEmail(async () => {
-      const result = await subscribeNewsletter({ email, source });
-      if (!result.ok) {
+      try {
+        const result = await subscribeNewsletter({ email, source });
+        if (!result?.ok) {
+          setEmailOutcome({
+            kind: "error",
+            code: result?.code ?? "save_failed",
+            message:
+              result?.error ??
+              "ההרשמה לא נשמרה. נסו שוב בעוד רגע, או פנו בוואטסאפ.",
+          });
+          return;
+        }
+        setEmailOutcome({ kind: "saved", status: result.status });
+      } catch {
         setEmailOutcome({
           kind: "error",
-          code: result.code,
-          message: result.error,
+          code: "save_failed",
+          message: "ההרשמה לא נשמרה. נסו שוב בעוד רגע, או פנו בוואטסאפ.",
         });
-        return;
       }
-      setEmailOutcome({ kind: "saved", status: result.status });
     });
   }
 
@@ -140,20 +171,30 @@ export function NewsletterSignup({
       return;
     }
     startPhone(async () => {
-      const result = await subscribeWhatsAppUpdates({ phone, source });
-      if (!result.ok) {
+      try {
+        const result = await subscribeWhatsAppUpdates({ phone, source });
+        if (!result?.ok) {
+          setPhoneOutcome({
+            kind: "error",
+            code: result?.code ?? "save_failed",
+            message:
+              result?.error ??
+              "ההרשמה לא נשמרה. נסו שוב בעוד רגע, או פנו בוואטסאפ.",
+          });
+          return;
+        }
+        setPhoneOutcome({
+          kind: "saved",
+          maskedPhone: result.maskedPhone,
+          status: result.status,
+        });
+      } catch {
         setPhoneOutcome({
           kind: "error",
-          code: result.code,
-          message: result.error,
+          code: "save_failed",
+          message: "ההרשמה לא נשמרה. נסו שוב בעוד רגע, או פנו בוואטסאפ.",
         });
-        return;
       }
-      setPhoneOutcome({
-        kind: "saved",
-        maskedPhone: result.maskedPhone,
-        status: result.status,
-      });
     });
   }
 
@@ -210,28 +251,25 @@ export function NewsletterSignup({
           </form>
 
           {emailOutcome?.kind === "saved" ? (
-            <Mark
+            <OutcomeBanner
+              bannerRef={emailBannerRef}
               ok
               tone={tone}
-              label={
+              title={
                 emailOutcome.status === "reactivated"
-                  ? "V נשמר מחדש במערכת. קיבלתם אישור למייל."
-                  : "V האימייל תקין ונשמר במערכת. קיבלתם אישור למייל."
+                  ? "האימייל נשמר מחדש במערכת"
+                  : "האימייל נשמר במערכת"
               }
+              detail="אם הגדרתם Resend, תקבלו אישור למייל. אפשר לבטל בכל עת מהקישור שם."
             />
           ) : null}
 
           {emailOutcome?.kind === "error" ? (
-            <Mark
+            <OutcomeBanner
+              bannerRef={emailBannerRef}
               ok={false}
               tone={tone}
-              label={
-                emailOutcome.code === "already_subscribed"
-                  ? `X ${emailOutcome.message}`
-                  : emailOutcome.code === "invalid"
-                    ? `X ${emailOutcome.message}`
-                    : `X ${emailOutcome.message}`
-              }
+              title={emailOutcome.message}
             />
           ) : null}
 
@@ -242,7 +280,7 @@ export function NewsletterSignup({
                 isDark ? "text-emerald-300/90" : "text-emerald-800",
               )}
             >
-              V הפורמט תקין. לחצו לשמירה במערכת.
+              הפורמט תקין. לחצו לשמירה במערכת.
             </p>
           ) : null}
 
@@ -269,19 +307,21 @@ export function NewsletterSignup({
 
             {phoneOutcome?.kind === "saved" ? (
               <div
+                ref={phoneBannerRef}
+                tabIndex={-1}
                 className={cn("mt-5 border p-4 sm:p-5", border, panel)}
                 role="status"
                 aria-live="polite"
               >
                 <p className="text-[11px] font-medium tracking-[0.16em] text-action uppercase">
-                  עדכון מערכת
+                  הצלחה
                 </p>
-                <p className="mt-2 text-sm font-semibold tracking-tight">
+                <p className="mt-2 text-base font-semibold tracking-tight">
                   אישור הרשמה למספר {phoneOutcome.maskedPhone}
                 </p>
                 <p className={cn("mt-2 text-sm leading-relaxed", muted)}>
-                  V המספר אומת ונשמר במערכת. הקישור למטה הוא אישור הרשמה
-                  אישי למספר הזה. לא משתפים אותו הלאה.
+                  המספר אומת ונשמר במערכת. הקישור למטה הוא אישור הרשמה אישי
+                  למספר הזה. לא משתפים אותו הלאה.
                 </p>
 
                 <a
@@ -356,10 +396,11 @@ export function NewsletterSignup({
             )}
 
             {phoneOutcome?.kind === "error" ? (
-              <Mark
+              <OutcomeBanner
+                bannerRef={phoneBannerRef}
                 ok={false}
                 tone={tone}
-                label={`X ${phoneOutcome.message}`}
+                title={phoneOutcome.message}
               />
             ) : null}
           </div>
