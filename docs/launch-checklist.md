@@ -19,7 +19,7 @@ Updated 2026-08-08. Production on Vercel. DNS behind Cloudflare.
 - Studio club board (live queue, not localStorage)
 - Extend membership months in Studio
 - Health checks: gated playlist env + missing teasers
-- CI on push
+- Unit tests via `npm test` (CI workflow file is local until pushed with GitHub `workflow` scope)
 
 ## Still human (dashboards / Incognito)
 
