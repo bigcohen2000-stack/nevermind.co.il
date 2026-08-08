@@ -3,7 +3,6 @@ import "server-only";
 import {
   CORE_MECHANISMS,
   collectCoreMechanisms,
-  type CoreMechanism,
 } from "@/lib/profile/core-mechanisms";
 import {
   emptyProfileProgressStats,
@@ -30,12 +29,23 @@ export async function getProfileProgressStats(
   try {
     const { data: history } = await supabase
       .from("watch_history")
-      .select("youtube_id")
+      .select("youtube_id, watched_at")
       .eq("user_id", userId);
 
-    const youtubeIds = (history ?? [])
-      .map((row) => row.youtube_id)
-      .filter(Boolean);
+    const rows = history ?? [];
+    stats.historyCount = rows.length;
+
+    const youtubeIds = rows.map((row) => row.youtube_id).filter(Boolean);
+
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const dayKeys = new Set<string>();
+    for (const row of rows) {
+      const t = new Date(row.watched_at).getTime();
+      if (Number.isFinite(t) && t >= weekAgo) {
+        dayKeys.add(new Date(row.watched_at).toISOString().slice(0, 10));
+      }
+    }
+    stats.activeDaysLast7 = dayKeys.size;
 
     if (youtubeIds.length > 0) {
       const { data: videos } = await supabase
@@ -73,6 +83,30 @@ export async function getProfileProgressStats(
     }
   } catch {
     // keep defaults
+  }
+
+  try {
+    const { count } = await supabase
+      .from("video_completions")
+      .select("youtube_id", { count: "exact", head: true })
+      .eq("user_id", userId);
+    stats.completedCount = count ?? 0;
+  } catch {
+    // migration may be pending
+  }
+
+  try {
+    const { data: searches } = await supabase
+      .from("user_search_history")
+      .select("query")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(5);
+    stats.recentSearches = (searches ?? [])
+      .map((row) => row.query.trim())
+      .filter(Boolean);
+  } catch {
+    // migration may be pending
   }
 
   try {

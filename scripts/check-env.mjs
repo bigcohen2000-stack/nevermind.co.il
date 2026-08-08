@@ -105,4 +105,4 @@ if (!browseOk) {
   }
 }
 
-process.exit(browseOk ? 0 : 1);
+process.exitCode = browseOk ? 0 : 1;

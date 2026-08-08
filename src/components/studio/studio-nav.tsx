@@ -5,6 +5,7 @@ import {
   FileText,
   Inbox,
   KeyRound,
+  Mail,
   Megaphone,
   MessageSquare,
   Search,
@@ -21,6 +22,7 @@ const LINKS: {
     | "club"
     | "analytics"
     | "leads"
+    | "newsletter"
     | "quotes"
     | "banners"
     | "comments"
@@ -47,6 +49,12 @@ const LINKS: {
     icon: Search,
   },
   { href: "/studio/leads", label: "לידים", active: "leads", icon: Inbox },
+  {
+    href: "/studio/newsletter",
+    label: "עדכון במייל",
+    active: "newsletter",
+    icon: Mail,
+  },
   {
     href: "/studio/quotes",
     label: "הצעות",

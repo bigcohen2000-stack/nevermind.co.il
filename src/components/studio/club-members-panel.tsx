@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import {
   deleteClubMember,
+  markClubOpsStage,
   mintClubFeedToken,
   upsertClubMember,
 } from "@/actions/club-login";
@@ -25,6 +26,8 @@ export type ClubMemberRow = {
   created_at: string;
   updated_at: string;
   last_seen_at: string | null;
+  ops_link_minted_at: string | null;
+  ops_whatsapp_sent_at: string | null;
 };
 
 export type ClubLoginEventRow = {
@@ -313,8 +316,74 @@ export function ClubMembersPanel({
                       ? `, תפוגה ${formatWhen(row.expires_at)}`
                       : ""}
                     {expired ? ", פג תוקף" : ""}
+                    {row.ops_link_minted_at
+                      ? `, קישור ${formatWhen(row.ops_link_minted_at)}`
+                      : ""}
+                    {row.ops_whatsapp_sent_at
+                      ? `, וואטסאפ ${formatWhen(row.ops_whatsapp_sent_at)}`
+                      : ""}
                   </span>
                   <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="border border-zinc-600 px-2 py-1 text-zinc-200"
+                      onClick={() => {
+                        startTransition(async () => {
+                          const result = await markClubOpsStage({
+                            phone: row.phone,
+                            stage: "link_minted",
+                          });
+                          if (!result.ok) {
+                            setError(result.error);
+                            return;
+                          }
+                          setRows((prev) =>
+                            prev.map((m) =>
+                              m.phone === row.phone
+                                ? {
+                                    ...m,
+                                    ops_link_minted_at: new Date().toISOString(),
+                                  }
+                                : m,
+                            ),
+                          );
+                          setStatus(result.message ?? "סומן.");
+                          router.refresh();
+                        });
+                      }}
+                    >
+                      קישור
+                    </button>
+                    <button
+                      type="button"
+                      className="border border-zinc-600 px-2 py-1 text-zinc-200"
+                      onClick={() => {
+                        startTransition(async () => {
+                          const result = await markClubOpsStage({
+                            phone: row.phone,
+                            stage: "whatsapp_sent",
+                          });
+                          if (!result.ok) {
+                            setError(result.error);
+                            return;
+                          }
+                          setRows((prev) =>
+                            prev.map((m) =>
+                              m.phone === row.phone
+                                ? {
+                                    ...m,
+                                    ops_whatsapp_sent_at: new Date().toISOString(),
+                                  }
+                                : m,
+                            ),
+                          );
+                          setStatus(result.message ?? "סומן.");
+                          router.refresh();
+                        });
+                      }}
+                    >
+                      וואטסאפ
+                    </button>
                     <button
                       type="button"
                       className="border border-zinc-600 px-2 py-1 text-zinc-200"

@@ -18,7 +18,7 @@ Updated 2026-08-04: Polish merged to `main` and live on Vercel. DNS behind Cloud
 - [x] Cloudflare Access app **NeverMind Studio** (`/nm-ops*` + `/studio*`, email `bigcohen2000@gmail.com`)
 - [x] Vercel Production: `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, `STUDIO_REQUIRE_CF_ACCESS=1`
 - [x] `STUDIO_GATE_SLUG=nm-ops`, `STUDIO_ALLOWED_EMAILS=bigcohen2000@gmail.com`
-- [x] Google OAuth callback cookies + visible `auth_error` on `/my-list`
+- [x] Google OAuth callback cookies + visible `auth_error` on `/my-list` (callback only, UI is magic link)
 - [x] Branded 404 with search, hubs, login, contact
 
 ## Keep vs junk (do not delete blindly)
@@ -90,12 +90,12 @@ Details: `docs/studio-cloudflare-access.md`
 - [x] Migration 33 `booking_leads` + pre_meeting status
 - [x] Migration 34 meeting confirm columns + `/m/[token]` + Studio schedule/V UI
 - [x] Apply `APPLY_MISSING_2026-08-04.sql` (21, 23, 30, 31, 32) — verified 2026-08-04
-- [ ] Auth URL config: see `docs/auth-google.md` (Site URL + `https://nevermind.co.il/**`)
-- [ ] Google OAuth: provider on + Google Cloud redirect = `https://<ref>.supabase.co/auth/v1/callback`
+- [x] Supabase Auth magic link (email only). No Google button in UI.
+- [ ] Auth URL config: Supabase Site URL + `https://nevermind.co.il/**` redirect allowlist
 - [ ] Club password in Studio
 - [ ] Confirm gated/unlisted videos look right
 
-Smoke auth: Incognito → `/my-list` → Google → signed-in list (or visible `auth_error`).
+Smoke auth: Incognito → `/my-list` → email magic link → signed-in list (or visible `auth_error`).
 
 ## Validation matrix
 

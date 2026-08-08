@@ -1,461 +1,181 @@
-# BLUEPRINT_REVISED.md
-## NeverMinde by Yakir Cohen - Technical & Philosophical Architecture
+# NeverMind — תוכנית מאושרת לביצוע
 
-**Last Updated:** June 18, 2026  
-**Status:** Planning Phase
+מסמך זה מחליף את גישת "הקמה מאפס". האתר כבר קיים ב-Next.js. העבודה היא שדרוג במקום, בלי לשבור מסלולים קיימים.
 
----
-
-## 1. Executive Summary
-
-NeverMinde is a minimalist knowledge platform dedicated to logical analysis and objective reality inquiry, rejecting psychological manipulation and sensory drama. The platform rebuilds the existing NeverMind website on Next.js with PWA capabilities, implementing a "zero drama" design philosophy, RTL support for Hebrew content, and a staged development approach.
-
-**Core Principle:** Facts vs. Story—separating objective reality from subjective interpretation.
+תאריך אישור כיוון: 2026-08-08
 
 ---
 
-## 2. Design Philosophy & UX Foundation
+## 1. מטרת המוצר
 
-### 2.1 Minimalism as Engineering Principle
-
-Minimalism is not an aesthetic preference but a **core engineering decision** to:
-- Eliminate cognitive noise
-- Prevent user manipulation through emotional triggers
-- Honor user time and bandwidth
-- Create space for pure logical analysis
-
-**Hard Rules:**
-- No shadows, gradients, or unnecessary borders
-- No dramatic language or manipulative CTAs
-- No heavy animations or visual drama
-- No external fonts or bloat
-- Fast loading = respect for user
-
-### 2.2 Color Token System (Design Tokens)
-
-| Purpose | Hex | Role | Usage |
-|---------|-----|------|-------|
-| **Background** | `#FAFAF8` | Off-white, calm, reduces eye fatigue | Page backgrounds, cards |
-| **Primary Text** | `#1A1A1A` | Deep black, maximum contrast, authority | Body text, facts |
-| **Action/Alert** | `#D42B2B` | Red accent, used sparingly | Buttons, critical links, premium gates |
-| **Muted/Interpretation** | `#9CA3AF` | Gray, represents "story" layer | Strikethrough text, secondary info |
-
-**Semantic Subtlety:**
-- **Relationships mechanism** (identity/family/communication) → `bg-red-50` (light red background)
-- **Existence mechanism** (survival/money/pressure) → `#D42B2B` (action red for energy)
-- **Identity mechanism** (ego/self/reality as illusion) → `bg-stone-100` (deep stone gray)
-
-### 2.3 Typography & Micro-Copy Rules
-
-**Strict Punctuation Standards:**
-- Only periods, commas, straight quotes allowed
-- No exclamation marks, no emojis, no hype language
-- Button text must be precise and dry
-
-**Examples:**
-- ✅ "Full mechanism breakdown available in members area. Requires payment."
-- ❌ "Unlock the secret NOW! Click to change your life!"
+NeverMind (השם לא משנה) הוא אתר עברי RTL לתוכן, וידאו, מושגים ומאגר מועדון.  
+הממשק מינימליסטי, יבש, בלי דרמה.  
+המטרה: מהירות, בהירות, קידום אורגני חזק, והובלה לשיחה ישירה עם יקיר.
 
 ---
 
-## 3. Technical Architecture
+## 2. החלטות עסקיות מחייבות
 
-### 3.1 Framework & Stack
+### 2.1 אין סליקה באתר
+- אין תשלומים, checkout, או שערי סליקה באתר.
+- אין כפתורי "שלם עכשיו" או מחירים דינמיים לסליקה עצמית.
+- בקשת גישה למועדון תמיד מובילה לשיחה ישירה: וואטסאפ, הודעה, או מייל.
+- אחרי שיחת התאמה, הגישה נפתחת ידנית (קישור אישי / סיסמה / הרשאה ב-Studio).
 
-- **Frontend:** Next.js 16+ (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS + design tokens
-- **Content:** MDX (Markdown + React components)
-- **Database:** Git-based (version control as source of truth)
-- **Deployment:** Vercel (Edge Functions, CDN)
-- **PWA:** Serwist (Service Worker)
-- **Email:** Resend + react-email
-- **Auth:** Better_Auth + Resend (magic links)
+### 2.2 שלוש שכבות משתמש (כבר קיימות בקוד)
+| שכבה | מי זה | מה מקבל | תחושה בממשק |
+|---|---|---|---|
+| `guest` | אורח | תוכן ציבורי, חיפוש בסיסי, צפייה פתוחה | ברור, מזמין, בלי לחץ |
+| `account` | רשום במייל בלבד | רשימה אישית, פרופיל, נוחות שמירה | חשבון חינם נוח. לא מועדון |
+| `club` | חבר מועדון | מאגר, תמלילים/ארכיון לפי הרשאה | פרימיום שקט: יותר מקום, פחות רעש, קיצורי דרך |
 
-### 3.2 Content Architecture: Three Mechanisms
+חשבון מייל לא פותח את מאגר המועדון. רק כניסת מועדון.
 
-All content organizes around **three psychological mechanisms** (not emotions):
+### 2.3 מה לא בונים בשלב זה
+- סליקה / מנויים אוטומטיים / Stripe וכדומה
+- לוח שנה מוטמע (רק אחרי אישור נפרד)
+- PWA מלא עם offline כבד (Serwist עמוק) בלי אישור נפרד
+- שינוי מודל עסקי או מחיקת תוכן
 
-1. **Relationships** - Topics: family, communication, blame, conflict resolution
-2. **Existence** - Topics: survival, money, pressure, work, health habits
-3. **Identity** - Topics: ego, free will, reality as illusion, consciousness
-
-**Frontmatter Structure (Required for all MDX):**
-```yaml
----
-title: "Fact title here"
-category: "relationships" | "existence" | "identity"
-slug: "/topics/relationships/specific-topic"
-isPremium: false | true
-lastUpdated: "2026-06-18"
----
-```
-
-### 3.3 Core Component: `<FactVsStory />`
-
-This component translates the core analytical method into code:
-
-```tsx
-<FactVsStory 
-  fact="Objective event: Your partner raised their voice."
-  story="Your interpretation: They don't respect me."
-/>
-```
-
-**Visual Implementation:**
-- **Fact:** Regular font, pure black (`#1A1A1A`), bold anchors in reality
-- **Story:** Gray text (`text-gray-400`), strikethrough, visual negation
-
-**Purpose:** Train readers to separate reality from narrative through repetition.
-
-### 3.4 Performance Targets
-
-- **Lighthouse Score:** 95+ (all categories)
-- **First Contentful Paint (FCP):** < 1.2s
-- **Largest Contentful Paint (LCP):** < 2.5s
-- **Cumulative Layout Shift (CLS):** < 0.1
-- **Time to Interactive (TTI):** < 3.2s
-
-**Method:** Static Site Generation (SSG) + Edge caching + zero external dependencies.
+מותר להשאיר כפתור "הורדת אפליקציה" קל אם כבר קיים, אבל בלי פרויקט PWA חדש.
 
 ---
 
-## 4. Content Delivery Strategy
+## 3. מצב קיים (בסיס לעבודה)
 
-### 4.1 MDX System
+כבר קיימים בין השאר:
+- App Router, RTL עברי, טוקני עיצוב
+- מאמרים ב-MDX
+- `/videos`, `/watch/[videoId]`, `/search`, `/concepts`, `/members`, `/contact`, `/booking`
+- שכבות `guest` / `account` / `club`
+- CTA וואטסאפ, טקסטים "אין סליקה באתר"
+- sitemap, JSON-LD, metadata חלקיים
+- Studio לניהול מועדון / לידים
 
-- **All articles stored in `/content` as `.mdx` files** (version controlled)
-- No database required—Git is the CMS
-- Zero external CMS vulnerabilities
-- Inline React components for interactivity (`<FactVsStory />`, `<Premium Gate />`)
-
-### 4.2 Static Site Generation (SSG)
-
-- **Build time:** All MDX files compiled to HTML at deploy
-- **Deployment:** Static HTML served from Vercel CDN
-- **User request:** Returns complete HTML in < 50ms globally
-- **Zero database calls** for content delivery
-
-### 4.3 Premium Content Gating
-
-**Premium Gate Component (`<PremiumGate />`):**
-- Show summary + first paragraphs to all users
-- Hard cutoff: "This content requires membership. Access in members area."
-- Single red button linking to login
-- No modal dialogs, no popup interruptions
-
-**Video Premium Content:**
-- Store unlisted YouTube videos
-- Server-side render video URL only for authenticated users
-- No video source leaks to unauthorized users
+העבודה: להשלים פערים, לתקן UX, לחזק SEO, לא להמציא מחדש.
 
 ---
 
-## 5. Video Strategy
+## 4. שפה חזותית ו-UX
 
-### 5.1 Lightweight Video Embedding
+### 4.1 טוקנים
+- רקע: `#FAFAF8`
+- טקסט: `#1A1A1A`
+- פעולה: `#D42B2B`
+- מושתק: `#9CA3AF`
+- בלי גרדיאנטים, בלי דרמה, בלי אנימציות כבדות
+- צללים רק אם נדרשים לבהירות מינימלית (עדיף בלי)
 
-- **Framework:** `@next/third-parties/google` (Vercel's official lite-youtube-embed)
-- **Method:** Load only thumbnail + play button initially
-- **On Click:** Inject full iframe and auto-play video
-- **Benefit:** Saves ~400KB per video on initial page load
+### 4.2 Header — תיקון מאושר
+בעיה מדווחת: בדסקטופ כפתורים לא מזמינים. "הירשם לחשבון" כהה על כהה. "הורדת אפליקציה" חלש מדי.
 
-### 5.2 Video Management
+כיוון מאושר:
+- **הירשם / חשבון חינם:** רקע `#D42B2B`, טקסט בהיר. CTA משני ברור לאורח.
+- **למועדון:** משני חזק (מסגרת או רקע בהיר), טקסט `#1A1A1A` על רקע בהיר. מוביל ל-`/members` ואז לוואטסאפ/מייל.
+- **התחברות:** טקסטual ברור, ניגודיות גבוהה ב-light ו-dark.
+- **הורדת אפליקציה:** משני נקי, לא מתחרה במועדון.
+- חובה: בדיקת ניגודיות ב-light וב-dark בדסקטופ ובמובייל.
 
-- Store on YouTube (unlisted for premium content)
-- Reference via YouTube IDs in MDX
-- Premium videos embedded within `<PremiumGate />`
-- Content served via Server Actions (auth required)
+### 4.3 תחושת פרימיום לחבר מועדון
+בלי יוקרה מזויפת. פרימיום = נוחות ושקט:
+- סטטוס ברור: "מועדון פעיל"
+- קיצורי דרך לארכיון ולחיפוש תמלילים
+- פחות הודעות שיווק / פחות הבהוב "הצטרף"
+- ממשק נקי יותר באזורים מורשים
+- שמירה על אותה שפת עיצוב, לא ערכת צבעים חדשה
 
----
-
-## 6. Progressive Web App (PWA)
-
-### 6.1 Serwist Service Worker
-
-**Three Configuration Layers:**
-
-1. **Server Config** (`next.config.ts`):
-   - Wrap config with `withSerwist` 
-   - Enable Service Worker generation
-
-2. **Service Worker Logic** (`app/sw.ts`):
-   - `StaleWhileRevalidate`: Static content (MDX, fonts, images)
-   - `NetworkFirst`: Main navigation + categories
-   - `NetworkOnly`: Auth operations, payments
-   - `Fallback`: Offline page (`/~offline`)
-
-3. **Manifest** (`app/manifest.ts`):
-   - Define app icons (192x192, 512x512)
-   - Standalone mode (full-screen app experience)
-   - Theme colors: `#FAFAF8` background, `#1A1A1A` text
-
-### 6.2 Offline Support
-
-- Users can read cached articles without internet
-- Offline fallback page explains connection status
-- No confusing browser error pages
-- Real-time sync when connection returns
+### 4.4 רשום במייל בלבד
+- רואה שהוא מחובר לחשבון
+- מקבל רשימה / פרופיל
+- רואה הודעה יבשה: חשבון מייל לא פותח מאגר. בקשת מועדון דרך וואטסאפ או מייל
+- בלי לבלבל בין "מחובר" לבין "חבר מועדון"
 
 ---
 
-## 7. SEO & Search Engine Optimization
+## 5. הובלה לשיחה (במקום סליקה)
 
-### 7.1 Dynamic Sitemap Generation
+כל נקודת המרה מרכזית מובילה לאחד מאלה:
+1. וואטסאפ (ברירת מחדל למועדון / התאמה)
+2. מייל (Resend / טופס קיים ב-`/contact` או booking)
+3. הודעה ישירה לפי מה שכבר מוגדר באתר
 
-**File:** `app/sitemap.ts`
+טקסט יבש לדוגמה:
+- "אין סליקה באתר. גישה אחרי שיחת התאמה."
+- "לשיחה בוואטסאפ"
+- "שליחת פרטים במייל"
 
-- Scans all MDX files at build time
-- Generates current `lastmod` dates
-- Creates sitemap XML dynamically
-- Submits to Google Search Console, Bing
-
-### 7.2 Robots & Crawl Directives
-
-**File:** `app/robots.ts`
-
-- Allow crawling of public content
-- Disallow premium content (via `<PremiumGate />` detection)
-- Point to sitemap location
-
-### 7.3 Schema.org Structured Data
-
-**Injected as JSON-LD:**
-
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "Article",
-  "headline": "Article title",
-  "author": {"@type": "Person", "name": "Yakir Cohen"},
-  "datePublished": "2026-06-18",
-  "articleBody": "..."
-}
-```
-
-**Use Cases:**
-- Teaches search engines article structure
-- Enables rich snippets in search results
-- Prepares for Generative Engine Optimization (GEO)
-- Paywall schema for premium content detection
-
-### 7.4 301 Redirect Strategy
-
-**Old → New URL Mapping** via `next.config.ts`:
-
-| Old URL | New URL | Mechanism |
-|---------|---------|-----------|
-| `/articles/when-you-blame-the-other-side/` | `/topics/relationships/blaming-the-other` | Relationships |
-| `/articles/quit-smoking-logical-analysis/` | `/topics/existence/quit-smoking` | Existence |
-| `/articles/reality-is-a-dream/` | `/topics/identity/reality` | Identity |
-
-**Benefit:** Preserves domain authority, maintains backlinks, prevents 404 errors.
+אין הבטחות שיווקיות. אין FOMO.
 
 ---
 
-## 8. Social Media & OG Tags
+## 6. תוכן ומאמרים
 
-### 8.1 Open Graph Protocol
-
-When user shares article link on social media:
-
-- **Dynamic OG Image Generation** using `@vercel/og`
-- **Image Elements:**
-  - Background: Semantic category color
-  - Center: AI-generated minimalist image matching article
-  - Text: Fact vs Story excerpt (fact bold black, story gray strikethrough)
-
-### 8.2 Organic Viral Strategy
-
-**Philosophy:** Logic attracts curiosity, not manipulation.
-
-- **Hook:** Clear "Fact vs Story" visual
-- **Result:** Intellectual curiosity drives clicks (not FOMO or drama)
-- **Experience:** Ultra-fast load (< 1s) + pure content
-- **Follow-up:** User lands directly in analytical system
+- מאמרים נשארים ב-MDX ב-Git. לא עוברים ל-DB.
+- רכיבים כמו Fact vs Story נשארים ככיוון תוכן, לא כתנאי לסליקה.
+- תוכן מוגן מועדון: הצגה חלקית + CTA לשיחה / כניסת מועדון. לא paywall תשלום.
 
 ---
 
-## 9. AI Image Generation (Brief)
+## 7. וידאו וחיפוש (שדרוג במקום)
 
-### 9.1 Minimalist AI Art
+סדר מודולים (אחד בכל פעם, מול הקוד הקיים):
 
-- **Tools:** Midjourney, DALL-E (with specific hex codes in prompts)
-- **Requirements:**
-  - No human faces or emotional expressions
-  - Metaphorical, geometric, vector representations
-  - Use exact hex colors: `#FAFAF8`, `#1A1A1A`, `#D42B2B`
-  - Low saturation, high contrast
-  - Store as WebP or AVIF
+1. **אינדקס חיפוש** — Supabase מבודד לוידאו/מושגים/תמלילים, עברית `tsvector` + GIN
+2. **סנכרון YouTube** — מוגן ב-`CRON_SECRET`, אידמפוטנטי
+3. **Hero Search** — debounce, הצעות, RTL, מקלדת
+4. **Watch + קשורים + CTA** — `?t=`, פאנל קשורים, CTA וואטסאפ/מייל (לא סליקה)
 
-### 9.2 Image Delivery
-
-- Use Next.js `<Image />` component
-- Automatic format conversion (WebP/AVIF)
-- Lazy loading with proper height/width
-- Zero Cumulative Layout Shift
+נגן:
+- ברשימות: lite facade
+- ב-`/watch`: נגן אינטראקטיבי עם קפיצת זמן
 
 ---
 
-## 10. Server Actions & Email Integration
+## 8. קידום אורגני (SEO / AEO / GEO / CWV)
 
-### 10.1 Next.js Server Actions
+חובה בכל עמוד רלוונטי:
+- `generateMetadata`, canonical, OG/Twitter
+- HTML סמנטי
+- RSC כברירת מחדל
+- `next/font`, `next/image`
+- JSON-LD לפי סוג עמוד (`VideoObject`, `WebSite`+`SearchAction`, `Article`, FAQ כשיש)
+- sitemap דינמי + robots
 
-**Pattern:**
-```tsx
-// app/actions.ts
-'use server'
+להשלים מעבר לטכני:
+- מפת הפניות 301 מהאתר הישן (רשימת ביצוע)
+- קישוריות פנימית: מאמר ↔ מושג ↔ וידאו ↔ מנגנון
+- דפי מושגים/מנגנונים כעמודי נחיתה בעברית ברורה
+- פיסוק פשוט בממשק ובמטא (בלי מקפים ארוכים, בלי נקודה-פסיק כמחבר רך)
+- מדידה: Search Console, בדיקת אינדוקס, שאילתות בעברית
 
-export async function subscribeNewsletter(email: string) {
-  // Validate, sanitize, send via Resend
-  // No API routes exposed
-  // API key stays on server only
-}
-```
-
-**Benefits:**
-- No exposed API endpoints
-- Credentials never reach browser
-- CSRF protection built-in
-- Direct server-side email handling
-
-### 10.2 Email with Resend + react-email
-
-- **Template Language:** React components
-- **Styling:** Tailwind CSS (same design tokens as website)
-- **Colors:** Off-white bg, black text, red actions
-- **Content:** Pure, no marketing language
-
-**Example Email Template:**
-```
-To: user@example.com
-Subject: Verify Your Account
-
-Your verification link is below. Link expires in 24 hours.
-
-[BUTTON: Verify Email]
-
-If you did not request this, ignore this email.
-```
-
-### 10.3 Auth Flow
-
-- **Magic Links:** Email-only auth via Better_Auth + Resend
-- **Premium Access:** Verify email → unlock `isPremium: true` content
-- **Session Storage:** Secure HTTP-only cookies (no localStorage for sensitive data)
+יעד ביצועים: Lighthouse גבוה, LCP טוב ב-watch, בלי CLS מכפתורי Header או dropdown חיפוש.
 
 ---
 
-## 11. RTL Support (Hebrew Content)
+## 9. תשתית
 
-### 11.1 HTML Direction
-
-```html
-<html lang="he" dir="rtl">
-```
-
-### 11.2 CSS Considerations
-
-- Tailwind RTL variant support (built-in)
-- `text-right` / `text-left` → automatic swap
-- Margin/padding directions: use logical properties
-- Icons and images: mirror if directional
-
-### 11.3 Typography
-
-- Load local Hebrew fonts (no Google Fonts)
-- Right-aligned text by default
-- Proper bidi punctuation handling
-- RTL form inputs and buttons
+- Deploy: Vercel בלבד בשלב זה
+- מאמרים: MDX
+- אינדקס וידאו: פרויקט Supabase חדש/מבודד בלבד (לא לערבב עם פרויקטים ישנים)
+- מייל: Resend + Server Actions (כבר בכיוון מאושר ללידים/booking)
+- מפתחות: לא לדלוף ללקוח. `CRON_SECRET` לסנכרון
 
 ---
 
-## 12. Staged Development Philosophy
+## 10. עקרון ביצוע
 
-**Why Phasing Matters:**
-- Prevents feature creep
-- Allows testing and refinement
-- Maintains velocity
-- Enables early feedback
-
-**Core Rule:** Each phase must deliver a working, deployable system. No partial implementations.
-
-**Phase Gates:**
-- Phase 1–4: Essential site foundation
-- Phase 5–7: Content + SEO power
-- Phase 8–10: Premium features (if revenue required)
-- Phase 11: Testing + production hardening
-
-See **TASKS.md** for detailed phase breakdown.
+1. לבדוק קוד קיים לפני כתיבה
+2. TypeScript חזק, שינויים קטנים
+3. לעצור ולשאול לפני: תשלומים (אסורים), Auth מלא חדש, PWA עמוק, שירות חיצוני חדש, שינוי מודל, מחיקת תוכן
+4. לפני מודול אינדקס: לוודא env של Supabase החדש
 
 ---
 
-## 13. Hosting & Deployment
+## 11. הגדרת הצלחה לשלב הביצוע הקרוב
 
-- **Platform:** Vercel
-- **Regions:** Global CDN (auto-optimize)
-- **Environment:** Edge Functions for server actions
-- **Monitoring:** Vercel Analytics + error tracking
-- **Domain:** Custom (determined separately)
-- **SSL:** Automatic (included)
-
----
-
-## 14. Testing Strategy (Phase 11)
-
-- **Unit Tests:** React components (`<FactVsStory />`, `<PremiumGate />`)
-- **E2E Tests:** User flows (read article → premium gate → login → verify)
-- **Lighthouse Audits:** Every commit
-- **Mobile Testing:** iOS/Android PWA installation
-- **RTL Testing:** Hebrew content layout + bidi
-- **Performance Budget:** Pages must stay < 100KB gzipped
-
----
-
-## 15. Security & Privacy
-
-- **No analytics trackers** (no Google Analytics, no Hotjar)
-- **No user profiling** 
-- **HTTPS only**
-- **Content Security Policy (CSP)** for XSS prevention
-- **Password hash:** bcrypt (if traditional auth added later)
-- **GDPR/Privacy:** Transparent data handling
-
----
-
-## 16. Key Decisions (See DECISIONS.md)
-
-1. Why Serwist over next-pwa?
-2. Why git-based content over headless CMS?
-3. Why magical links instead of password auth for Phase 1?
-4. Why 301 redirects instead of URL parameters?
-5. Why Server Actions instead of API routes?
-6. How to balance minimal design with content discoverability?
-
----
-
-## 17. Success Metrics
-
-- ✅ Lighthouse 95+ score maintained
-- ✅ Pages load < 1.2s globally
-- ✅ PWA installable on mobile
-- ✅ Hebrew RTL content perfect
-- ✅ Premium gate prevents content leakage
-- ✅ All old URLs redirect correctly
-- ✅ Email verification works end-to-end
-- ✅ Offline mode functional
-
----
-
-## 18. Change Log
-
-| Date | Change |
-|------|--------|
-| 2026-06-18 | Initial BLUEPRINT_REVISED.md created from BLUEPRINT.md |
-| | Consolidated 11 sections into 18 architectural layers |
-| | Added explicit security + testing strategy |
-| | Clarified staged development gates |
-
----
-
-**Next Step:** Review this document, then proceed to TASKS.md for implementation timeline.
+- Header מזמין וקריא בדסקטופ (light + dark)
+- הבדל ברור בין אורח / מייל / מועדון
+- כל בקשת מועדון יוצאת לוואטסאפ או מייל, בלי סליקה
+- חיפוש וצפייה יציבים עם metadata ו-JSON-LD
+- תחושת נוחות לחבר מועדון בלי רעש שיווקי
+- קידום: sitemap חי, canonical, קישוריות פנימית מתחזקת

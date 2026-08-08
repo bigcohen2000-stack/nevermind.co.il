@@ -16,6 +16,7 @@ import { Search, X } from "lucide-react";
 import { useCommandPalette } from "@/components/search/command-palette-context";
 import { useSearchHotkey } from "@/hooks/use-search-hotkey";
 import { pushRecentSearch } from "@/lib/recent-searches";
+import { pushUserSearchHistory } from "@/actions/search-history";
 import {
   suggestItemBadge,
   suggestItemHref,
@@ -119,12 +120,15 @@ export function CommandPalette() {
     const t = term.trim();
     if (!t) return;
     pushRecentSearch(t);
+    void pushUserSearchHistory(t);
     closePalette();
     router.push(`/search?q=${encodeURIComponent(t)}`);
   }
 
   function goToItem(item: SuggestItem) {
-    pushRecentSearch(suggestItemLabel(item));
+    const label = suggestItemLabel(item);
+    pushRecentSearch(label);
+    void pushUserSearchHistory(label);
     closePalette();
     router.push(suggestItemHref(item));
   }

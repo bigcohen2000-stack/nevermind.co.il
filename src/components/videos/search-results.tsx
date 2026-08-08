@@ -1,8 +1,10 @@
 import Link from "next/link";
 
 import { finalizeSearchPageAnalytics } from "@/actions/search-analytics";
+import { getCompletedYoutubeIds } from "@/actions/video-completions";
 import { getSavedYoutubeIds } from "@/actions/saved-videos";
 import { BlindSpotSection } from "@/components/search/blind-spot-section";
+import { InvertQuotaTeaser } from "@/components/premium/invert-quota-teaser";
 import { SearchJumpLinks } from "@/components/search/search-browse-nav";
 import { SearchFilterControls } from "@/components/search/search-filter-controls";
 import { SearchMissedHelp } from "@/components/search/search-missed-help";
@@ -55,15 +57,17 @@ export async function SearchResults({
   };
   let journey: Awaited<ReturnType<typeof getLearningJourney>> = [];
   let savedIds = new Set<string>();
+  let completedIds = new Set<string>();
   let blindSpot: Awaited<ReturnType<typeof getBlindSpotRecommendation>> = null;
   let hasFullAccess = false;
 
   try {
     const trimmed = query.trim();
-    const [searchResult, saved, journeyVideos, blind, access] =
+    const [searchResult, saved, completed, journeyVideos, blind, access] =
       await Promise.all([
         searchAll(query),
         getSavedYoutubeIds(),
+        getCompletedYoutubeIds(),
         trimmed ? getLearningJourney(trimmed, 5) : Promise.resolve([]),
         trimmed
           ? getBlindSpotRecommendation(trimmed, 2)
@@ -72,6 +76,7 @@ export async function SearchResults({
       ]);
     results = searchResult;
     savedIds = new Set(saved);
+    completedIds = new Set(completed);
     journey = journeyVideos;
     blindSpot = blind;
     hasFullAccess = Boolean(
@@ -193,6 +198,7 @@ export async function SearchResults({
 
   return (
     <div id="search-results" className="mt-8 scroll-mt-24 space-y-12 sm:space-y-14">
+      <InvertQuotaTeaser hasVideoAccess={hasFullAccess} />
       <SearchJumpLinks
         articles={jumpArticles}
         concepts={jumpConcepts}
@@ -326,6 +332,7 @@ export async function SearchResults({
                     <VideoCard
                       video={v}
                       initialSaved={savedIds.has(v.youtube_id)}
+                      initialCompleted={completedIds.has(v.youtube_id)}
                       priority={index === 0}
                       hasFullAccess={hasFullAccess}
                     />

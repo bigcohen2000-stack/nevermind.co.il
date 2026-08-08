@@ -5,6 +5,8 @@ type Bucket = { count: number; resetAt: number };
 const WINDOW_MS = 15 * 60_000;
 /** Max magic-link sends per key in the window. */
 const MAX_SENDS = 5;
+/** Max newsletter signups per key in the window. */
+const MAX_NEWSLETTER = 8;
 
 const buckets = new Map<string, Bucket>();
 
@@ -25,6 +27,22 @@ export function assertMagicLinkRateLimit(keys: string[]): {
   ok: false;
   error: string;
 } {
+  return checkRateLimit(
+    keys,
+    MAX_SENDS,
+    "נשלחו יותר מדי קישורים. נסו שוב בעוד כמה דקות.",
+  );
+}
+
+export function recordMagicLinkSend(keys: string[]): void {
+  recordRateLimitHit(keys, MAX_SENDS);
+}
+
+function checkRateLimit(
+  keys: string[],
+  max: number,
+  error: string,
+): { ok: true } | { ok: false; error: string } {
   const now = Date.now();
   prune(now);
 
@@ -32,18 +50,15 @@ export function assertMagicLinkRateLimit(keys: string[]): {
     const key = raw.trim().toLowerCase();
     if (!key) continue;
     const bucket = buckets.get(key);
-    if (bucket && bucket.resetAt > now && bucket.count >= MAX_SENDS) {
-      return {
-        ok: false,
-        error: "נשלחו יותר מדי קישורים. נסו שוב בעוד כמה דקות.",
-      };
+    if (bucket && bucket.resetAt > now && bucket.count >= max) {
+      return { ok: false, error };
     }
   }
 
   return { ok: true };
 }
 
-export function recordMagicLinkSend(keys: string[]): void {
+function recordRateLimitHit(keys: string[], _max: number): void {
   const now = Date.now();
   for (const raw of keys) {
     const key = raw.trim().toLowerCase();
@@ -55,4 +70,22 @@ export function recordMagicLinkSend(keys: string[]): void {
       existing.count += 1;
     }
   }
+}
+
+/** Best-effort in-memory rate limit for newsletter signups (IP + email). */
+export function assertNewsletterRateLimit(keys: string[]): {
+  ok: true;
+} | {
+  ok: false;
+  error: string;
+} {
+  return checkRateLimit(
+    keys,
+    MAX_NEWSLETTER,
+    "יותר מדי ניסיונות הרשמה. נסו שוב בעוד כמה דקות.",
+  );
+}
+
+export function recordNewsletterSignup(keys: string[]): void {
+  recordRateLimitHit(keys, MAX_NEWSLETTER);
 }

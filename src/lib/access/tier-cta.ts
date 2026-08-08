@@ -46,20 +46,20 @@ export function getTierCtaBundle(tier: SiteAccessTier): TierCtaBundle {
   if (tier === "account") {
     return {
       tier,
-      statusLabel: "חשבון פתוח",
+      statusLabel: "חשבון במייל",
       primary: {
         href: "/members#access",
-        label: "בקשת גישה למאגר",
-        statusLabel: "חשבון פתוח",
+        label: "למועדון",
+        statusLabel: "חשבון במייל",
         variant: "primary",
       },
       secondary: {
         href: "/my-list",
         label: "הרשימה שלי",
-        statusLabel: "חשבון פתוח",
+        statusLabel: "חשבון במייל",
         variant: "secondary",
       },
-      note: "חשבון מייל לא פותח את מאגר המועדון. רק כניסת מועדון.",
+      note: "חשבון מייל שומר רשימה. הוא לא פותח את מאגר המועדון. גישה אחרי שיחה בוואטסאפ או במייל. אין סליקה באתר.",
     };
   }
 
@@ -74,10 +74,10 @@ export function getTierCtaBundle(tier: SiteAccessTier): TierCtaBundle {
     },
     secondary: {
       href: "/profile?mode=register",
-      label: "חשבון חינם",
+      label: "הירשם לחשבון",
       statusLabel: "אורח",
       variant: "secondary",
     },
-    note: "חשבון חינם שומר רשימה. מועדון פותח את המאגר.",
+    note: "חשבון במייל שומר רשימה. מועדון נפתח אחרי שיחת התאמה. אין סליקה באתר.",
   };
 }

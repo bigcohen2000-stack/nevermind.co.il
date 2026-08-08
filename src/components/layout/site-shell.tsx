@@ -16,6 +16,7 @@ import { DailyResetPrompt } from "@/components/push/daily-reset-prompt";
 import { PresenceBeacon } from "@/components/layout/presence-beacon";
 import { DotBackground } from "@/components/ui/dot-background";
 import { FocusModeProvider } from "@/components/videos/focus-mode-context";
+import { readUiPrefs } from "@/lib/ui/prefs-server";
 import { CommandPaletteRoot } from "@/components/search/command-palette-root";
 import { FocusModeChrome } from "./focus-mode-chrome";
 import { KeyboardShortcutsHud } from "./keyboard-shortcuts-hud";
@@ -52,6 +53,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
     })),
   ]);
   const theme = await resolveSiteTheme(session);
+  const uiPrefs = await readUiPrefs();
   const accessTier = resolveSiteAccessTier({
     authUserId: session.authUserId,
     entitled: access.entitled || access.hasVideoAccess,
@@ -66,7 +68,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
   return (
     <CommandPaletteRoot>
       <WhatsAppTopicProvider>
-      <FocusModeProvider>
+      <FocusModeProvider initialPrefs={uiPrefs}>
         <SiteShellFrame>
           <AccessTierMarker tier={accessTier} />
           <a

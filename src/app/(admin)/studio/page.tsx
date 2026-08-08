@@ -1,7 +1,9 @@
 import { getLivePushStats } from "@/actions/live-push";
 import { getClubPasswordStatus } from "@/actions/club-login";
 import { listStudioViewerFeedback } from "@/actions/viewer-feedback";
+import { listStudioClubAssets } from "@/actions/club-assets";
 import { ClubMembersPanel } from "@/components/studio/club-members-panel";
+import { StudioClubAssetsPanel } from "@/components/studio/studio-club-assets-panel";
 import { ClubPasswordPanel } from "@/components/studio/club-password-panel";
 import { ClubTokenMint } from "@/components/studio/club-token-mint";
 import { LiveQueueStudioPanel } from "@/components/studio/live-queue-studio-panel";
@@ -95,6 +97,8 @@ type ClubMemberListRow = {
   created_at: string;
   updated_at: string;
   last_seen_at: string | null;
+  ops_link_minted_at: string | null;
+  ops_whatsapp_sent_at: string | null;
 };
 
 async function listClubMembers(limit = 80): Promise<{
@@ -106,7 +110,7 @@ async function listClubMembers(limit = 80): Promise<{
     const { data, error } = await admin
       .from("club_members")
       .select(
-        "phone, display_name, notes, expires_at, created_at, updated_at, last_seen_at",
+        "phone, display_name, notes, expires_at, created_at, updated_at, last_seen_at, ops_link_minted_at, ops_whatsapp_sent_at",
       )
       .order("updated_at", { ascending: false })
       .limit(limit);
@@ -134,6 +138,8 @@ async function listClubMembers(limit = 80): Promise<{
         created_at: row.created_at,
         updated_at: row.updated_at,
         last_seen_at: row.last_seen_at,
+        ops_link_minted_at: null,
+        ops_whatsapp_sent_at: null,
       })),
       error: null,
     };
@@ -179,6 +185,7 @@ export default async function StudioPage() {
     feedbackItems,
     liveQueue,
     livePush,
+    clubAssets,
   ] = await Promise.all([
     getStudioHealth(),
     getStudioLibraryStatus(),
@@ -192,6 +199,7 @@ export default async function StudioPage() {
     listStudioViewerFeedback(40),
     listLiveQueue(40),
     getLivePushStats(),
+    listStudioClubAssets(),
   ]);
 
   const liveStatus: LiveStudioStatus = {
@@ -306,8 +314,14 @@ export default async function StudioPage() {
             {
               id: "feedback",
               title: "משוב ולבבות",
-              summary: "דיסלייקים ובקשות תשובה מהאתר",
+              summary: "דיסלייקים, בקשות תשובה ושאלות שיטה",
               children: <StudioFeedbackPanel items={feedbackItems} />,
+            },
+            {
+              id: "vault",
+              title: "כספת נכסים",
+              summary: "metadata לקבצי מועדון ב-Storage",
+              children: <StudioClubAssetsPanel items={clubAssets} />,
             },
           ]}
         />

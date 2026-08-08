@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           מדיניות פרטיות
         </h1>
         <p className="mt-4 text-sm text-muted">
-          עודכן לאחרונה: 3 באוגוסט 2026
+          עודכן לאחרונה: 8 באוגוסט 2026
         </p>
 
         <section
@@ -132,6 +132,14 @@ export default function PrivacyPage() {
               <li>
                 כניסה למאגר לחברים: פרטי זיהוי שנמסרו לצורך הרשאה (למשל טלפון).
               </li>
+              <li>
+                עדכון במייל: כתובת אימייל כשבוחרים להירשם לעדכונים (בלי פתיחת
+                חשבון).
+              </li>
+              <li>
+                ערוץ עדכונים בוואטסאפ: מספר טלפון כשבוחרים להירשם לערוץ הפנימי
+                (בלי פתיחת מועדון).
+              </li>
             </ul>
 
             <h3 className="mt-6 text-base font-semibold tracking-tight">
@@ -158,9 +166,9 @@ export default function PrivacyPage() {
             </h3>
             <p className="mt-3">
               האתר אינו שומר מספרי כרטיס אשראי ואינו מבצע סליקה. אין שימוש מצדנו
-              בכלי מעקב פרסום חיצוניים כמו Google Analytics. למדידת ביצועים
-              ושימוש באתר אצל ספק האירוח (Vercel Analytics ו-Speed Insights)
-              בלבד, לא לפיקסלים פרסומיים.
+              בכלי מעקב פרסום חיצוניים כמו Google Analytics. אין כרגע חיבור
+              ל-Vercel Analytics או Speed Insights. נשמרים יומני שרת בסיסיים
+              אצל ספק האירוח לתפעול ואבטחה.
             </p>
           </section>
 
@@ -173,6 +181,7 @@ export default function PrivacyPage() {
             </h2>
             <ul className="mt-3 list-disc space-y-2 pe-5">
               <li>לענות לפניות ולתאם שיחה כשביקשתם.</li>
+              <li>לשלוח עדכון במייל למי שנרשם (כשמתחילים לשלוח).</li>
               <li>לתת גישה לתכנים לפי הרשאה שאושרה.</li>
               <li>לנהל חשבון, רשימה, והתקדמות צפייה.</li>
               <li>לשפר חיפוש ותוכן באתר.</li>
@@ -204,8 +213,8 @@ export default function PrivacyPage() {
                 וואטסאפ או SMS: רק כשאתם בוחרים לפתוח את הערוץ במכשירכם.
               </li>
               <li>
-                Vercel: אירוח, ומדידת ביצועים ושימוש באתר (Analytics ו-Speed
-                Insights), בלי פיקסלים פרסומיים.
+                Vercel: אירוח האתר ויומני שרת בסיסיים לתפעול, בלי פיקסלים
+                פרסומיים.
               </li>
             </ul>
             <p className="mt-4">

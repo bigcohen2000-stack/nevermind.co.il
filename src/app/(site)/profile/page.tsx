@@ -10,7 +10,11 @@ import { ClearWatchHistoryButton } from "@/components/profile/clear-watch-histor
 import { ClubMemberVoucher } from "@/components/profile/club-member-voucher";
 import { LiveNotifySettings } from "@/components/profile/live-notify-settings";
 import { ProgressDashboard } from "@/components/profile/progress-dashboard";
+import { TopicPrefsSettings } from "@/components/profile/topic-prefs-settings";
+import { UiDensityToggle } from "@/components/profile/ui-density-toggle";
 import { SignOutButton } from "@/components/profile/sign-out-button";
+import { listTopicPrefOptions } from "@/actions/topic-prefs";
+import { listCompletedVideos } from "@/actions/video-completions";
 import { resolveSiteAccessTier } from "@/lib/access/site-tier";
 import { resolveVideoEntitlement } from "@/lib/club/access";
 import { maskClubPhone } from "@/lib/club/phone";
@@ -133,13 +137,16 @@ export default async function ProfilePage({
     );
   }
 
-  const [history, progress, voucher] = await Promise.all([
-    listWatchHistory(24),
-    getProfileProgressStats(user.id),
-    club.clubSession && club.phone
-      ? getClubVoucherState(club.phone)
-      : Promise.resolve(null),
-  ]);
+  const [history, progress, voucher, topicOptions, completed] =
+    await Promise.all([
+      listWatchHistory(24),
+      getProfileProgressStats(user.id),
+      club.clubSession && club.phone
+        ? getClubVoucherState(club.phone)
+        : Promise.resolve(null),
+      listTopicPrefOptions(48),
+      listCompletedVideos(24),
+    ]);
 
   const accessTier = resolveSiteAccessTier({
     authUserId: user.id,
@@ -204,6 +211,12 @@ export default async function ProfilePage({
             </div>
             <div className="flex flex-wrap gap-3">
               <Link
+                href="/profile/questions"
+                className="border border-[#FAFAF8]/25 px-4 py-2 text-sm text-[#FAFAF8] transition hover:border-[#D42B2B] hover:text-[#D42B2B]"
+              >
+                שאלות שיטה
+              </Link>
+              <Link
                 href="/my-list"
                 className="border border-[#FAFAF8]/25 px-4 py-2 text-sm text-[#FAFAF8] transition hover:border-[#D42B2B] hover:text-[#D42B2B]"
               >
@@ -265,6 +278,13 @@ export default async function ProfilePage({
             </li>
           </ul>
           <LiveNotifySettings />
+          <UiDensityToggle />
+          <div className="mt-10 border-t border-[#FAFAF8]/10 pt-8">
+            <h3 className="text-base font-semibold tracking-tight">
+              תחומי עניין להתראות
+            </h3>
+            <TopicPrefsSettings options={topicOptions} />
+          </div>
         </section>
 
         <section
@@ -323,6 +343,32 @@ export default async function ProfilePage({
         <ProgressDashboard stats={progress} />
 
         {voucher ? <ClubMemberVoucher voucher={voucher} /> : null}
+
+        {completed.length > 0 ? (
+          <section aria-labelledby="completed-videos-title" className="mt-14">
+            <h2
+              id="completed-videos-title"
+              className="text-xl font-semibold tracking-tight lg:text-2xl"
+            >
+              סרטונים שהושלמו
+            </h2>
+            <ul className="mt-6 divide-y divide-[#FAFAF8]/10 border border-[#FAFAF8]/10">
+              {completed.slice(0, 8).map((item) => (
+                <li key={item.youtube_id}>
+                  <Link
+                    href={`/watch/${item.youtube_id}`}
+                    className="block p-4 text-[#FAFAF8] no-underline transition hover:bg-[#141519] hover:no-underline"
+                  >
+                    <p className="font-semibold tracking-tight">{item.title}</p>
+                    <p className="mt-1 text-sm text-[#9CA3AF]">
+                      הושלם {formatWatchedAt(item.completedAt)}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <section aria-labelledby="watch-history-title" className="mt-14">
           <div className="flex flex-wrap items-end justify-between gap-4">

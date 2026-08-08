@@ -1,7 +1,9 @@
 "use client";
 
+import { markLocalVideoCompleted } from "@/lib/videos/completions-local";
 import {
   VIDEO_PROGRESS_STORAGE_KEY,
+  isProgressComplete,
   shouldPersistProgress,
   type ContinueWatchingItem,
 } from "@/lib/videos/progress-shared";
@@ -60,6 +62,9 @@ export function saveLocalVideoProgress(input: {
   const map = readMap();
 
   if (!shouldPersistProgress(progressSeconds, durationSeconds)) {
+    if (isProgressComplete(progressSeconds, durationSeconds)) {
+      markLocalVideoCompleted(input.youtubeId);
+    }
     delete map[input.youtubeId];
     writeMap(map);
     return;

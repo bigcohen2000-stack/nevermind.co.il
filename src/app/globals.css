@@ -61,6 +61,18 @@ html[data-access="club"] {
   --hairline-strong: color-mix(in srgb, var(--action) 28%, rgba(26, 26, 26, 0.2));
 }
 
+/* Connected visitors may prefer dark canvas. Keep tokens explicit. */
+html[data-theme="dark"] {
+  --background: #121212;
+  --foreground: #fafaf8;
+  --muted: #9ca3af;
+  --paper: #1a1a1a;
+  --ink: #0a0a0b;
+  --ink-raised: #1a1a1a;
+  --hairline: rgba(250, 250, 248, 0.12);
+  --hairline-strong: rgba(250, 250, 248, 0.22);
+}
+
 html[data-theme="dark"][data-access="club"] {
   --hairline: color-mix(in srgb, var(--action) 22%, rgba(250, 250, 248, 0.12));
   --hairline-strong: color-mix(
@@ -405,8 +417,8 @@ p {
     background: transparent;
   }
   .btn-secondary:hover {
-    background-color: rgba(26, 26, 26, 0.05);
-    border-color: rgba(26, 26, 26, 0.35);
+    background-color: color-mix(in srgb, var(--foreground) 6%, transparent);
+    border-color: color-mix(in srgb, var(--foreground) 35%, transparent);
   }
   .btn-on-dark {
     border-color: var(--hairline-on-dark-strong);
@@ -504,10 +516,10 @@ p {
     align-items: center;
     min-height: 2.25rem;
     padding: 0.35rem 0.75rem;
-    border-radius: 0.5rem;
+    border-radius: 0;
     font-size: 0.875rem;
     line-height: 1.25;
-    color: color-mix(in srgb, var(--foreground) 82%, transparent);
+    color: var(--foreground);
     text-decoration: none;
     white-space: nowrap;
     transition:
@@ -663,4 +675,24 @@ summary {
 }
 summary::-webkit-details-marker {
   display: none;
+}
+
+/* Workspace density (cookie nm_ui_prefs → html[data-density]) */
+html[data-density="compact"] .card,
+html[data-density="compact"] article {
+  --nm-density-pad: 0.75rem;
+}
+html[data-density="compact"] #main-content {
+  letter-spacing: -0.01em;
+}
+html[data-density="compact"] #main-content .p-5,
+html[data-density="compact"] #main-content .p-6,
+html[data-density="compact"] #main-content .sm\:p-6,
+html[data-density="compact"] #main-content .sm\:p-8 {
+  padding: 0.85rem;
+}
+html[data-density="compact"] #main-content .mt-10,
+html[data-density="compact"] #main-content .mt-12,
+html[data-density="compact"] #main-content .mt-14 {
+  margin-top: 1.75rem;
 }

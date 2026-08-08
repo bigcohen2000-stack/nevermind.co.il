@@ -631,8 +631,48 @@ alter table public.club_config enable row level security;
 
 -- No policies for anon/authenticated = no access via PostgREST with anon key.
 
+-- ===== 38_newsletter_subscribers.sql =====
+-- Email newsletter list (manual send via Resend / Studio later).
+-- Service role writes from the Server Action. No public SELECT.
+
+create table if not exists public.newsletter_subscribers (
+  id         uuid primary key default gen_random_uuid(),
+  email      text not null,
+  source     text not null default 'site',
+  created_at timestamptz not null default now(),
+
+  constraint newsletter_subscribers_email_not_blank
+    check (length(trim(email)) > 0),
+  constraint newsletter_subscribers_email_unique
+    unique (email)
+);
+
+create index if not exists newsletter_subscribers_created_at_idx
+  on public.newsletter_subscribers (created_at desc);
+
+alter table public.newsletter_subscribers enable row level security;
+
+-- ===== 41_newsletter_unsubscribe.sql =====
+alter table public.newsletter_subscribers
+  add column if not exists status text not null default 'active'
+    check (status in ('active', 'unsubscribed')),
+  add column if not exists unsubscribe_token uuid not null default gen_random_uuid(),
+  add column if not exists unsubscribed_at timestamptz;
+
+create unique index if not exists newsletter_subscribers_unsubscribe_token_idx
+  on public.newsletter_subscribers (unsubscribe_token);
+
+create index if not exists newsletter_subscribers_status_idx
+  on public.newsletter_subscribers (status);
+
+-- ===== 40_club_ops_stage.sql =====
+alter table public.club_members
+  add column if not exists ops_link_minted_at timestamptz,
+  add column if not exists ops_whatsapp_sent_at timestamptz;
+
 -- ===== 22_unlisted_gate_backfill.sql =====
 update public.videos
 set is_gated = true
 where coalesce(is_unlisted, false) = true
   and coalesce(is_gated, false) = false;
+

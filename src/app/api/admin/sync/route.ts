@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getServerEnv } from "@/env";
+import { submitIndexNow } from "@/lib/seo/indexnow";
 import { syncYoutubeLibrary, type SyncInput } from "@/lib/youtube/sync";
 
 export const runtime = "nodejs";
@@ -110,6 +111,12 @@ async function runAuthorizedSync(req: Request, body: SyncInput = {}) {
       upserted: result.upserted,
       transcriptsUpserted: result.transcriptsUpserted,
       softErrors: result.errors,
+    });
+    void submitIndexNow([
+      "https://nevermind.co.il/videos",
+      "https://nevermind.co.il/search",
+    ]).catch(() => {
+      /* IndexNow is best-effort after sync */
     });
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {

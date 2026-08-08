@@ -1,7 +1,9 @@
 "use server";
 
+import { maybeRecordCompletionFromProgress } from "@/actions/video-completions";
 import { createClient } from "@/lib/supabase/server";
 import {
+  isProgressComplete,
   shouldPersistProgress,
   type ContinueWatchingItem,
 } from "@/lib/videos/progress-shared";
@@ -35,6 +37,13 @@ export async function saveVideoProgress(input: {
     }
 
     if (!shouldPersistProgress(progressSeconds, durationSeconds)) {
+      if (isProgressComplete(progressSeconds, durationSeconds)) {
+        await maybeRecordCompletionFromProgress({
+          youtubeId,
+          progressSeconds,
+          durationSeconds,
+        });
+      }
       await supabase
         .from("video_progress")
         .delete()

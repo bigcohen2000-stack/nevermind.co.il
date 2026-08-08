@@ -16,7 +16,7 @@ import {
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import { RandomInvestigationButton } from "@/components/search/random-investigation-button";
 import { logSearchQuery } from "@/actions/search-analytics";
-import { pushRecentSearch, readRecentSearches } from "@/lib/recent-searches";
+import { useRecentSearches } from "@/lib/recent-searches-sync";
 import { storeSearchAnalyticsId } from "@/lib/search/analytics-session";
 import {
   suggestItemBadge,
@@ -112,7 +112,7 @@ export function HeroSearch({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
-  const [recent, setRecent] = useState<string[]>([]);
+  const { recent, setRecent, pushRecent, readLocal } = useRecentSearches();
   const [focused, setFocused] = useState(false);
   const [hasFetchedEmpty, setHasFetchedEmpty] = useState(false);
 
@@ -262,7 +262,7 @@ export function HeroSearch({
     (q: string) => {
       const trimmedQ = q.trim();
       if (!trimmedQ) return;
-      setRecent(pushRecentSearch(trimmedQ));
+      setRecent(pushRecent(trimmedQ));
       setOpen(false);
       setFocused(false);
 
@@ -279,13 +279,13 @@ export function HeroSearch({
 
       router.push(`/search?q=${encodeURIComponent(trimmedQ)}`);
     },
-    [items, router],
+    [items, router, pushRecent, setRecent],
   );
 
   const goToSuggestItem = useCallback(
     (item: SuggestItem) => {
       const label = suggestItemLabel(item);
-      setRecent(pushRecentSearch(label));
+      setRecent(pushRecent(label));
       setOpen(false);
       setFocused(false);
 
@@ -303,7 +303,7 @@ export function HeroSearch({
 
       router.push(suggestItemHref(item));
     },
-    [items, router],
+    [items, router, pushRecent, setRecent],
   );
 
   const fillSearch = useCallback(
@@ -392,7 +392,7 @@ export function HeroSearch({
           onSubmit={onSubmit}
           onKeyDown={onKeyDown}
           onFocus={() => {
-            setRecent(readRecentSearches());
+            setRecent(readLocal());
             setFocused(true);
             setOpen(true);
           }}

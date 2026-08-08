@@ -19,6 +19,8 @@ import type { Video } from "@/types/supabase";
 type VideoCardProps = {
   video: Video;
   initialSaved?: boolean;
+  /** Show "הושלם" badge when the viewer finished this video. */
+  initialCompleted?: boolean;
   /** Dark surface for /my-list and other ink pages. */
   tone?: "light" | "dark";
   /** First above-fold card on browse grids (LCP). */
@@ -77,6 +79,7 @@ function MemberAccessStrip({ tone }: { tone: "light" | "dark" }) {
 export function VideoCard({
   video,
   initialSaved = false,
+  initialCompleted = false,
   tone = "light",
   priority = false,
   hasFullAccess = false,
@@ -91,7 +94,7 @@ export function VideoCard({
   const isDark = tone === "dark";
   const metaLine = formatVideoMetaLine(video);
   const showNew = videoIsNew(video);
-  const showBadges = showNew || membersOnly;
+  const showBadges = showNew || membersOnly || initialCompleted;
   const shellClass = cn(
     "group relative flex h-auto min-h-full w-full flex-col overflow-hidden",
     isDark
@@ -152,6 +155,18 @@ export function VideoCard({
           <div className="flex w-full flex-1 flex-col p-4 sm:p-5">
             {showBadges ? (
               <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                {initialCompleted ? (
+                  <span
+                    className={cn(
+                      "inline-flex items-center border px-1.5 py-0.5 text-[11px] font-medium tracking-wide",
+                      isDark
+                        ? "border-zinc-500 bg-zinc-800 text-zinc-300"
+                        : "border-foreground/20 bg-paper text-foreground/80",
+                    )}
+                  >
+                    הושלם
+                  </span>
+                ) : null}
                 {showNew ? (
                   <>
                     <span

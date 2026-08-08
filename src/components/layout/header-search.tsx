@@ -18,6 +18,7 @@ import {
   type SuggestItem,
 } from "@/lib/search/types";
 import { pushRecentSearch } from "@/lib/recent-searches";
+import { pushUserSearchHistory } from "@/actions/search-history";
 import { cn } from "@/lib/utils";
 
 type HeaderSearchProps = {
@@ -110,6 +111,7 @@ export function HeaderSearch({
       return;
     }
     pushRecentSearch(t);
+    void pushUserSearchHistory(t);
     router.push(`/search?q=${encodeURIComponent(t)}`);
     setOpen(false);
     setFocused(false);
@@ -118,6 +120,7 @@ export function HeaderSearch({
   function goToItem(item: SuggestItem) {
     const label = suggestItemLabel(item);
     pushRecentSearch(label);
+    void pushUserSearchHistory(label);
     onNavigate?.();
     router.push(suggestItemHref(item));
     setOpen(false);

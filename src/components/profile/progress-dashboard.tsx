@@ -36,7 +36,7 @@ function StatCell({
 }
 
 /**
- * Dry analytical strip: mechanisms / dive hours / last meeting.
+ * Dry analytical strip: mechanisms / dive hours / completions / activity.
  */
 export function ProgressDashboard({ stats }: ProgressDashboardProps) {
   const mechanismHint =
@@ -51,11 +51,10 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
     .filter(Boolean)
     .join(", ");
 
+  const weekPct = Math.min(100, Math.round((stats.activeDaysLast7 / 7) * 100));
+
   return (
-    <section
-      aria-labelledby="progress-dashboard-title"
-      className="mt-10"
-    >
+    <section aria-labelledby="progress-dashboard-title" className="mt-10">
       <h2
         id="progress-dashboard-title"
         className="text-xl font-semibold tracking-tight"
@@ -83,7 +82,7 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
         </div>
       ) : null}
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <StatCell
           label="מנגנונים"
           value={`${stats.mechanismsExplored}/${stats.mechanismsTotal}`}
@@ -95,11 +94,54 @@ export function ProgressDashboard({ stats }: ProgressDashboardProps) {
           hint="זמן צפייה שנצבר בחשבון."
         />
         <StatCell
+          label="הושלמו"
+          value={String(stats.completedCount)}
+          hint={`${stats.historyCount} התחלות צפייה בהיסטוריה.`}
+        />
+        <StatCell
+          label="פעילות השבוע"
+          value={`${stats.activeDaysLast7}/7`}
+          hint="ימים עם צפייה ב-7 הימים האחרונים."
+        />
+        <StatCell
           label="פגישה אחרונה"
           value={formatMeetingDate(stats.lastMeetingAt)}
           hint={meetingHint || undefined}
         />
       </div>
+
+      <div className="mt-4 border border-[#FAFAF8]/10 bg-[#0A0A0B] p-4">
+        <p className="text-xs tracking-[0.15em] text-[#9CA3AF] uppercase">
+          רצף שבועי
+        </p>
+        <div className="mt-3 h-2 w-full bg-[#FAFAF8]/10">
+          <div
+            className="h-full bg-action"
+            style={{ width: `${weekPct}%` }}
+            role="presentation"
+          />
+        </div>
+      </div>
+
+      {stats.recentSearches.length > 0 ? (
+        <div className="mt-6 border border-[#FAFAF8]/10 bg-[#0A0A0B] p-5">
+          <p className="text-xs tracking-[0.15em] text-[#9CA3AF] uppercase">
+            חיפושים אחרונים
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {stats.recentSearches.map((term) => (
+              <li key={term}>
+                <Link
+                  href={`/search?q=${encodeURIComponent(term)}`}
+                  className="border border-[#FAFAF8]/20 px-2.5 py-1 text-xs text-[#FAFAF8] no-underline hover:border-action hover:text-action"
+                >
+                  {term}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }

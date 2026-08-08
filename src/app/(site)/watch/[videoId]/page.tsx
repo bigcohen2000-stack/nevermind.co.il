@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { Lock, Tag } from "lucide-react";
 
 import { getVideoProgressSeconds } from "@/actions/video-progress";
+import { isVideoCompleted } from "@/actions/video-completions";
 import { resolveVideoEntitlement } from "@/lib/club/access";
 import { maskClubPhone } from "@/lib/club/phone";
 import { logClubWatchEvent } from "@/lib/club/watch-events";
@@ -34,6 +35,7 @@ import {
   WatchLockedFaq,
 } from "@/components/videos/watch-guide-strip";
 import { WatchPrevNext } from "@/components/videos/watch-prev-next";
+import { MarkCompleteButton } from "@/components/videos/mark-complete-button";
 import { WatchQuickActions } from "@/components/videos/watch-quick-actions";
 import { WatchTalkStrip } from "@/components/videos/watch-talk-strip";
 import { LogicalContinuationLink } from "@/components/videos/logical-continuation-link";
@@ -314,12 +316,15 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
   }
 
   const urlStart = parseTimestampParam(t);
-  const [concepts, transcriptPayload, savedStart] = await Promise.all([
+  const [concepts, transcriptPayload, savedStart, completed] = await Promise.all([
     getVideoConcepts(video.id).catch(() => []),
     getVideoTranscriptPayload(video.id).catch(() => null),
     urlStart <= 0 && authed
       ? getVideoProgressSeconds(video.youtube_id).catch(() => 0)
       : Promise.resolve(0),
+    authed
+      ? isVideoCompleted(video.youtube_id).catch(() => false)
+      : Promise.resolve(false),
   ]);
   const startSeconds = urlStart > 0 ? urlStart : savedStart;
 
@@ -496,12 +501,19 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
             />
           }
           actions={
-            <WatchQuickActions
-              title={video.title}
-              shareUrl={watchHref}
-              isMembersOnly={isMembersOnlyVideo(video)}
-              isEntitled={entitled}
-            />
+            <div className="flex flex-wrap items-center gap-3">
+              <WatchQuickActions
+                title={video.title}
+                shareUrl={watchHref}
+                isMembersOnly={isMembersOnlyVideo(video)}
+                isEntitled={entitled}
+              />
+              <MarkCompleteButton
+                youtubeId={video.youtube_id}
+                initialCompleted={completed}
+                isAuthenticated={authed}
+              />
+            </div>
           }
           belowPlayer={
             <div className="space-y-5 sm:space-y-6">

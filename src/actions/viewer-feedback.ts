@@ -4,11 +4,12 @@ import { Resend } from "resend";
 import { z } from "zod";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { isStudioAuthenticated } from "@/lib/studio/session";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import type { ViewerFeedback } from "@/types/supabase";
 
-const publicKindSchema = z.enum(["dislike", "reply_request"]);
+const publicKindSchema = z.enum(["dislike", "reply_request", "method_question"]);
 
 const submitSchema = z.object({
   kind: publicKindSchema,
@@ -149,6 +150,11 @@ export async function submitViewerFeedback(
 
   try {
     const admin = getSupabaseAdmin();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const { error } = await admin.from("viewer_feedback").insert({
       kind,
       video_id: videoId ?? null,
@@ -157,8 +163,9 @@ export async function submitViewerFeedback(
       author_name: name?.trim() || null,
       contact_phone: phone?.trim() || null,
       contact_email: email?.trim() || null,
-      want_reply: shouldNotify,
+      want_reply: shouldNotify || kind === "method_question",
       status: "open",
+      user_id: user?.id ?? null,
     });
 
     if (error) {
@@ -223,6 +230,7 @@ export async function listStudioViewerFeedback(
 export async function updateViewerFeedbackStatus(input: {
   id: string;
   status: "open" | "replied" | "closed";
+  replyBody?: string;
 }): Promise<StudioFeedbackActionResult> {
   const unlocked = await isStudioAuthenticated();
   if (!unlocked) return { ok: false, error: "הסטודיו נעול." };
@@ -232,11 +240,38 @@ export async function updateViewerFeedbackStatus(input: {
 
   try {
     const admin = getSupabaseAdmin();
-    const { error } = await admin
+    const reply = input.replyBody?.trim() || null;
+    const patch: {
+      status: "open" | "replied" | "closed";
+      reply_body?: string | null;
+      replied_at?: string | null;
+    } = { status: input.status };
+
+    if (reply) {
+      patch.reply_body = reply;
+      patch.replied_at = new Date().toISOString();
+      if (input.status === "open") patch.status = "replied";
+    } else if (input.status === "replied") {
+      patch.replied_at = new Date().toISOString();
+    }
+
+    const { data: row, error } = await admin
       .from("viewer_feedback")
-      .update({ status: input.status })
-      .eq("id", id);
+      .update(patch)
+      .eq("id", id)
+      .select("contact_email, reply_body, body, kind")
+      .maybeSingle();
+
     if (error) return { ok: false, error: error.message };
+
+    if (row?.contact_email && (reply || input.status === "replied")) {
+      await notifyMemberReplyEmail({
+        to: row.contact_email,
+        question: row.body,
+        reply: reply || row.reply_body || "",
+      });
+    }
+
     return { ok: true, message: "עודכן." };
   } catch (err) {
     return {
@@ -244,4 +279,86 @@ export async function updateViewerFeedbackStatus(input: {
       error: err instanceof Error ? err.message : "שגיאת שרת.",
     };
   }
+}
+
+async function notifyMemberReplyEmail(input: {
+  to: string;
+  question: string;
+  reply: string;
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const fromEmail =
+    process.env.RESEND_FROM_EMAIL?.trim() ||
+    "NeverMinde <onboarding@resend.dev>";
+  if (!apiKey || !input.to.trim() || !input.reply.trim()) return;
+  try {
+    const resend = new Resend(apiKey);
+    await resend.emails.send({
+      from: fromEmail,
+      to: [input.to.trim()],
+      subject: "תשובה לשאלה שלך ב-NeverMind",
+      text: [
+        "התקבלה תשובה לשאלה שהגשת:",
+        "",
+        input.question.trim(),
+        "",
+        "תשובה:",
+        input.reply.trim(),
+        "",
+        "לצפייה בפרופיל: https://nevermind.co.il/profile/questions",
+      ].join("\n"),
+    });
+  } catch {
+    /* never block studio */
+  }
+}
+
+/**
+ * Authenticated member: list own method questions / reply tickets.
+ */
+export async function listMemberQuestions(
+  limit = 40,
+): Promise<ViewerFeedback[]> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data } = await supabase
+      .from("viewer_feedback")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Authenticated member: submit a method-focused Q&A ticket.
+ */
+export async function submitMethodQuestion(input: {
+  body: string;
+  videoTitle?: string;
+}): Promise<SubmitViewerFeedbackResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false, error: "יש להתחבר כדי לשלוח שאלה." };
+  }
+
+  return submitViewerFeedback({
+    kind: "method_question",
+    body: input.body,
+    videoTitle: input.videoTitle,
+    email: user.email ?? undefined,
+    name: undefined,
+    wantReply: true,
+  });
 }

@@ -531,19 +531,55 @@ export type Database = {
           id: string;
           email: string;
           source: string;
+          status: "active" | "unsubscribed";
+          unsubscribe_token: string;
           created_at: string;
+          unsubscribed_at: string | null;
         };
         Insert: {
           id?: string;
           email: string;
           source?: string;
+          status?: "active" | "unsubscribed";
+          unsubscribe_token?: string;
           created_at?: string;
+          unsubscribed_at?: string | null;
         };
         Update: {
           id?: string;
           email?: string;
           source?: string;
+          status?: "active" | "unsubscribed";
+          unsubscribe_token?: string;
           created_at?: string;
+          unsubscribed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      whatsapp_update_subscribers: {
+        Row: {
+          id: string;
+          phone: string;
+          source: string;
+          status: "active" | "unsubscribed";
+          created_at: string;
+          unsubscribed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          phone: string;
+          source?: string;
+          status?: "active" | "unsubscribed";
+          created_at?: string;
+          unsubscribed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          phone?: string;
+          source?: string;
+          status?: "active" | "unsubscribed";
+          created_at?: string;
+          unsubscribed_at?: string | null;
         };
         Relationships: [];
       };
@@ -886,6 +922,8 @@ export type Database = {
           created_at: string;
           updated_at: string;
           last_seen_at: string | null;
+          ops_link_minted_at: string | null;
+          ops_whatsapp_sent_at: string | null;
         };
         Insert: {
           phone: string;
@@ -895,6 +933,8 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           last_seen_at?: string | null;
+          ops_link_minted_at?: string | null;
+          ops_whatsapp_sent_at?: string | null;
         };
         Update: {
           phone?: string;
@@ -904,13 +944,19 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           last_seen_at?: string | null;
+          ops_link_minted_at?: string | null;
+          ops_whatsapp_sent_at?: string | null;
         };
         Relationships: [];
       };
       viewer_feedback: {
         Row: {
           id: string;
-          kind: "heart_reply" | "dislike" | "reply_request";
+          kind:
+            | "heart_reply"
+            | "dislike"
+            | "reply_request"
+            | "method_question";
           video_id: string | null;
           video_title: string | null;
           body: string;
@@ -920,10 +966,17 @@ export type Database = {
           want_reply: boolean;
           status: "open" | "replied" | "closed";
           created_at: string;
+          user_id: string | null;
+          reply_body: string | null;
+          replied_at: string | null;
         };
         Insert: {
           id?: string;
-          kind: "heart_reply" | "dislike" | "reply_request";
+          kind:
+            | "heart_reply"
+            | "dislike"
+            | "reply_request"
+            | "method_question";
           video_id?: string | null;
           video_title?: string | null;
           body: string;
@@ -933,10 +986,17 @@ export type Database = {
           want_reply?: boolean;
           status?: "open" | "replied" | "closed";
           created_at?: string;
+          user_id?: string | null;
+          reply_body?: string | null;
+          replied_at?: string | null;
         };
         Update: {
           id?: string;
-          kind?: "heart_reply" | "dislike" | "reply_request";
+          kind?:
+            | "heart_reply"
+            | "dislike"
+            | "reply_request"
+            | "method_question";
           video_id?: string | null;
           video_title?: string | null;
           body?: string;
@@ -946,6 +1006,9 @@ export type Database = {
           want_reply?: boolean;
           status?: "open" | "replied" | "closed";
           created_at?: string;
+          user_id?: string | null;
+          reply_body?: string | null;
+          replied_at?: string | null;
         };
         Relationships: [
           {
@@ -1191,6 +1254,153 @@ export type Database = {
         };
         Relationships: [];
       };
+      video_completions: {
+        Row: {
+          user_id: string;
+          youtube_id: string;
+          completed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          youtube_id: string;
+          completed_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          youtube_id?: string;
+          completed_at?: string;
+        };
+        Relationships: [];
+      };
+      user_search_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          query: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          query: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          query?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      user_topic_prefs: {
+        Row: {
+          user_id: string;
+          concept_id: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          concept_id: string;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          concept_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      topic_notification_log: {
+        Row: {
+          id: string;
+          user_id: string;
+          video_id: string;
+          concept_id: string | null;
+          channel: "email" | "push";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          video_id: string;
+          concept_id?: string | null;
+          channel: "email" | "push";
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          video_id?: string;
+          concept_id?: string | null;
+          channel?: "email" | "push";
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      tool_usage_events: {
+        Row: {
+          id: string;
+          tool: "invert";
+          user_id: string | null;
+          subject_key: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tool: "invert";
+          user_id?: string | null;
+          subject_key: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          tool?: "invert";
+          user_id?: string | null;
+          subject_key?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      club_assets: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          storage_path: string;
+          file_name: string;
+          content_type: string | null;
+          byte_size: number | null;
+          sort_order: number;
+          is_published: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string | null;
+          storage_path: string;
+          file_name: string;
+          content_type?: string | null;
+          byte_size?: number | null;
+          sort_order?: number;
+          is_published?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string | null;
+          storage_path?: string;
+          file_name?: string;
+          content_type?: string | null;
+          byte_size?: number | null;
+          sort_order?: number;
+          is_published?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1231,6 +1441,8 @@ export type PushSubscriber =
   Database["public"]["Tables"]["subscribers"]["Row"];
 export type NewsletterSubscriber =
   Database["public"]["Tables"]["newsletter_subscribers"]["Row"];
+export type WhatsAppUpdateSubscriber =
+  Database["public"]["Tables"]["whatsapp_update_subscribers"]["Row"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type UserMeeting =
   Database["public"]["Tables"]["user_meetings"]["Row"];
@@ -1244,3 +1456,7 @@ export type StudioQuote =
   Database["public"]["Tables"]["studio_quotes"]["Row"];
 export type SiteBanner =
   Database["public"]["Tables"]["site_banners"]["Row"];
+export type VideoCompletion =
+  Database["public"]["Tables"]["video_completions"]["Row"];
+export type ClubAsset =
+  Database["public"]["Tables"]["club_assets"]["Row"];

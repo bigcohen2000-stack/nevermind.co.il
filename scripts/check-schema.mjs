@@ -42,14 +42,14 @@ const anon = get("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
 function fail(message) {
   console.error(`[schema] FAIL  ${message}`);
-  if (strict) process.exit(1);
+  if (strict) process.exitCode = 1;
   console.warn("[schema] Soft mode: continuing (set STRICT_SCHEMA_CHECK=1 to hard-fail).");
-  process.exit(0);
+  process.exitCode = 0;
 }
 
 function ok(message) {
   console.log(`[schema] OK    ${message}`);
-  process.exit(0);
+  process.exitCode = 0;
 }
 
 if (mock) {
@@ -105,3 +105,5 @@ try {
 } catch (err) {
   fail(err instanceof Error ? err.message : String(err));
 }
+
+process.exit();

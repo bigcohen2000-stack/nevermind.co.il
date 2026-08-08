@@ -113,18 +113,53 @@ function HeaderSearchCluster({
 function DesktopMoreMenu() {
   const pathname = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(
+    null,
+  );
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const anyActive = SECONDARY_NAV.some((l) => isNavActive(pathname, l.href));
+  const menuWidth = 224;
+
+  useStickyChromeLock(open);
 
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
   useEffect(() => {
+    if (!open) {
+      setMenuPos(null);
+      return;
+    }
+
+    function place() {
+      const btn = rootRef.current;
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+      const left = Math.min(
+        Math.max(8, r.right - menuWidth),
+        window.innerWidth - menuWidth - 8,
+      );
+      setMenuPos({ top: r.bottom + 6, left });
+    }
+
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open]);
+
+  useEffect(() => {
     if (!open) return;
     function onDoc(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (rootRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
@@ -150,11 +185,17 @@ function DesktopMoreMenu() {
         <MoreHorizontal className="me-1.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
         עוד
       </button>
-      {open ? (
+      {open && menuPos ? (
         <div
+          ref={menuRef}
           id={menuId}
           role="menu"
-          className="absolute end-0 z-[60] mt-2 min-w-[14rem] border border-foreground/15 bg-background p-1.5 shadow-float"
+          className="fixed z-[80] border border-foreground/20 bg-background p-1.5"
+          style={{
+            top: menuPos.top,
+            left: menuPos.left,
+            width: menuWidth,
+          }}
         >
           {SECONDARY_NAV.map((link) => {
             const active = isNavActive(pathname, link.href);
@@ -165,8 +206,8 @@ function DesktopMoreMenu() {
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-10 items-center px-3 text-sm transition hover:bg-paper",
-                  active ? "text-action" : "text-foreground/90",
+                  "flex min-h-10 items-center px-3 text-sm text-foreground transition hover:bg-paper hover:text-action",
+                  active && "bg-paper text-action",
                 )}
                 onClick={() => setOpen(false)}
               >
@@ -272,7 +313,11 @@ export function SiteHeader({
     >
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <div className="flex items-center justify-between gap-3 py-3 lg:gap-6 lg:py-3.5">
-          <SiteLogo variant="on-dark" size="header" priority />
+          <SiteLogo
+            variant={theme === "dark" ? "on-dark" : "on-light"}
+            size="header"
+            priority
+          />
 
           <div className="hidden min-w-0 flex-1 lg:block">
             <HeaderSearchCluster />
@@ -280,6 +325,11 @@ export function SiteHeader({
 
           <div className="hidden shrink-0 items-center gap-2 lg:flex">
             {isClub ? <ClubMemberChrome variant="chip" /> : null}
+            {accessTier === "account" ? (
+              <span className="hidden items-center border border-foreground/20 bg-paper px-2.5 py-1 text-[11px] font-medium tracking-wide text-foreground/80 xl:inline-flex">
+                חשבון במייל
+              </span>
+            ) : null}
             {!isClub ? (
               <AccessUpgradeStrip
                 tier={accessTier}
@@ -332,8 +382,8 @@ export function SiteHeader({
           aria-label="ניווט ראשי"
           className="hidden border-t border-foreground/10 lg:block"
         >
-          <div className="flex items-center gap-1 py-2">
-            <ul className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex flex-wrap items-center justify-start gap-0.5 py-2">
+            <ul className="flex flex-wrap items-center gap-0.5">
               {PRIMARY_NAV.map((link) => {
                 const active = isNavActive(pathname, link.href);
                 return (

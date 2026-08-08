@@ -8,6 +8,18 @@ export type ContinueWatchingItem = {
 };
 
 export const VIDEO_PROGRESS_STORAGE_KEY = "nm_video_progress_v1";
+export const VIDEO_COMPLETIONS_STORAGE_KEY = "nm_video_completions_v1";
+
+/** Near-end threshold used for Continue Watching clear + "הושלם". */
+export const COMPLETION_RATIO = 0.92;
+
+export function isProgressComplete(
+  progressSeconds: number,
+  durationSeconds: number | null,
+): boolean {
+  if (!durationSeconds || durationSeconds <= 0) return false;
+  return progressSeconds / durationSeconds >= COMPLETION_RATIO;
+}
 
 /** Ignore tiny starts and nearly-finished watches. */
 export function shouldPersistProgress(
@@ -15,10 +27,7 @@ export function shouldPersistProgress(
   durationSeconds: number | null,
 ): boolean {
   if (progressSeconds < 5) return false;
-  if (durationSeconds && durationSeconds > 0) {
-    const ratio = progressSeconds / durationSeconds;
-    if (ratio >= 0.92) return false;
-  }
+  if (isProgressComplete(progressSeconds, durationSeconds)) return false;
   return true;
 }
 

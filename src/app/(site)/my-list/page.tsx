@@ -6,6 +6,7 @@ import { AccessUpgradeStrip } from "@/components/access/access-upgrade-strip";
 import { MyListSignInForm } from "@/components/auth/my-list-sign-in-form";
 import { SmartEmptyState } from "@/components/ui/smart-empty-state";
 import { VideoCard } from "@/components/videos/video-card";
+import { listCompletedVideos } from "@/actions/video-completions";
 import { listSavedVideos } from "@/actions/saved-videos";
 import { listWatchHistory } from "@/actions/watch-history";
 import { resolveVideoEntitlement } from "@/lib/club/access";
@@ -157,9 +158,10 @@ export default async function MyListPage({
     );
   }
 
-  const [videos, history, entitlement] = await Promise.all([
+  const [videos, history, completed, entitlement] = await Promise.all([
     listSavedVideos(),
     listWatchHistory(8),
+    listCompletedVideos(12),
     resolveVideoEntitlement().catch(() => ({
       entitled: false,
       hasVideoAccess: false,
@@ -259,7 +261,53 @@ export default async function MyListPage({
             <ul className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {videos.map((video) => (
                 <li key={video.id}>
-                  <VideoCard video={video} initialSaved tone="dark" />
+                  <VideoCard
+                    video={video}
+                    initialSaved
+                    initialCompleted={completed.some(
+                      (c) => c.youtube_id === video.youtube_id,
+                    )}
+                    tone="dark"
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="mt-16" aria-labelledby="my-list-completed-title">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2
+                id="my-list-completed-title"
+                className="text-xl font-semibold tracking-tight text-zinc-100"
+              >
+                הושלמו
+                {completed.length > 0 ? ` (${completed.length})` : ""}
+              </h2>
+              <p className="mt-2 text-sm text-zinc-500">
+                סרטונים שסימנת כהושלמו או שהגעת לסופם.
+              </p>
+            </div>
+          </div>
+
+          {completed.length === 0 ? (
+            <p className="mt-6 text-sm text-zinc-500">
+              עדיין אין סרטונים שהושלמו. בסוף צפייה או בלחיצה על &quot;סמן
+              כהושלם&quot; הם יופיעו כאן.
+            </p>
+          ) : (
+            <ul className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {completed.map((video) => (
+                <li key={video.id}>
+                  <VideoCard
+                    video={video}
+                    initialCompleted
+                    tone="dark"
+                    hasFullAccess={
+                      entitlement.entitled || entitlement.hasVideoAccess
+                    }
+                  />
                 </li>
               ))}
             </ul>

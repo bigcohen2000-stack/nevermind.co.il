@@ -26,15 +26,19 @@ function CtaLink({
 }: {
   href: string;
   label: string;
-  variant: "primary" | "secondary";
+  variant: "primary" | "secondary" | "header-club";
   className?: string;
 }) {
   return (
     <Link
       href={href}
       className={cn(
-        variant === "primary" ? "btn btn-primary" : "btn btn-secondary",
-        "min-h-10 px-3 text-sm",
+        variant === "primary"
+          ? "btn btn-primary"
+          : variant === "header-club"
+            ? "inline-flex min-h-10 items-center justify-center border border-action/55 bg-action/[0.08] px-3.5 text-sm font-semibold text-action transition hover:border-action hover:bg-action/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+            : "btn btn-secondary",
+        variant !== "header-club" && "min-h-10 px-3 text-sm",
         className,
       )}
     >
@@ -75,7 +79,7 @@ export function AccessUpgradeStrip({
           <CtaLink
             href={primaryHrefResolved}
             label={bundle.primary.label}
-            variant="primary"
+            variant={tier === "guest" ? "header-club" : "primary"}
             className="min-h-10"
           />
         ) : null}

@@ -31,14 +31,22 @@ const LINKS = [
 export function ClubMemberChrome({ variant = "chip" }: ClubMemberChromeProps) {
   if (variant === "chip") {
     return (
-      <Link
-        href="/members"
-        className="inline-flex min-h-9 items-center gap-1.5 border border-action/50 bg-action/[0.08] px-2.5 text-xs font-semibold tracking-wide text-action no-underline transition hover:border-action hover:bg-action/[0.14] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
-        aria-label="מועדון פתוח במכשיר הזה"
-      >
-        <KeyRound className="size-3.5" aria-hidden="true" strokeWidth={1.75} />
-        מועדון
-      </Link>
+      <div className="flex items-center gap-1.5">
+        <Link
+          href="/members"
+          className="inline-flex min-h-10 items-center gap-1.5 border border-action/50 bg-action/[0.08] px-2.5 text-xs font-semibold tracking-wide text-action no-underline transition hover:border-action hover:bg-action/[0.14] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+          aria-label="מועדון פעיל במכשיר הזה"
+        >
+          <KeyRound className="size-3.5" aria-hidden="true" strokeWidth={1.75} />
+          מועדון פעיל
+        </Link>
+        <Link
+          href="/videos?filter=club"
+          className="hidden min-h-10 items-center border border-foreground/20 bg-paper px-2.5 text-xs font-medium text-foreground no-underline transition hover:border-action hover:text-action hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action xl:inline-flex"
+        >
+          ארכיון
+        </Link>
+      </div>
     );
   }
 

@@ -166,8 +166,8 @@ export function HeaderAuthControls({
   if (layout === "stack") {
     return (
       <div className="space-y-2 border-t border-foreground/10 pt-4">
-        <p className="px-2 text-xs font-medium tracking-wide text-muted">
-          חשבון
+        <p className="px-2 text-xs font-medium tracking-wide text-action">
+          {isClub ? "מועדון פעיל" : isConnected ? "חשבון במייל" : "חשבון"}
         </p>
         {isConnected ? (
           <div className="space-y-1 px-2 text-sm">
@@ -177,6 +177,11 @@ export function HeaderAuthControls({
             {clubLabel || isClub ? (
               <p className="text-foreground/70">
                 מועדון: {clubLabel || "פתוח במכשיר"}
+              </p>
+            ) : null}
+            {hasAuth && !isClub ? (
+              <p className="text-xs leading-relaxed text-muted">
+                מייל לא פותח מאגר. גישה אחרי שיחה. אין סליקה באתר.
               </p>
             ) : null}
             <div className="flex flex-col gap-1 pt-2">
@@ -217,11 +222,21 @@ export function HeaderAuthControls({
             </div>
           </div>
         ) : (
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-2">
+            <li>
+              <Link
+                href="/profile?mode=register"
+                className="btn btn-primary flex min-h-12 w-full items-center justify-center gap-2 text-base"
+                onClick={onNavigate}
+              >
+                <UserPlus className="h-4 w-4 shrink-0" aria-hidden="true" />
+                הירשם לחשבון
+              </Link>
+            </li>
             <li>
               <Link
                 href="/profile"
-                className="nav-link flex min-h-12 items-center gap-2 px-2 text-base"
+                className="btn btn-secondary flex min-h-12 w-full items-center justify-center gap-2 text-base"
                 onClick={onNavigate}
               >
                 <LogIn className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -229,24 +244,9 @@ export function HeaderAuthControls({
               </Link>
             </li>
             <li>
-              <Link
-                href="/profile?mode=register"
-                className="nav-link flex min-h-12 items-center gap-2 px-2 text-base"
-                onClick={onNavigate}
-              >
-                <UserPlus className="h-4 w-4 shrink-0" aria-hidden="true" />
-                חשבון חינם
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/members#access"
-                className="nav-link flex min-h-12 items-center gap-2 px-2 text-base text-action"
-                onClick={onNavigate}
-              >
-                <KeyRound className="h-4 w-4 shrink-0" aria-hidden="true" />
-                בקשת גישה למועדון
-              </Link>
+              <p className="px-2 pt-1 text-xs leading-relaxed text-muted">
+                חשבון במייל שומר רשימה. מועדון דרך הכפתור למטה. אין סליקה באתר.
+              </p>
             </li>
           </ul>
         )}
@@ -271,40 +271,47 @@ export function HeaderAuthControls({
         <Link
           href="/profile?mode=register"
           className={cn(
-            "btn btn-secondary min-h-10 gap-1.5 border-foreground/30 bg-foreground text-sm text-background hover:border-action hover:bg-action hover:text-white",
+            "btn btn-primary min-h-10 gap-1.5 text-sm",
             compact ? "min-w-11 justify-center px-2" : "px-3",
           )}
-          aria-label="חשבון חינם"
+          aria-label="הירשם לחשבון"
         >
           <UserPlus className="h-4 w-4 shrink-0" aria-hidden="true" />
-          {compact ? null : <span>חשבון חינם</span>}
+          {compact ? null : <span>הירשם לחשבון</span>}
         </Link>
       </div>
     );
   }
 
-  const triggerLabel = hasAuth ? "החשבון" : "מועדון";
+  const isAccountOnly = hasAuth && !isClub;
+  const triggerLabel = isClub
+    ? "מועדון פעיל"
+    : isAccountOnly
+      ? "חשבון במייל"
+      : "החשבון";
 
   return (
     <div ref={rootRef} className="relative">
       <button
         type="button"
         className={cn(
-          "inline-flex min-h-10 items-center gap-1.5 border border-foreground/20 text-sm text-foreground transition",
+          "inline-flex min-h-10 items-center gap-1.5 border text-sm font-medium transition",
           compact ? "min-w-11 justify-center px-2" : "px-3",
-          "hover:border-action hover:text-action",
+          isClub
+            ? "border-action/45 bg-action/[0.08] text-action hover:border-action hover:bg-action/[0.14]"
+            : "border-foreground/25 bg-paper text-foreground hover:border-action hover:text-action",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action",
         )}
         aria-expanded={open}
         aria-controls={menuId}
         aria-haspopup="menu"
-        aria-label={hasAuth ? "תפריט חשבון" : "תפריט מועדון"}
+        aria-label={isClub ? "תפריט מועדון" : "תפריט חשבון"}
         onClick={() => setOpen((v) => !v)}
       >
-        {hasAuth ? (
-          <User className="h-4 w-4 shrink-0" aria-hidden="true" />
-        ) : (
+        {isClub ? (
           <KeyRound className="h-4 w-4 shrink-0" aria-hidden="true" />
+        ) : (
+          <User className="h-4 w-4 shrink-0" aria-hidden="true" />
         )}
         {compact ? (
           <span className="sr-only">{triggerLabel}</span>
@@ -320,12 +327,24 @@ export function HeaderAuthControls({
           className="absolute end-0 z-[60] mt-2 w-64 border border-foreground/15 bg-background p-2 text-sm shadow-float"
         >
           <div className="space-y-1">
+            <p className="px-2 py-1 text-xs font-medium tracking-wide text-action">
+              {isClub
+                ? "מועדון פעיל"
+                : isAccountOnly
+                  ? "חשבון במייל"
+                  : "מחובר"}
+            </p>
             {authLabel ? (
               <p className="px-2 py-1 text-xs text-muted">חשבון: {authLabel}</p>
             ) : null}
             {clubLabel || isClub ? (
               <p className="px-2 py-1 text-xs text-muted">
                 מועדון: {clubLabel || "פתוח במכשיר"}
+              </p>
+            ) : null}
+            {isAccountOnly ? (
+              <p className="px-2 py-1 text-xs leading-relaxed text-muted">
+                מייל לא פותח מאגר. גישה אחרי שיחה. אין סליקה באתר.
               </p>
             ) : null}
             {menuLinks}

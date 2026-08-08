@@ -13,6 +13,11 @@ export type ProfileProgressStats = {
   lastMeetingStatus: string | null;
   /** Absolute path when a V confirmation is pending. */
   pendingConfirmPath: string | null;
+  completedCount: number;
+  historyCount: number;
+  recentSearches: string[];
+  /** Distinct calendar days with watch history in the last 7 days. */
+  activeDaysLast7: number;
 };
 
 export function emptyProfileProgressStats(): ProfileProgressStats {
@@ -24,6 +29,10 @@ export function emptyProfileProgressStats(): ProfileProgressStats {
     lastMeetingAt: null,
     lastMeetingStatus: null,
     pendingConfirmPath: null,
+    completedCount: 0,
+    historyCount: 0,
+    recentSearches: [],
+    activeDaysLast7: 0,
   };
 }
 

@@ -146,6 +146,8 @@ export type ClubActionResult =
         created_at: string;
         updated_at: string;
         last_seen_at: string | null;
+        ops_link_minted_at: string | null;
+        ops_whatsapp_sent_at: string | null;
       };
     }
   | { ok: false; error: string };
@@ -401,7 +403,7 @@ export async function upsertClubMember(input: {
       .from("club_members")
       .upsert(row, { onConflict: "phone" })
       .select(
-        "phone, display_name, notes, expires_at, created_at, updated_at, last_seen_at",
+        "phone, display_name, notes, expires_at, created_at, updated_at, last_seen_at, ops_link_minted_at, ops_whatsapp_sent_at",
       )
       .single();
 
@@ -446,6 +448,8 @@ export async function upsertClubMember(input: {
             created_at: retry.data.created_at,
             updated_at: retry.data.updated_at,
             last_seen_at: retry.data.last_seen_at,
+            ops_link_minted_at: null,
+            ops_whatsapp_sent_at: null,
           },
         };
       }
@@ -465,6 +469,8 @@ export async function upsertClubMember(input: {
             created_at: data.created_at,
             updated_at: data.updated_at,
             last_seen_at: data.last_seen_at,
+            ops_link_minted_at: data.ops_link_minted_at ?? null,
+            ops_whatsapp_sent_at: data.ops_whatsapp_sent_at ?? null,
           }
         : undefined,
     };
@@ -487,6 +493,54 @@ export async function deleteClubMember(phoneRaw: string): Promise<ClubActionResu
     const { error } = await admin.from("club_members").delete().eq("phone", phone);
     if (error) return { ok: false, error: error.message };
     return { ok: true, message: "החבר הוסר." };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "שגיאת שרת.",
+    };
+  }
+}
+
+/** Studio-only: persist grant-flow ops stage on club_members. */
+export async function markClubOpsStage(input: {
+  phone: string;
+  stage: "link_minted" | "whatsapp_sent";
+}): Promise<ClubActionResult> {
+  const unlocked = await isStudioAuthenticated();
+  if (!unlocked) return { ok: false, error: "Studio locked." };
+
+  const phone = normalizeClubPhone(input.phone);
+  if (!phone) return { ok: false, error: "מספר טלפון לא תקין." };
+
+  const now = new Date().toISOString();
+
+  try {
+    const admin = getSupabaseAdmin();
+    const patch =
+      input.stage === "link_minted"
+        ? { ops_link_minted_at: now, updated_at: now }
+        : { ops_whatsapp_sent_at: now, updated_at: now };
+    const { error } = await admin
+      .from("club_members")
+      .update(patch)
+      .eq("phone", phone);
+
+    if (error) {
+      return {
+        ok: false,
+        error: error.message.includes("ops_")
+          ? "חסרה מיגרציה 40 (ops_link_minted_at / ops_whatsapp_sent_at)."
+          : error.message,
+      };
+    }
+
+    return {
+      ok: true,
+      message:
+        input.stage === "link_minted"
+          ? "סומן: קישור/סיסמה הונפק."
+          : "סומן: וואטסאפ נשלח.",
+    };
   } catch (err) {
     return {
       ok: false,

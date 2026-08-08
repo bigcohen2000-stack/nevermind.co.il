@@ -3,6 +3,7 @@ import { InfoTip } from "@/components/ui/info-tip";
 import { VideoCard } from "@/components/videos/video-card";
 import { VideosBrowseControls } from "@/components/videos/videos-browse-controls";
 import { VideosPagination } from "@/components/videos/videos-pagination";
+import { getCompletedYoutubeIds } from "@/actions/video-completions";
 import { getSavedYoutubeIds } from "@/actions/saved-videos";
 import { resolveVideoEntitlement } from "@/lib/club/access";
 import { INFO_TIPS } from "@/lib/content/info-tips";
@@ -90,10 +91,11 @@ export async function VideosResults({
   let page = 1;
   let totalPages = 1;
   let savedIds = new Set<string>();
+  let completedIds = new Set<string>();
   let hasFullAccess = false;
 
   try {
-    const [listed, saved, access] = await Promise.all([
+    const [listed, saved, completed, access] = await Promise.all([
       listBrowseVideosPage({
         page: requestedPage,
         pageSize: VIDEOS_PAGE_SIZE,
@@ -104,6 +106,7 @@ export async function VideosResults({
         duration,
       }),
       getSavedYoutubeIds(),
+      getCompletedYoutubeIds(),
       resolveVideoEntitlement().catch(() => null),
     ]);
     videos = listed.videos;
@@ -111,6 +114,7 @@ export async function VideosResults({
     page = listed.page;
     totalPages = listed.totalPages;
     savedIds = new Set(saved);
+    completedIds = new Set(completed);
     hasFullAccess = Boolean(
       access && (access.entitled || access.hasVideoAccess),
     );
@@ -161,6 +165,7 @@ export async function VideosResults({
                 <VideoCard
                   video={v}
                   initialSaved={savedIds.has(v.youtube_id)}
+                  initialCompleted={completedIds.has(v.youtube_id)}
                   priority={index === 0}
                   hasFullAccess={hasFullAccess}
                 />

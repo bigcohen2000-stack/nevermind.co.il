@@ -142,14 +142,19 @@ export function InstallAppButton({
         onClick={onInstallClick}
         className={cn(
           compact
-            ? "inline-flex min-h-11 items-center justify-center gap-1.5 border border-foreground/25 px-3 py-2 text-sm text-foreground transition hover:border-action hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
-            : "btn btn-secondary inline-flex items-center justify-center gap-2",
+            ? "inline-flex min-h-10 items-center justify-center gap-1.5 border border-foreground/25 bg-paper px-3 text-sm font-medium text-foreground transition hover:border-action hover:text-action focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
+            : "btn btn-secondary inline-flex items-center justify-center gap-2 font-medium",
           className,
         )}
         aria-label="הורדת אפליקציה: השם לא משנה"
       >
         <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <span>הורדת אפליקציה</span>
+        <span className={compact ? "hidden xl:inline" : undefined}>
+          הורדת אפליקציה
+        </span>
+        {compact ? (
+          <span className="xl:hidden">אפליקציה</span>
+        ) : null}
       </button>
 
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>

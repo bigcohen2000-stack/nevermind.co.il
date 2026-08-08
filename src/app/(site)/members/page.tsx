@@ -168,6 +168,9 @@ export default async function MembersPage() {
                 <a href="#podcast" className="btn btn-secondary">
                   פיד פרטי
                 </a>
+                <Link href="/members/vault" className="btn btn-secondary">
+                  כספת נכסים
+                </Link>
                 <Link href="/my-list" className="btn btn-secondary">
                   הרשימה שלי
                 </Link>
