@@ -50,6 +50,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
       phone: null as string | null,
       displayName: null as string | null,
       expiresAt: null as string | null,
+      renewalRequestedAt: null as string | null,
     })),
   ]);
   const theme = await resolveSiteTheme(session);
@@ -93,6 +94,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
                 <ClubExpiryBanner
                   state={clubExpiry}
                   displayName={sessionForUi.displayName}
+                  renewalRequestedAt={access.renewalRequestedAt}
                 />
               </FocusModeChrome>
             ) : null}

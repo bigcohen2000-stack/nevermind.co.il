@@ -21,6 +21,11 @@ export type ClubAccessResult = {
    * profiles.access_expires_at. Null means open ended.
    */
   expiresAt: string | null;
+  /**
+   * When the member marked in the expiry banner that a renewal request was
+   * sent on WhatsApp (ISO). Null when there is no pending mark.
+   */
+  renewalRequestedAt: string | null;
 };
 
 async function clubConfigVersion(): Promise<number> {
@@ -41,7 +46,25 @@ type ClubMemberCheck = {
   valid: boolean;
   /** club_members.expires_at when the column is readable. */
   expiresAt: string | null;
+  /** club_members.renewal_requested_at when the column is readable. */
+  renewalRequestedAt: string | null;
 };
+
+/** Expired end date means the cookie is no longer trusted. */
+function checkFromRow(row: {
+  expires_at: string | null;
+  renewal_requested_at?: string | null;
+}): ClubMemberCheck {
+  const expiresAt = row.expires_at ?? null;
+  const expired = Boolean(
+    expiresAt && new Date(expiresAt).getTime() < Date.now(),
+  );
+  return {
+    valid: !expired,
+    expiresAt,
+    renewalRequestedAt: row.renewal_requested_at ?? null,
+  };
+}
 
 /**
  * Cookie alone is not enough: member must still be allowlisted and not expired.
@@ -50,40 +73,51 @@ type ClubMemberCheck = {
 async function clubMemberStillValid(
   session: ClubSessionPayload,
 ): Promise<ClubMemberCheck> {
+  const denied: ClubMemberCheck = {
+    valid: false,
+    expiresAt: null,
+    renewalRequestedAt: null,
+  };
+
   try {
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
       .from("club_members")
-      .select("phone, expires_at")
+      .select("phone, expires_at, renewal_requested_at")
       .eq("phone", session.phone)
       .maybeSingle();
 
     if (error) {
       const msg = error.message?.toLowerCase() ?? "";
-      if (msg.includes("does not exist") || msg.includes("42p01")) {
-        return { valid: true, expiresAt: null };
+      // Migration 43 not applied yet: read the older column set instead of
+      // treating the whole session as invalid.
+      if (msg.includes("renewal_requested_at")) {
+        const legacy = await admin
+          .from("club_members")
+          .select("phone, expires_at")
+          .eq("phone", session.phone)
+          .maybeSingle();
+        if (legacy.error || !legacy.data) return denied;
+        return checkFromRow(legacy.data);
       }
-      return { valid: false, expiresAt: null };
+      if (msg.includes("does not exist") || msg.includes("42p01")) {
+        return { valid: true, expiresAt: null, renewalRequestedAt: null };
+      }
+      return denied;
     }
 
-    if (!data) return { valid: false, expiresAt: null };
+    if (!data) return denied;
 
-    if (
-      data.expires_at &&
-      new Date(data.expires_at).getTime() < Date.now()
-    ) {
-      return { valid: false, expiresAt: data.expires_at };
-    }
-
-    return { valid: true, expiresAt: data.expires_at ?? null };
+    return checkFromRow(data);
   } catch {
-    return { valid: true, expiresAt: null };
+    return { valid: true, expiresAt: null, renewalRequestedAt: null };
   }
 }
 
 type LiveClubSession = {
   session: ClubSessionPayload;
   expiresAt: string | null;
+  renewalRequestedAt: string | null;
 };
 
 async function assertLiveClubSession(): Promise<LiveClubSession | null> {
@@ -102,7 +136,11 @@ async function assertLiveClubSession(): Promise<LiveClubSession | null> {
     return null;
   }
 
-  return { session, expiresAt: member.expiresAt };
+  return {
+    session,
+    expiresAt: member.expiresAt,
+    renewalRequestedAt: member.renewalRequestedAt,
+  };
 }
 
 /**
@@ -127,6 +165,7 @@ export async function resolveVideoEntitlement(): Promise<ClubAccessResult> {
       phone: live.session.phone,
       displayName: live.session.name?.trim() || null,
       expiresAt: live.expiresAt ?? premium.accessExpiresAt ?? null,
+      renewalRequestedAt: live.renewalRequestedAt,
     };
   }
 
@@ -149,6 +188,7 @@ export async function resolveVideoEntitlement(): Promise<ClubAccessResult> {
     phone: null,
     displayName: null,
     expiresAt: hasVideoAccess ? premium.accessExpiresAt ?? null : null,
+    renewalRequestedAt: null,
   };
 }
 

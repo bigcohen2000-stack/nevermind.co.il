@@ -191,6 +191,39 @@ export function expiryReminder(input: {
   return lines.join("\n");
 }
 
+/**
+ * Confirmation right after a manual extension in Studio: new end date, no hype.
+ */
+export function clubRenewalConfirmed(input: {
+  name: string;
+  expiresAt: string;
+}): string {
+  const name = input.name.trim();
+  const until = formatHebrewDate(input.expiresAt);
+  const lines: string[] = [];
+
+  if (name && name !== "שלום" && name !== "חבר/ת") {
+    lines.push(`שלום ${name},`, "");
+  }
+
+  lines.push(
+    "✅ החברות במועדון הוארכה.",
+    "",
+    `תוקף חדש: ${until}.`,
+    "",
+    "הכניסה נשארת אותה כניסה. אם המכשיר כבר מחובר, אין צורך להיכנס מחדש.",
+    "",
+    `כניסה למועדון: ${MEMBERS_URL}`,
+    "",
+    "פרטי התוקף גם בעמוד האישי:",
+    PROFILE_URL,
+    "",
+    "לשאלות - אפשר להשיב ישירות להודעה זו.",
+  );
+
+  return lines.join("\n");
+}
+
 /** Announce live to a WhatsApp group or individual. */
 export function liveNowAnnounce(input: {
   topic?: string;

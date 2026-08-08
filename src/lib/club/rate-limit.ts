@@ -7,10 +7,15 @@ const MAX_FAILS = 5;
 
 const buckets = new Map<string, Bucket>();
 
-function prune(now: number) {
-  if (buckets.size < 500) return;
-  for (const [key, value] of buckets) {
-    if (value.resetAt <= now) buckets.delete(key);
+/** Public renewal mark: counts every accepted call, not only failures. */
+const RENEWAL_WINDOW_MS = 60 * 60 * 1000;
+const RENEWAL_MAX_MARKS = 4;
+const renewalBuckets = new Map<string, Bucket>();
+
+function prune(map: Map<string, Bucket>, now: number) {
+  if (map.size < 500) return;
+  for (const [key, value] of map) {
+    if (value.resetAt <= now) map.delete(key);
   }
 }
 
@@ -25,7 +30,7 @@ export function assertClubLoginRateLimit(keys: string[]): {
   error: string;
 } {
   const now = Date.now();
-  prune(now);
+  prune(buckets, now);
 
   for (const raw of keys) {
     const key = raw.trim();
@@ -36,6 +41,43 @@ export function assertClubLoginRateLimit(keys: string[]): {
         ok: false,
         error: "נסיונות רבים מדי. נסו שוב בעוד דקה.",
       };
+    }
+  }
+
+  return { ok: true };
+}
+
+/**
+ * Counting limit for the member facing "sent on WhatsApp" mark.
+ * Every accepted call is counted, so the banner cannot be used to hammer the DB.
+ */
+export function assertClubRenewalMarkRateLimit(keys: string[]): {
+  ok: true;
+} | {
+  ok: false;
+  error: string;
+} {
+  const now = Date.now();
+  prune(renewalBuckets, now);
+
+  const live = keys.map((raw) => raw.trim()).filter(Boolean);
+
+  for (const key of live) {
+    const bucket = renewalBuckets.get(key);
+    if (bucket && bucket.resetAt > now && bucket.fails >= RENEWAL_MAX_MARKS) {
+      return {
+        ok: false,
+        error: "הבקשה כבר נרשמה. אפשר לנסות שוב מאוחר יותר.",
+      };
+    }
+  }
+
+  for (const key of live) {
+    const bucket = renewalBuckets.get(key);
+    if (!bucket || bucket.resetAt <= now) {
+      renewalBuckets.set(key, { fails: 1, resetAt: now + RENEWAL_WINDOW_MS });
+    } else {
+      bucket.fails += 1;
     }
   }
 

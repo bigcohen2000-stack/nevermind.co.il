@@ -8,6 +8,7 @@ import {
   formatClubExpiryHeadline,
   type ClubExpiryState,
 } from "@/lib/club/expiry";
+import { ClubRenewalRequestMark } from "@/components/layout/club-renewal-request-mark";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,11 @@ type ClubExpiryBannerProps = {
   state: ClubExpiryState;
   /** Club display name, used only to prefill the renewal message. */
   displayName?: string | null;
+  /**
+   * ISO timestamp when the member already marked that a request was sent on
+   * WhatsApp. Null means the mark button is still open.
+   */
+  renewalRequestedAt?: string | null;
 };
 
 /**
@@ -25,6 +31,7 @@ type ClubExpiryBannerProps = {
 export function ClubExpiryBanner({
   state,
   displayName = null,
+  renewalRequestedAt = null,
 }: ClubExpiryBannerProps) {
   const headline = formatClubExpiryHeadline(state);
   const dateLabel = formatClubExpiryDate(state.expiresAt);
@@ -90,6 +97,7 @@ export function ClubExpiryBanner({
           >
             יצירת קשר
           </Link>
+          <ClubRenewalRequestMark requestedAt={renewalRequestedAt} />
         </div>
       </div>
     </aside>

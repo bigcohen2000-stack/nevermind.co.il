@@ -22,6 +22,7 @@ type ClubMemberListRow = {
   last_seen_at: string | null;
   ops_link_minted_at: string | null;
   ops_whatsapp_sent_at: string | null;
+  renewal_requested_at: string | null;
 };
 
 async function listClubMembers(limit = 80): Promise<{
@@ -33,7 +34,7 @@ async function listClubMembers(limit = 80): Promise<{
     const { data, error } = await admin
       .from("club_members")
       .select(
-        "phone, display_name, notes, expires_at, created_at, updated_at, last_seen_at, ops_link_minted_at, ops_whatsapp_sent_at",
+        "phone, display_name, notes, expires_at, created_at, updated_at, last_seen_at, ops_link_minted_at, ops_whatsapp_sent_at, renewal_requested_at",
       )
       .order("updated_at", { ascending: false })
       .limit(limit);
@@ -63,6 +64,7 @@ async function listClubMembers(limit = 80): Promise<{
         last_seen_at: row.last_seen_at,
         ops_link_minted_at: null,
         ops_whatsapp_sent_at: null,
+        renewal_requested_at: null,
       })),
       error: null,
     };

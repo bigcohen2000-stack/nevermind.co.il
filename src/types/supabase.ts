@@ -924,6 +924,7 @@ export type Database = {
           last_seen_at: string | null;
           ops_link_minted_at: string | null;
           ops_whatsapp_sent_at: string | null;
+          renewal_requested_at: string | null;
         };
         Insert: {
           phone: string;
@@ -935,6 +936,7 @@ export type Database = {
           last_seen_at?: string | null;
           ops_link_minted_at?: string | null;
           ops_whatsapp_sent_at?: string | null;
+          renewal_requested_at?: string | null;
         };
         Update: {
           phone?: string;
@@ -946,6 +948,7 @@ export type Database = {
           last_seen_at?: string | null;
           ops_link_minted_at?: string | null;
           ops_whatsapp_sent_at?: string | null;
+          renewal_requested_at?: string | null;
         };
         Relationships: [];
       };

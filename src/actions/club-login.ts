@@ -12,6 +12,7 @@ import {
 import { normalizeClubPhone } from "@/lib/club/phone";
 import {
   assertClubLoginRateLimit,
+  assertClubRenewalMarkRateLimit,
   clearClubLoginFailures,
   recordClubLoginFailure,
 } from "@/lib/club/rate-limit";
@@ -21,6 +22,7 @@ import {
   generateRawClubToken,
   hashClubFeedToken,
   hashClubToken,
+  readClubSession,
   setClubSessionCookie,
   verifyClubPassword,
 } from "@/lib/club/session";
@@ -344,6 +346,67 @@ export async function logoutClub(): Promise<void> {
   redirect("/members#login");
 }
 
+export type ClubRenewalRequestResult =
+  | { ok: true; requestedAt: string; message: string }
+  | { ok: false; error: string };
+
+/**
+ * Member facing: mark that a renewal request was already sent on WhatsApp.
+ * Requires a signed club cookie whose phone is on the allowlist.
+ * No payment, no free text, no new row: only a timestamp Studio can see.
+ */
+export async function markClubRenewalRequested(): Promise<ClubRenewalRequestResult> {
+  const session = await readClubSession();
+  const phone = session?.phone
+    ? normalizeClubPhone(session.phone) ?? session.phone
+    : null;
+  if (!phone) {
+    return { ok: false, error: "נדרשת כניסה למועדון כדי לסמן בקשה." };
+  }
+
+  const ip = await clientIp();
+  const rate = assertClubRenewalMarkRateLimit([
+    `renew:${phone}`,
+    `renew-ip:${ip}`,
+  ]);
+  if (!rate.ok) return rate;
+
+  const requestedAt = new Date().toISOString();
+
+  try {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin
+      .from("club_members")
+      .update({ renewal_requested_at: requestedAt })
+      .eq("phone", phone)
+      .select("phone")
+      .maybeSingle();
+
+    if (error) {
+      return {
+        ok: false,
+        error: error.message.includes("renewal_requested_at")
+          ? "חסרה מיגרציה 43 (renewal_requested_at)."
+          : error.message,
+      };
+    }
+    if (!data) {
+      return { ok: false, error: "הטלפון לא ברשימת חברי המועדון." };
+    }
+
+    return {
+      ok: true,
+      requestedAt,
+      message: "סימנו שהבקשה נשלחה. התאריך יוארך ידנית אחרי בדיקה.",
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "שגיאת שרת.",
+    };
+  }
+}
+
 /**
  * Studio-only: add or update allowlisted club member.
  */
@@ -561,6 +624,13 @@ export async function extendClubMembership(input: {
           : error.message,
       };
     }
+
+    // The pending WhatsApp renewal mark is handled once the date moved.
+    // Best effort: an older schema without migration 43 must not fail the extension.
+    await admin
+      .from("club_members")
+      .update({ renewal_requested_at: null })
+      .eq("phone", phone);
 
     const until = new Date(plan.nextExpiresAt).toLocaleDateString("he-IL", {
       dateStyle: "medium",

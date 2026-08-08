@@ -20,6 +20,7 @@ import { buildLeadWhatsAppHref } from "@/lib/studio/lead-contact";
 import {
   clubAccessGranted,
   clubLoginGuide,
+  clubRenewalConfirmed,
   expiryReminder,
 } from "@/lib/studio/whatsapp-templates";
 
@@ -33,6 +34,7 @@ export type ClubMemberRow = {
   last_seen_at: string | null;
   ops_link_minted_at: string | null;
   ops_whatsapp_sent_at: string | null;
+  renewal_requested_at: string | null;
 };
 
 export type ClubLoginEventRow = {
@@ -76,6 +78,11 @@ export function ClubMembersPanel({
     name: string;
     phone: string;
   } | null>(null);
+  const [lastExtended, setLastExtended] = useState<{
+    name: string;
+    phone: string;
+    expiresAt: string;
+  } | null>(null);
 
   useEffect(() => {
     setRows(members);
@@ -99,9 +106,21 @@ export function ClubMembersPanel({
       }
       const updated = result.member;
       if (updated) {
+        // The extension answers the pending WhatsApp request, so the mark clears.
         setRows((prev) =>
-          prev.map((m) => (m.phone === updated.phone ? updated : m)),
+          prev.map((m) =>
+            m.phone === updated.phone
+              ? { ...updated, renewal_requested_at: null }
+              : m,
+          ),
         );
+        if (updated.expires_at) {
+          setLastExtended({
+            name: updated.display_name || "חבר/ת",
+            phone: updated.phone,
+            expiresAt: updated.expires_at,
+          });
+        }
       }
       setStatus(result.message ?? "הוארך.");
       router.refresh();
@@ -151,10 +170,17 @@ export function ClubMembersPanel({
             }
             if (result.member) {
               setRows((prev) => {
-                const without = prev.filter(
-                  (m) => m.phone !== result.member!.phone,
-                );
-                return [result.member!, ...without];
+                const saved = result.member!;
+                const existing = prev.find((m) => m.phone === saved.phone);
+                const without = prev.filter((m) => m.phone !== saved.phone);
+                return [
+                  {
+                    ...saved,
+                    renewal_requested_at:
+                      existing?.renewal_requested_at ?? null,
+                  },
+                  ...without,
+                ];
               });
             }
             setLastSaved({
@@ -287,6 +313,52 @@ export function ClubMembersPanel({
         </div>
       ) : null}
 
+      {lastExtended ? (
+        <div className="space-y-2 border border-emerald-800 bg-zinc-950 p-4">
+          <p className="text-xs text-zinc-400">
+            אישור הארכה ל-{lastExtended.name}. תוקף חדש{" "}
+            {formatWhen(lastExtended.expiresAt)}.
+          </p>
+          <pre className="max-h-40 overflow-auto whitespace-pre-wrap font-sans text-xs text-zinc-400">
+            {clubRenewalConfirmed({
+              name: lastExtended.name,
+              expiresAt: lastExtended.expiresAt,
+            })}
+          </pre>
+          <div className="flex flex-wrap gap-2">
+            <StudioCopyButton
+              text={clubRenewalConfirmed({
+                name: lastExtended.name,
+                expiresAt: lastExtended.expiresAt,
+              })}
+              label="העתק אישור לחבר"
+              onCopied={() => setStatus("אישור ההארכה הועתק.")}
+            />
+            <a
+              href={buildLeadWhatsAppHref(
+                lastExtended.phone,
+                clubRenewalConfirmed({
+                  name: lastExtended.name,
+                  expiresAt: lastExtended.expiresAt,
+                }),
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-10 items-center border border-zinc-500 px-3 text-xs text-zinc-100"
+            >
+              פתח וואטסאפ
+            </a>
+            <button
+              type="button"
+              className="inline-flex min-h-10 items-center border border-zinc-700 px-3 text-xs text-zinc-400"
+              onClick={() => setLastExtended(null)}
+            >
+              סגור
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {feedUrl ? (
         <div className="border border-zinc-600 bg-zinc-950 p-3">
           <p className="text-xs text-zinc-400">
@@ -350,6 +422,11 @@ export function ClubMembersPanel({
                     {row.ops_whatsapp_sent_at
                       ? `, וואטסאפ ${formatWhen(row.ops_whatsapp_sent_at)}`
                       : ""}
+                    {row.renewal_requested_at ? (
+                      <span className="text-amber-300">
+                        {`, בקשת חידוש ממתינה מ-${formatWhen(row.renewal_requested_at)}`}
+                      </span>
+                    ) : null}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -455,16 +532,25 @@ export function ClubMembersPanel({
                     </button>
                     <StudioCopyButton
                       text={
-                        row.expires_at
-                          ? expiryReminder({
+                        lastExtended?.phone === row.phone && row.expires_at
+                          ? clubRenewalConfirmed({
                               name: row.display_name || "חבר/ת",
                               expiresAt: row.expires_at,
                             })
-                          : clubLoginGuide({
-                              name: row.display_name || "חבר/ת",
-                            })
+                          : row.expires_at
+                            ? expiryReminder({
+                                name: row.display_name || "חבר/ת",
+                                expiresAt: row.expires_at,
+                              })
+                            : clubLoginGuide({
+                                name: row.display_name || "חבר/ת",
+                              })
                       }
-                      label="העתק הודעה"
+                      label={
+                        lastExtended?.phone === row.phone && row.expires_at
+                          ? "העתק אישור הארכה"
+                          : "העתק הודעה"
+                      }
                       onCopied={() => setStatus("הודעה הועתקה.")}
                     />
                     <button

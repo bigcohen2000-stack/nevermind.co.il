@@ -670,6 +670,14 @@ alter table public.club_members
   add column if not exists ops_link_minted_at timestamptz,
   add column if not exists ops_whatsapp_sent_at timestamptz;
 
+-- ===== 43_club_renewal_request.sql =====
+alter table public.club_members
+  add column if not exists renewal_requested_at timestamptz;
+
+create index if not exists club_members_renewal_requested_at_idx
+  on public.club_members (renewal_requested_at)
+  where renewal_requested_at is not null;
+
 -- ===== 22_unlisted_gate_backfill.sql =====
 update public.videos
 set is_gated = true
