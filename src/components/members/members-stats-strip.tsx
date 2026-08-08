@@ -249,7 +249,7 @@ export function MembersStatsStrip({
         </p>
         <h2
           id="members-stats-title"
-          className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+          className="mt-3 text-fluid-title font-semibold tracking-tight"
         >
           עומק במאגר. לא במה לרעש.
         </h2>

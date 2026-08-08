@@ -104,7 +104,7 @@ export function ClubLoginForm({
     >
       {!compact ? (
         <>
-          <h2 className="text-2xl font-semibold tracking-tight lg:text-3xl">
+          <h2 className="text-fluid-title font-semibold tracking-tight">
             כניסה למועדון
           </h2>
           <p className="mt-4 max-w-prose text-sm leading-relaxed text-foreground/80 sm:text-base">

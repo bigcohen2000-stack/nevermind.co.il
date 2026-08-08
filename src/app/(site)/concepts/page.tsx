@@ -127,7 +127,7 @@ export default async function ConceptsPage() {
           <Eyebrow onDark>מושגים</Eyebrow>
           <h1
             id="concepts-hero-title"
-            className="mt-5 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
+            className="mt-5 text-fluid-display font-semibold leading-[1.05] tracking-tight"
           >
             מדריך המושגים
           </h1>
@@ -221,7 +221,7 @@ export default async function ConceptsPage() {
             <Eyebrow onDark>מפה</Eyebrow>
             <h2
               id="concept-graph-title"
-              className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+              className="mt-3 text-fluid-title font-semibold tracking-tight"
             >
               מי מופיע עם מי
             </h2>
@@ -246,7 +246,7 @@ export default async function ConceptsPage() {
               <Eyebrow>רשימה</Eyebrow>
               <h2
                 id="concepts-list-title"
-                className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+                className="mt-3 text-fluid-title font-semibold tracking-tight"
               >
                 כל המושגים
               </h2>
@@ -279,7 +279,7 @@ export default async function ConceptsPage() {
           <Eyebrow>המשך חקירה</Eyebrow>
           <h2
             id="concepts-next-title"
-            className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+            className="mt-3 text-fluid-title font-semibold tracking-tight"
           >
             ממושג למנגנון, מסרטון למאמר.
           </h2>

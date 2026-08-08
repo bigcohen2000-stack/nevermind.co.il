@@ -165,7 +165,7 @@ export default async function BooksPage() {
                   </div>
                   <h2
                     id="books-book-title"
-                    className="text-2xl font-semibold tracking-tight lg:text-3xl"
+                    className="text-fluid-title font-semibold tracking-tight"
                   >
                     {BOOK_IN_PROGRESS.title}
                   </h2>
@@ -221,7 +221,7 @@ export default async function BooksPage() {
           <Eyebrow>חקירת אהבה</Eyebrow>
           <h2
             id="books-matrix-title"
-            className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+            className="mt-3 text-fluid-title font-semibold tracking-tight"
           >
             מטריצת סרטונים ומאמרים
           </h2>

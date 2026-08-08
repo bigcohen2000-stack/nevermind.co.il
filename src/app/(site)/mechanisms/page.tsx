@@ -250,7 +250,7 @@ export default function MechanismsPage() {
               <Eyebrow onDark>מבנה התוכן</Eyebrow>
               <h1
                 id="mechanisms-hero-title"
-                className="mt-5 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
+                className="mt-5 text-fluid-display font-semibold leading-[1.05] tracking-tight"
               >
                 מנגנונים, לא רגשות.
               </h1>
@@ -300,7 +300,7 @@ export default function MechanismsPage() {
               <Eyebrow>העיקרון</Eyebrow>
               <h2
                 id="concept-title"
-                className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+                className="mt-3 text-fluid-title font-semibold tracking-tight"
               >
                 מנגנון הוא תבנית חוזרת.
               </h2>

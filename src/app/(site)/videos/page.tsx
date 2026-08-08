@@ -113,7 +113,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
               <Eyebrow onDark>וידאו והרצאות</Eyebrow>
               <h1
                 id="videos-hero-title"
-                className="mt-5 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
+                className="mt-5 text-fluid-display font-semibold leading-[1.05] tracking-tight"
               >
                 אותו ניתוח,
                 <br />
@@ -158,7 +158,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
             <Eyebrow>ספרייה</Eyebrow>
             <h2
               id="videos-list-title"
-              className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+              className="mt-3 text-fluid-title font-semibold tracking-tight"
             >
               סרטונים זמינים לחקירה.
             </h2>
@@ -220,7 +220,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
               <Eyebrow onDark>למה וידאו</Eyebrow>
               <h2
                 id="videos-philosophy-title"
-                className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+                className="mt-3 text-fluid-title font-semibold tracking-tight"
               >
                 וידאו אינו בידור.
               </h2>

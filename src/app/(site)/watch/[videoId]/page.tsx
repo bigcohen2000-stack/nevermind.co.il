@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { Lock, Tag } from "lucide-react";
@@ -200,11 +201,13 @@ function LockedWatchPage({
             />
           ) : (
             <div className="relative aspect-video overflow-hidden border border-foreground/15 bg-paper">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={thumbSrc}
                 alt=""
-                className="h-full w-full object-cover opacity-80"
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 768px"
+                className="object-cover opacity-80"
               />
               {gateBanner}
             </div>

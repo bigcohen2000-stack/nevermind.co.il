@@ -143,7 +143,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
           <Eyebrow onDark>חיפוש</Eyebrow>
           <h1
             id="search-hero-title"
-            className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
+            className="mt-5 max-w-3xl text-fluid-display font-semibold leading-[1.05] tracking-tight"
           >
             חקירה לפי נושא
           </h1>

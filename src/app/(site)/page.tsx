@@ -143,7 +143,7 @@ export default async function Home() {
           <Eyebrow onDark>השם לא משנה</Eyebrow>
           <h1
             id="hero-title"
-            className="mt-5 text-[2rem] font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl"
+            className="mt-5 text-fluid-hero font-semibold leading-[1.1] tracking-tight"
           >
             להפריד עובדה
             <br />
@@ -187,7 +187,7 @@ export default async function Home() {
             <Eyebrow>נושאים לחקירה</Eyebrow>
             <h2
               id="mechanisms-title"
-              className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+              className="mt-3 text-fluid-title font-semibold tracking-tight"
             >
               שלושה צירים. בלי דרמה.
             </h2>
@@ -233,7 +233,7 @@ export default async function Home() {
             <Eyebrow>מסלולים</Eyebrow>
             <h2
               id="paths-home-title"
-              className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+              className="mt-3 text-fluid-title font-semibold tracking-tight"
             >
               איך העבודה מתבצעת.
             </h2>
@@ -262,7 +262,7 @@ export default async function Home() {
           <Eyebrow>מה קורה בפועל</Eyebrow>
           <h2
             id="process-title"
-            className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+            className="mt-3 text-fluid-title font-semibold tracking-tight"
           >
             שלושה שלבים. בלי הפתעות.
           </h2>
@@ -300,7 +300,7 @@ export default async function Home() {
               <Eyebrow>מאמרים</Eyebrow>
               <h2
                 id="articles-title"
-                className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+                className="mt-3 text-fluid-title font-semibold tracking-tight"
               >
                 חקירה בכתב.
               </h2>
@@ -363,7 +363,7 @@ export default async function Home() {
               <Eyebrow onDark>וידאו והרצאות</Eyebrow>
               <h2
                 id="video-title"
-                className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+                className="mt-3 text-fluid-title font-semibold tracking-tight"
               >
                 אותו מבנה, בקול.
               </h2>
@@ -447,7 +447,7 @@ export default async function Home() {
             <Eyebrow>השיטה</Eyebrow>
             <h2
               id="factstory-title"
-              className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+              className="mt-3 text-fluid-title font-semibold tracking-tight"
             >
               עובדה מול סיפור.
             </h2>
@@ -522,7 +522,7 @@ export default async function Home() {
               <Eyebrow>ספר</Eyebrow>
               <h2
                 id="books-teaser-title"
-                className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+                className="mt-3 text-fluid-title font-semibold tracking-tight"
               >
                 {SHOP_BOOK.title}.
               </h2>

@@ -95,7 +95,7 @@ export default async function MembersPage() {
           <Eyebrow onDark>מאגר חברים</Eyebrow>
           <h1
             id="members-hero-title"
-            className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
+            className="mt-5 max-w-3xl text-fluid-display font-semibold leading-[1.05] tracking-tight"
           >
             {isMember ? "אתם בפנים." : "כניסה למועדון."}
           </h1>

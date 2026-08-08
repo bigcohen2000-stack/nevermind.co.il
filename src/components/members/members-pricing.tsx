@@ -83,7 +83,7 @@ export function MembersPricing() {
         </p>
         <h2
           id="members-pricing-title"
-          className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+          className="mt-3 text-fluid-title font-semibold tracking-tight"
         >
           מחיר לפי תקופה.
         </h2>

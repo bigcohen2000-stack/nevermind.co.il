@@ -39,7 +39,7 @@ export default function ArticlesPage() {
           <Eyebrow onDark>מאמרים</Eyebrow>
           <h1
             id="articles-hero-title"
-            className="mt-5 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
+            className="mt-5 text-fluid-display font-semibold leading-[1.05] tracking-tight"
           >
             ניתוח לוגי, מנגנון אחר מנגנון.
           </h1>
@@ -58,7 +58,7 @@ export default function ArticlesPage() {
           <Eyebrow>איך התוכן מאורגן</Eyebrow>
           <h2
             id="articles-org-title"
-            className="mt-3 text-2xl font-semibold tracking-tight lg:text-3xl"
+            className="mt-3 text-fluid-title font-semibold tracking-tight"
           >
             לפי מנגנונים, לא לפי רגשות.
           </h2>
@@ -85,7 +85,7 @@ export default function ArticlesPage() {
           <div className="flex items-baseline justify-between gap-4">
             <h2
               id="articles-list-title"
-              className="text-2xl font-semibold tracking-tight lg:text-3xl"
+              className="text-fluid-title font-semibold tracking-tight"
             >
               כל המאמרים
             </h2>

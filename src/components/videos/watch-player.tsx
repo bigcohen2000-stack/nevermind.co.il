@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import {
   forwardRef,
   useEffect,
   useId,
   useImperativeHandle,
   useRef,
+  useState,
 } from "react";
 
 import { saveVideoProgress } from "@/actions/video-progress";
@@ -74,6 +76,29 @@ declare global {
 const SAVE_EVERY_MS = 10_000;
 let ytApiPromise: Promise<void> | null = null;
 
+/** Hosts covered by next.config images.remotePatterns. */
+const POSTER_HOSTS = new Set(["i.ytimg.com", "img.youtube.com"]);
+
+/**
+ * DB thumbnail URLs are trusted only when they match the image allowlist;
+ * anything else falls back to the canonical YouTube thumb so next/image
+ * never throws on an unconfigured host.
+ */
+function resolvePosterSrc(
+  thumbnailUrl: string | null | undefined,
+  youtubeId: string,
+): string {
+  const fallback = `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`;
+  const raw = thumbnailUrl?.trim();
+  if (!raw) return fallback;
+  if (raw.startsWith("/")) return raw;
+  try {
+    return POSTER_HOSTS.has(new URL(raw).hostname) ? raw : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function loadYoutubeApi(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (window.YT?.Player) return Promise.resolve();
@@ -118,6 +143,7 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
   ) {
     const reactId = useId().replace(/:/g, "");
     const elementId = `nm-yt-${reactId}`;
+    const [playerReady, setPlayerReady] = useState(false);
     const playerRef = useRef<YtPlayer | null>(null);
     const lastSavedAtRef = useRef(0);
     const historyRecordedRef = useRef(false);
@@ -251,6 +277,7 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
           },
           events: {
             onReady: (event) => {
+              setPlayerReady(true);
               if (resumeAt > 0) {
                 event.target.seekTo(resumeAt, true);
               }
@@ -311,6 +338,8 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
       };
     }, [elementId, startSeconds, youtubeId, previewEndSeconds]);
 
+    const posterSrc = resolvePosterSrc(thumbnailUrl, youtubeId);
+
     return (
       <div
         className={cn(
@@ -322,6 +351,19 @@ export const WatchPlayer = forwardRef<WatchPlayerHandle, WatchPlayerProps>(
           id={elementId}
           className="absolute inset-0 h-full w-full"
           title={title}
+        />
+        {/* LCP poster: paints immediately, fades out once the player boots. */}
+        <Image
+          src={posterSrc}
+          alt=""
+          aria-hidden
+          fill
+          priority
+          sizes="(max-width: 1024px) 100vw, 800px"
+          className={cn(
+            "pointer-events-none object-cover transition-opacity duration-300",
+            playerReady ? "opacity-0" : "opacity-100",
+          )}
         />
       </div>
     );

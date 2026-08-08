@@ -158,6 +158,24 @@ html[data-a11y-grayscale="on"] {
   --radius-frame: 0;
 }
 
+/* Fluid type scale: interpolates between the old breakpoint steps.
+   Anchors keep the small-mobile and large-desktop sizes identical to the
+   previous stepped classes, so only mid-range viewports smooth out. */
+@utility text-fluid-hero {
+  /* Home hero h1: 32px at <=480px viewport up to 72px at >=1440px. */
+  font-size: clamp(2rem, 0.75rem + 4.17vw, 4.5rem);
+}
+
+@utility text-fluid-display {
+  /* Page hero h1: 36px at <=480px viewport up to 60px at >=1280px. */
+  font-size: clamp(2.25rem, 1.35rem + 3vw, 3.75rem);
+}
+
+@utility text-fluid-title {
+  /* Section h2: 24px at <=640px viewport up to 30px at >=1280px. */
+  font-size: clamp(1.5rem, 1.125rem + 0.94vw, 1.875rem);
+}
+
 *,
 *::before,
 *::after {
