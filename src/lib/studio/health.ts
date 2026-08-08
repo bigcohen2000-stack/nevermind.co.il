@@ -22,6 +22,8 @@ export type StudioHealth = {
   membersCount: number;
   gatedVideosCount: number;
   teasersMissingCount: number;
+  /** True when GATED_PLAYLIST_IDS or force-gated ID lists are set. */
+  gatedPlaylistConfigured: boolean;
   resendConfigured: boolean;
   youtubeKeyConfigured: boolean;
   cronSecretConfigured: boolean;
@@ -46,6 +48,10 @@ export async function getStudioHealth(): Promise<StudioHealth> {
   const vapidConfigured =
     envTruthy(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) &&
     envTruthy(process.env.VAPID_PRIVATE_KEY);
+  const gatedPlaylistConfigured =
+    envTruthy(process.env.GATED_PLAYLIST_IDS) ||
+    envTruthy(process.env.YOUTUBE_GATED_VIDEO_IDS) ||
+    envTruthy(process.env.YOUTUBE_UNLISTED_VIDEO_IDS);
 
   const base: Omit<
     StudioHealth,
@@ -54,6 +60,7 @@ export async function getStudioHealth(): Promise<StudioHealth> {
     | "membersCount"
     | "gatedVideosCount"
     | "teasersMissingCount"
+    | "gatedPlaylistConfigured"
     | "latestVideo"
     | "paymentReady"
     | "checklist"
@@ -127,6 +134,25 @@ export async function getStudioHealth(): Promise<StudioHealth> {
             : "אין חברים עדיין. אפשר להוסיף לפני גבייה.",
       },
       {
+        id: "gated-playlist",
+        label: "פלייליסט / מזהי מועדון",
+        ok: gatedPlaylistConfigured || gatedVideosCount > 0,
+        hint: gatedPlaylistConfigured
+          ? "GATED_PLAYLIST_IDS או רשימות ID מוגדרים."
+          : gatedVideosCount > 0
+            ? `${gatedVideosCount} סרטונים מסומנים. מומלץ גם GATED_PLAYLIST_IDS לסנכרון עתידי.`
+            : "חסר GATED_PLAYLIST_IDS. סרטונים חדשים עלולים להישאר פתוחים.",
+      },
+      {
+        id: "teasers",
+        label: "טעימות לסרטונים חסומים",
+        ok: teasersMissingCount === 0,
+        hint:
+          teasersMissingCount === 0
+            ? "לכל החסומים יש teaser_youtube_id."
+            : `${teasersMissingCount} חסרים. השלימו בפאנל טעימות בסטודיו.`,
+      },
+      {
         id: "youtube",
         label: "מפתח YouTube API",
         ok: youtubeKeyConfigured,
@@ -182,6 +208,7 @@ export async function getStudioHealth(): Promise<StudioHealth> {
       membersCount,
       gatedVideosCount,
       teasersMissingCount,
+      gatedPlaylistConfigured,
       latestVideo: latestRes.data ?? null,
       paymentReady,
       checklist,
@@ -251,6 +278,7 @@ export async function getStudioHealth(): Promise<StudioHealth> {
       membersCount: 0,
       gatedVideosCount: 0,
       teasersMissingCount: 0,
+      gatedPlaylistConfigured,
       latestVideo: null,
       paymentReady: false,
       checklist,

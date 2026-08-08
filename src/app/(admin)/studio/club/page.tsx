@@ -133,7 +133,7 @@ export default async function StudioClubPage() {
       }
     >
       <div className="space-y-8">
-        <ClubOpsChecklist />
+        <ClubOpsChecklist members={membersResult.members} />
 
         <section id="password" className="scroll-mt-6">
           <ClubPasswordPanel status={passwordStatus} />

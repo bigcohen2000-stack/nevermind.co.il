@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "npx tsx --test src/lib/access/site-tier.test.ts src/lib/forms/validators.test.ts src/lib/newsletter/subscribe-result.test.ts src/lib/admin/sync-auth.test.ts",
+    "test": "npx tsx --test src/lib/access/site-tier.test.ts src/lib/forms/validators.test.ts src/lib/newsletter/subscribe-result.test.ts src/lib/admin/sync-auth.test.ts src/lib/club/expiry.test.ts",
     "core-facts:backfill": "node scripts/backfill-core-facts.mjs",
     "env:check": "node scripts/check-env.mjs",
     "schema:check": "node scripts/check-schema.mjs",

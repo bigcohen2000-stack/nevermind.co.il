@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import type { StudioHealth } from "@/lib/studio/health";
 
 type StudioHealthPanelProps = {
@@ -66,7 +68,26 @@ export function StudioHealthPanel({ health }: StudioHealthPanelProps) {
         </div>
         <div>
           <dt>חסרות טעימות</dt>
-          <dd className="text-zinc-200">{health.teasersMissingCount}</dd>
+          <dd className="text-zinc-200">
+            {health.teasersMissingCount}
+            {health.teasersMissingCount > 0 ? (
+              <>
+                {" "}
+                <Link
+                  href="/studio#teasers"
+                  className="text-amber-200 underline-offset-2 hover:underline"
+                >
+                  לפאנל טעימות
+                </Link>
+              </>
+            ) : null}
+          </dd>
+        </div>
+        <div>
+          <dt>פלייליסט מועדון מוגדר</dt>
+          <dd className="text-zinc-200">
+            {health.gatedPlaylistConfigured ? "כן" : "לא (מומלץ להגדיר)"}
+          </dd>
         </div>
         <div>
           <dt>חברים ברשימה</dt>

@@ -5,11 +5,16 @@ import { useRouter } from "next/navigation";
 
 import {
   deleteClubMember,
+  extendClubMembership,
   markClubOpsStage,
   mintClubFeedToken,
   upsertClubMember,
 } from "@/actions/club-login";
 import { StudioCopyButton } from "@/components/studio/studio-copy-button";
+import {
+  CLUB_RENEWAL_MONTHS,
+  CLUB_RENEWAL_WITH_BONUS_MONTHS,
+} from "@/lib/club/expiry";
 import { maskClubPhone } from "@/lib/club/phone";
 import { buildLeadWhatsAppHref } from "@/lib/studio/lead-contact";
 import {
@@ -79,6 +84,29 @@ export function ClubMembersPanel({
   useEffect(() => {
     if (loadError) setError(loadError);
   }, [loadError]);
+
+  /** Quick manual renewal after a WhatsApp request. No checkout involved. */
+  const extendMember = (memberPhone: string, months: number) => {
+    setError(null);
+    startTransition(async () => {
+      const result = await extendClubMembership({
+        phone: memberPhone,
+        months,
+      });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      const updated = result.member;
+      if (updated) {
+        setRows((prev) =>
+          prev.map((m) => (m.phone === updated.phone ? updated : m)),
+        );
+      }
+      setStatus(result.message ?? "הוארך.");
+      router.refresh();
+    });
+  };
 
   return (
     <section
@@ -324,6 +352,28 @@ export function ClubMembersPanel({
                       : ""}
                   </span>
                   <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={pending}
+                      title="מוסיף חודש קלנדרי אחד. מהתאריך הקיים אם עוד בתוקף, אחרת מהיום."
+                      className="border border-zinc-600 px-2 py-1 text-zinc-200 disabled:opacity-50"
+                      onClick={() =>
+                        extendMember(row.phone, CLUB_RENEWAL_MONTHS)
+                      }
+                    >
+                      הארך חודש
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      title="הטבת יום אחרון: חודש בתשלום ועוד חודשיים מתנה."
+                      className="border border-emerald-700 px-2 py-1 text-emerald-200 disabled:opacity-50"
+                      onClick={() =>
+                        extendMember(row.phone, CLUB_RENEWAL_WITH_BONUS_MONTHS)
+                      }
+                    >
+                      הארך {CLUB_RENEWAL_WITH_BONUS_MONTHS} חודשים (הטבה)
+                    </button>
                     <button
                       type="button"
                       className="border border-zinc-600 px-2 py-1 text-zinc-200"

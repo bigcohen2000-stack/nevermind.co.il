@@ -5,6 +5,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { CLUB_MAGIC_TTL_MS } from "@/lib/club/constants";
+import {
+  CLUB_MAX_EXTENSION_MONTHS,
+  planClubExtension,
+} from "@/lib/club/expiry";
 import { normalizeClubPhone } from "@/lib/club/phone";
 import {
   assertClubLoginRateLimit,
@@ -501,6 +505,92 @@ export async function deleteClubMember(phoneRaw: string): Promise<ClubActionResu
   }
 }
 
+/**
+ * Studio-only: extend a member by whole calendar months.
+ * Stacks on the current end date while it is still valid, otherwise starts from now.
+ */
+export async function extendClubMembership(input: {
+  phone: string;
+  months: number;
+}): Promise<ClubActionResult> {
+  const unlocked = await isStudioAuthenticated();
+  if (!unlocked) return { ok: false, error: "Studio locked." };
+
+  const phone = normalizeClubPhone(input.phone);
+  if (!phone) return { ok: false, error: "מספר טלפון לא תקין." };
+
+  const months = Math.floor(input.months);
+  if (!Number.isFinite(months) || months < 1) {
+    return { ok: false, error: "מספר חודשים לא תקין." };
+  }
+  if (months > CLUB_MAX_EXTENSION_MONTHS) {
+    return {
+      ok: false,
+      error: `אפשר להאריך עד ${CLUB_MAX_EXTENSION_MONTHS} חודשים בפעולה אחת.`,
+    };
+  }
+
+  try {
+    const admin = getSupabaseAdmin();
+    const { data: member, error: readError } = await admin
+      .from("club_members")
+      .select("phone, expires_at")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    if (readError) return { ok: false, error: readError.message };
+    if (!member) return { ok: false, error: "הטלפון לא ברשימת חברי המועדון." };
+
+    const plan = planClubExtension(member.expires_at, months);
+    const now = new Date().toISOString();
+
+    const { data, error } = await admin
+      .from("club_members")
+      .update({ expires_at: plan.nextExpiresAt, updated_at: now })
+      .eq("phone", phone)
+      .select(
+        "phone, display_name, notes, expires_at, created_at, updated_at, last_seen_at, ops_link_minted_at, ops_whatsapp_sent_at",
+      )
+      .single();
+
+    if (error) {
+      return {
+        ok: false,
+        error: error.message.includes("expires_at")
+          ? "חסרה עמודת expires_at בטבלת club_members. הרץ 35_ensure_club_members.sql."
+          : error.message,
+      };
+    }
+
+    const until = new Date(plan.nextExpiresAt).toLocaleDateString("he-IL", {
+      dateStyle: "medium",
+    });
+    const from = plan.fromNow ? "מהיום" : "מהתאריך הקיים";
+
+    return {
+      ok: true,
+      phone,
+      message: `הוארך ב-${months} חודשים ${from}. תוקף עד ${until}.`,
+      member: {
+        phone: data.phone,
+        display_name: data.display_name,
+        notes: data.notes,
+        expires_at: data.expires_at,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        last_seen_at: data.last_seen_at,
+        ops_link_minted_at: data.ops_link_minted_at ?? null,
+        ops_whatsapp_sent_at: data.ops_whatsapp_sent_at ?? null,
+      },
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "שגיאת שרת.",
+    };
+  }
+}
+
 /** Studio-only: persist grant-flow ops stage on club_members. */
 export async function markClubOpsStage(input: {
   phone: string;
@@ -611,6 +701,16 @@ export async function mintClubToken(input: {
     }
 
     const url = `${siteOrigin()}/club/login?token=${encodeURIComponent(raw)}`;
+
+    // Persist grant-flow stage so Studio ops survive refresh (migration 40).
+    await admin
+      .from("club_members")
+      .update({
+        ops_link_minted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("phone", phone);
+
     return {
       ok: true,
       url,
