@@ -110,10 +110,7 @@ export default async function BooksPage() {
     <main className="w-full text-start">
       <JsonLd data={breadcrumbLd} />
       <JsonLd data={buildYakirCohenPersonLd()} />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(pageLd) }}
-      />
+      <JsonLd data={pageLd} />
 
       <section aria-labelledby="books-hero-title" className="band-dark">
         <Watermark className="bottom-[-1.5rem] start-[-0.5rem] text-[6rem] text-foreground/[0.045] sm:text-[9rem] lg:text-[12rem]">
@@ -122,7 +119,7 @@ export default async function BooksPage() {
         <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-20 lg:py-28">
           <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
             <div className="max-w-2xl">
-              <Eyebrow onDark>// ARCHIVE_TEXT_REPOSITORY</Eyebrow>
+              <Eyebrow onDark>{"// ARCHIVE_TEXT_REPOSITORY"}</Eyebrow>
               <h1
                 id="books-hero-title"
                 className="mt-4 text-3xl font-semibold leading-[1.05] tracking-tight sm:text-5xl"
@@ -234,7 +231,7 @@ export default async function BooksPage() {
           </p>
 
           <p className="mt-8 font-mono text-xs uppercase text-muted">
-            // CHAPTER_INDEX
+            {"// CHAPTER_INDEX"}
           </p>
           <div className="mt-4">
             {rows.length > 0 ? (

@@ -11,6 +11,9 @@ import { buildBreadcrumbList } from "@/lib/seo/breadcrumb-json-ld";
 export const metadata: Metadata = {
   title: "מאמרים",
   description: "ניתוח לוגי בכתב. הפרדה בין עובדה לבין סיפור, ללא דרמה.",
+  alternates: {
+    canonical: "https://nevermind.co.il/articles",
+  },
   ...shareImageMetadata("ניתוח לוגי, מנגנון אחר מנגנון."),
 };
 

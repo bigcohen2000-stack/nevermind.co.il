@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import { redeemClubToken } from "@/actions/club-login";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "כניסה למועדון",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 type PageProps = {
   searchParams: Promise<{ token?: string }>;

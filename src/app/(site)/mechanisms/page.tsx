@@ -26,6 +26,9 @@ export const metadata: Metadata = {
   title: "מנגנונים",
   description:
     "האתר מאורגן לפי מנגנונים, לא לפי רגשות: יחסים, קיום, זהות. מאמרים, סרטונים וחיפוש לפי כל ציר.",
+  alternates: {
+    canonical: "https://nevermind.co.il/mechanisms",
+  },
   ...shareImageMetadata("מנגנונים, לא רגשות."),
 };
 

@@ -25,6 +25,10 @@ export interface ArticleMeta {
   description: string;
   /** Optional Hebrew terms bridging to video concepts / search. */
   relatedTerms?: string[];
+  /** ISO date (YYYY-MM-DD) of first publication, for Article JSON-LD. */
+  publishedAt?: string;
+  /** ISO date (YYYY-MM-DD) of last content update, for Article JSON-LD. */
+  updatedAt?: string;
 }
 
 interface ArticleEntry {

@@ -18,6 +18,8 @@ declare module "*.mdx" {
     isPremium: boolean;
     description: string;
     relatedTerms?: string[];
+    publishedAt?: string;
+    updatedAt?: string;
   };
 
   const MDXComponent: import("react").ComponentType;

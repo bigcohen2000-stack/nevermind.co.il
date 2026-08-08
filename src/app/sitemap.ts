@@ -11,6 +11,7 @@ const STATIC_PATHS = [
   "",
   "/articles",
   "/videos",
+  "/videos/topics",
   "/search",
   "/contact",
   "/paths",

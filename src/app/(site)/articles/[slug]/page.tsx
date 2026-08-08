@@ -62,6 +62,12 @@ export async function generateMetadata({
       type: "article",
       url: canonical,
       images: shareOgImage(article.meta.title),
+      ...(article.meta.publishedAt
+        ? { publishedTime: article.meta.publishedAt }
+        : {}),
+      ...(article.meta.updatedAt
+        ? { modifiedTime: article.meta.updatedAt }
+        : {}),
     },
     twitter: share.twitter,
   };
@@ -105,6 +111,11 @@ export default async function ArticlePage({
     inLanguage: "he-IL",
     url: canonical,
     mainEntityOfPage: canonical,
+    image: [
+      `https://nevermind.co.il/api/og?title=${encodeURIComponent(meta.title)}`,
+    ],
+    ...(meta.publishedAt ? { datePublished: meta.publishedAt } : {}),
+    ...(meta.updatedAt ? { dateModified: meta.updatedAt } : {}),
     timeRequired: readingMinutesToIsoDuration(readingMinutes),
     author: yakirCohenAuthorRef(),
     creator: yakirCohenAuthorRef(),

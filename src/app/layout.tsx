@@ -43,7 +43,21 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    title: "NeverMind | השם לא משנה",
+    description:
+      "ניתוח לוגי של המציאות: הפרדה בין עובדה לבין סיפור. חקירה לפי נושא בעברית.",
     images: [shareOgImageUrl(DEFAULT_OG_TITLE)],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 };
 
