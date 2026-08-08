@@ -193,7 +193,43 @@ on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- B3: method Q&A fields on viewer_feedback
+-- Create base table if migration 29 was never applied on this project.
 -- ---------------------------------------------------------------------------
+create table if not exists public.viewer_feedback (
+  id            uuid primary key default gen_random_uuid(),
+  kind          text not null,
+  video_id      uuid references public.videos (id) on delete set null,
+  video_title   text,
+  body          text not null,
+  author_name   text,
+  contact_phone text,
+  contact_email text,
+  want_reply    boolean not null default false,
+  status        text not null default 'open'
+                  check (status in ('open', 'replied', 'closed')),
+  created_at    timestamptz not null default now(),
+  user_id       uuid references auth.users (id) on delete set null,
+  reply_body    text,
+  replied_at    timestamptz,
+
+  constraint viewer_feedback_body_not_blank check (length(trim(body)) > 0)
+);
+
+create index if not exists viewer_feedback_created_at_idx
+  on public.viewer_feedback (created_at desc);
+
+create index if not exists viewer_feedback_status_idx
+  on public.viewer_feedback (status);
+
+alter table public.viewer_feedback enable row level security;
+
+drop policy if exists viewer_feedback_anon_insert on public.viewer_feedback;
+create policy viewer_feedback_anon_insert
+  on public.viewer_feedback
+  for insert
+  to anon, authenticated
+  with check (true);
+
 alter table public.viewer_feedback
   add column if not exists user_id uuid references auth.users (id) on delete set null;
 
@@ -203,8 +239,21 @@ alter table public.viewer_feedback
 alter table public.viewer_feedback
   add column if not exists replied_at timestamptz;
 
-alter table public.viewer_feedback
-  drop constraint if exists viewer_feedback_kind_check;
+-- Replace any kind CHECK (named or auto-named) so method_question is allowed.
+do $$
+declare
+  cname text;
+begin
+  for cname in
+    select conname
+    from pg_constraint
+    where conrelid = 'public.viewer_feedback'::regclass
+      and contype = 'c'
+      and pg_get_constraintdef(oid) ilike '%kind%'
+  loop
+    execute format('alter table public.viewer_feedback drop constraint %I', cname);
+  end loop;
+end $$;
 
 alter table public.viewer_feedback
   add constraint viewer_feedback_kind_check

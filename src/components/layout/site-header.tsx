@@ -124,49 +124,59 @@ function DesktopMoreMenu() {
 
   useStickyChromeLock(open);
 
-  useEffect(() => {
+  function placeMenu() {
+    const btn = rootRef.current;
+    if (!btn) return;
+    const r = btn.getBoundingClientRect();
+    const left = Math.min(
+      Math.max(8, r.right - menuWidth),
+      window.innerWidth - menuWidth - 8,
+    );
+    setMenuPos({ top: r.bottom + 6, left });
+  }
+
+  function closeMenu() {
     setOpen(false);
+    setMenuPos(null);
+  }
+
+  function toggleMenu() {
+    if (open) {
+      closeMenu();
+      return;
+    }
+    placeMenu();
+    setOpen(true);
+  }
+
+  useEffect(() => {
+    closeMenu();
+    // pathname change should always collapse secondary nav
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional close on route change
   }, [pathname]);
 
   useEffect(() => {
-    if (!open) {
-      setMenuPos(null);
-      return;
-    }
-
-    function place() {
-      const btn = rootRef.current;
-      if (!btn) return;
-      const r = btn.getBoundingClientRect();
-      const left = Math.min(
-        Math.max(8, r.right - menuWidth),
-        window.innerWidth - menuWidth - 8,
-      );
-      setMenuPos({ top: r.bottom + 6, left });
-    }
-
-    place();
-    window.addEventListener("resize", place);
-    window.addEventListener("scroll", place, true);
-    return () => {
-      window.removeEventListener("resize", place);
-      window.removeEventListener("scroll", place, true);
-    };
-  }, [open]);
-
-  useEffect(() => {
     if (!open) return;
+
+    function onResizeOrScroll() {
+      placeMenu();
+    }
     function onDoc(e: MouseEvent) {
       const t = e.target as Node;
       if (rootRef.current?.contains(t) || menuRef.current?.contains(t)) return;
-      setOpen(false);
+      closeMenu();
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") closeMenu();
     }
+
+    window.addEventListener("resize", onResizeOrScroll);
+    window.addEventListener("scroll", onResizeOrScroll, true);
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
     return () => {
+      window.removeEventListener("resize", onResizeOrScroll);
+      window.removeEventListener("scroll", onResizeOrScroll, true);
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
     };
@@ -180,7 +190,7 @@ function DesktopMoreMenu() {
         aria-expanded={open}
         aria-controls={menuId}
         aria-haspopup="menu"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleMenu}
       >
         <MoreHorizontal className="me-1.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
         עוד
@@ -209,7 +219,7 @@ function DesktopMoreMenu() {
                   "flex min-h-10 items-center px-3 text-sm text-foreground transition hover:bg-paper hover:text-action",
                   active && "bg-paper text-action",
                 )}
-                onClick={() => setOpen(false)}
+                onClick={closeMenu}
               >
                 <NavIcon href={link.href} />
                 {link.label}
