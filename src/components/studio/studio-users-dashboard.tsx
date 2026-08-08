@@ -641,7 +641,7 @@ export function StudioUsersDashboard({
                         <td className="py-2 pe-3 text-zinc-300">
                           {formatDateTime(user.lastMeetingAt)}
                           <span className="mt-0.5 block text-[10px] text-zinc-600">
-                            סה"כ {user.meetingCount}
+                            סה&quot;כ {user.meetingCount}
                           </span>
                         </td>
                         <td className="py-2 pe-3 text-zinc-300">

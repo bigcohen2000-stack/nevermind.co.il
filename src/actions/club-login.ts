@@ -4,7 +4,6 @@ import { Resend } from "resend";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { CLUB_MAGIC_TTL_MS } from "@/lib/club/constants";
 import {
   CLUB_MAX_EXTENSION_MONTHS,
   planClubExtension,

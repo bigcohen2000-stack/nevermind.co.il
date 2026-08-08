@@ -34,7 +34,7 @@ export default async function StudioLeadsPage() {
       summary={
         <div className="flex flex-wrap gap-4 text-sm text-zinc-400">
           <span>
-            פתוחים סה"כ:{" "}
+            פתוחים סה&quot;כ:{" "}
             <strong className="text-zinc-100">{openTotal}</strong>
           </span>
           <span>

@@ -106,7 +106,7 @@ export async function broadcastTopicAlerts(): Promise<{
   }
 
   let emailed = 0;
-  let pushed = 0;
+  const pushed = 0;
   let skipped = 0;
 
   const apiKey = process.env.RESEND_API_KEY?.trim();

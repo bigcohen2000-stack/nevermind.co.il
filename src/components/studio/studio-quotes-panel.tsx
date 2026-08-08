@@ -476,7 +476,7 @@ export function StudioQuotesPanel({ initialQuotes }: StudioQuotesPanelProps) {
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="block text-sm">
-            <span className="text-zinc-400">מחיר (ש"ח, לפני מע"מ)</span>
+            <span className="text-zinc-400">מחיר (ש&quot;ח, לפני מע&quot;מ)</span>
             <input
               value={priceIls}
               onChange={(e) => setPriceIls(e.target.value)}

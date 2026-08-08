@@ -2,7 +2,7 @@
 
 import { MessageCircle, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 
 import { updatePreMeetingLeadStatus } from "@/actions/studio-lead-status";
 import { LeadMeetingInviteTools } from "@/components/studio/lead-meeting-invite-tools";

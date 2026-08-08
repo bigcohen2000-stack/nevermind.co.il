@@ -14,8 +14,12 @@ export const colors = {
   foreground: "#1A1A1A",
   /** Action red. Used sparingly for buttons and critical links. */
   action: "#D42B2B",
-  /** Muted gray. The "story" / interpretation layer. */
-  muted: "#9CA3AF",
+  /**
+   * Muted gray for the "story" / interpretation layer on the cream canvas.
+   * Darkened from #9CA3AF to keep text contrast >= 4.5:1; dark surfaces
+   * still use onDark.muted (#9CA3AF).
+   */
+  muted: "#6B7280",
 } as const;
 
 /** Supporting tones for section rhythm. */

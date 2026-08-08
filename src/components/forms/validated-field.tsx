@@ -38,6 +38,14 @@ type CommonProps = {
   minLengthHint?: number;
 };
 
+/**
+ * Muted text that keeps a >= 4.5:1 contrast ratio on both tones:
+ * gray-400 passes on the dark form surfaces, gray-500 on white.
+ */
+function mutedText(tone: FieldTone): string {
+  return tone === "dark" ? "text-[#9CA3AF]" : "text-[#6B7280]";
+}
+
 function CheckIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -88,7 +96,7 @@ function StatusPill({
           "inline-flex min-h-7 items-center gap-1 rounded-none border px-2 text-[11px] font-medium",
           tone === "dark"
             ? "border-[#FAFAF8]/15 text-[#9CA3AF]"
-            : "border-[#1A1A1A]/15 text-[#9CA3AF]",
+            : "border-[#1A1A1A]/15 text-[#6B7280]",
         )}
         aria-hidden
       >
@@ -169,7 +177,9 @@ function labelRow(
       >
         {label}
         {optional ? (
-          <span className="ms-1.5 font-normal text-[#9CA3AF]">לא חובה</span>
+          <span className={cn("ms-1.5 font-normal", mutedText(tone))}>
+            לא חובה
+          </span>
         ) : (
           <span
             className={cn(
@@ -239,7 +249,7 @@ function feedbackBlock({
       {!showMessage && status !== "valid" && help ? (
         <p
           id={describedById}
-          className="text-xs leading-relaxed text-[#9CA3AF]"
+          className={cn("text-xs leading-relaxed", mutedText(tone))}
         >
           {help}
         </p>
@@ -253,7 +263,7 @@ function feedbackBlock({
               ? tone === "dark"
                 ? "text-emerald-300/80"
                 : "text-emerald-800/80"
-              : "text-[#9CA3AF]",
+              : mutedText(tone),
           )}
           aria-live="polite"
         >
@@ -327,7 +337,7 @@ export function ValidatedInput({
           baseInput,
           tone === "dark"
             ? "bg-black text-[#FAFAF8] placeholder:text-[#9CA3AF]"
-            : "bg-white text-[#1A1A1A] placeholder:text-[#9CA3AF]",
+            : "bg-white text-[#1A1A1A] placeholder:text-[#6B7280]",
           inputBorderClass(status, tone),
           inputClassName,
         )}
@@ -394,7 +404,7 @@ export function ValidatedTextarea({
           "min-h-[6.5rem] resize-y",
           tone === "dark"
             ? "bg-black text-[#FAFAF8] placeholder:text-[#9CA3AF]"
-            : "bg-white text-[#1A1A1A] placeholder:text-[#9CA3AF]",
+            : "bg-white text-[#1A1A1A] placeholder:text-[#6B7280]",
           inputBorderClass(status, tone),
           inputClassName,
         )}
@@ -553,7 +563,9 @@ export function ValidatedCheckbox({
             <StatusPill status={status} tone={tone} />
           </div>
           {help && !invalid ? (
-            <p className="mt-1 text-xs leading-relaxed text-[#9CA3AF]">{help}</p>
+            <p className={cn("mt-1 text-xs leading-relaxed", mutedText(tone))}>
+              {help}
+            </p>
           ) : null}
           {invalid ? (
             <p className="mt-1 text-xs text-[#D42B2B]" role="alert">
@@ -608,7 +620,7 @@ export function FormFillGuide({
         >
           {allReady ? "הכול מוכן לשליחה" : "מה עוד חסר"}
         </p>
-        <p className="text-[11px] tabular-nums text-[#9CA3AF]">
+        <p className={cn("text-[11px] tabular-nums", mutedText(tone))}>
           {done}/{total}
         </p>
       </div>
@@ -641,7 +653,7 @@ export function FormFillGuide({
                   ? tone === "dark"
                     ? "text-emerald-300"
                     : "text-emerald-800"
-                  : "text-[#9CA3AF]",
+                  : mutedText(tone),
               )}
             >
               {item.label}

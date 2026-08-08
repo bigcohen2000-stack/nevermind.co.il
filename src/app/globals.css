@@ -12,7 +12,9 @@
   --background: #fafaf8;
   --foreground: #1a1a1a;
   --action: #d42b2b;
-  --muted: #9ca3af;
+  /* Muted text on cream: gray-500 keeps >= 4.5:1. Dark surfaces
+     (band-dark, dark theme) re-pin the original #9ca3af locally. */
+  --muted: #6b7280;
 
   accent-color: var(--action);
 

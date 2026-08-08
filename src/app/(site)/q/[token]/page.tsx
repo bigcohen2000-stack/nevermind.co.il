@@ -78,7 +78,7 @@ export default async function PublicQuotePage({ params }: QuotePageProps) {
           </dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">מחיר (לפני מע"מ)</dt>
+          <dt className="text-xs text-muted">מחיר (לפני מע&quot;מ)</dt>
           <dd className="mt-1 text-2xl font-semibold tabular-nums">
             {formatQuotePriceIls(Number(quote.price_ils))}
           </dd>

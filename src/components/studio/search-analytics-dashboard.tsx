@@ -319,7 +319,7 @@ export function SearchAnalyticsDashboard({
             מה מחפשים הגולשים
           </p>
           <p className="mt-1 max-w-xl text-xs leading-relaxed text-zinc-500">
-            סיכום חיפושים באתר: מה עובד, איפה יש חורים, ומתי מחפשים. בלי ז'רגון.
+            סיכום חיפושים באתר: מה עובד, איפה יש חורים, ומתי מחפשים. בלי ז&apos;רגון.
           </p>
         </div>
         <ResetAnalyticsButton />

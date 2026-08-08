@@ -217,6 +217,7 @@ export function HeaderSearch({
           placeholder="חיפוש מהיר באתר"
           autoComplete="off"
           spellCheck={false}
+          role="combobox"
           aria-label="חיפוש סרטונים, מאמרים ומושגים"
           aria-autocomplete="list"
           aria-controls={listId}
@@ -302,7 +303,7 @@ export function HeaderSearch({
                       <span className="block leading-snug">{label}</span>
                       {snippet ? (
                         <span className="mt-0.5 block text-[11px] leading-snug text-muted">
-                          "{snippet}"
+                          &quot;{snippet}&quot;
                         </span>
                       ) : null}
                     </span>

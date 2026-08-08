@@ -74,7 +74,6 @@ function MarkUnlistedSubmitButton() {
 
 export function VideoIngestionStudio({
   initialVideos,
-  embedded = false,
 }: VideoIngestionStudioProps) {
   const router = useRouter();
   const [toast, setToast] = useState<ToastState>(null);
